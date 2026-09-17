@@ -77,6 +77,45 @@ const result = await page.evaluate(async () => {
     const es = await mod.extract(new File([tar], 'z.tar'))
     return es.map((e) => e.name)
   })
+  // 8) 分卷 ZIP 合并解压：单文件 zip 从内部切点拆分为 .z01 + .zip，拼接后应完整还原
+  await T('split_zip', async () => {
+    const big = 'x'.repeat(500)
+    const zblob = await mod.createZip([fresh('big.txt', big)])
+    const buf = new Uint8Array(await zblob.arrayBuffer())
+    const cut = 60 // 落在文件数据区内（局部头约 37 字节之后），拼接后无损
+    const p1 = new File([buf.slice(0, cut)], 'vol.z01')
+    const p2 = new File([buf.slice(cut)], 'vol.zip')
+    const isSet = mod.isSplitZipSet([p1, p2])
+    const entries = await mod.extractSplitZip([p1, p2])
+    const txt = await (await entries[0].getBlob()).text()
+    return { isSet, count: entries.length, name: entries[0].name, ok: txt === big }
+  })
+  // 9) PDF 合并 / 拆分（pdf-lib）
+  await T('pdf_merge_split', async () => {
+    const td = await import('/src/lib/test-deps.js')
+    const { PDFDocument } = td
+    const mkPdf = async (label) => {
+      const d = await PDFDocument.create()
+      d.addPage([200, 200]).drawText(label)
+      return new File([await d.save()], label + '.pdf')
+    }
+    const a = await mkPdf('A'), b = await mkPdf('B')
+    const { mergePdf, splitPdf } = await import('/src/lib/pdf.js')
+    const m = await mergePdf([a, b])
+    const sp = await splitPdf(a)
+    return { mergedName: m.name, mergedPages: m.count, splitParts: sp.length }
+  })
+  // 10) pdf.js 浏览器内加载与解析（预览能力的关键风险点）
+  await T('pdf_preview', async () => {
+    const td = await import('/src/lib/test-deps.js')
+    td.pdfjs.GlobalWorkerOptions.workerSrc = td.workerUrl
+    const { PDFDocument } = td
+    const d = await PDFDocument.create()
+    d.addPage([100, 100]).drawText('hi')
+    const bytes = await d.save()
+    const doc = await td.pdfjs.getDocument({ data: new Uint8Array(bytes), isEvalSupported: false }).promise
+    return { numPages: doc.numPages }
+  })
   return out
 })
 

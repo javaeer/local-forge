@@ -154,7 +154,7 @@ async function downloadAll() {
           <option v-for="f in CREATE_FORMATS" :key="f.ext" :value="f.ext">{{ f.label }} — {{ f.note }}</option>
         </select>
       </div>
-      <div class="field" v-if="outFmt !== 'zip'">
+      <div class="field" v-if="outFmt === 'tar.gz'">
         <label>压缩方式</label>
         <select v-model="compression">
           <option v-for="c in COMPRESSIONS" :key="c.id" :value="c.id">{{ c.label }}</option>
@@ -200,7 +200,7 @@ async function downloadAll() {
           <option v-for="f in CREATE_FORMATS" :key="f.ext" :value="f.ext">{{ f.label }}</option>
         </select>
       </div>
-      <div class="field" v-if="outFmt !== 'zip'">
+      <div class="field" v-if="outFmt === 'tar.gz'">
         <label>压缩方式</label>
         <select v-model="compression"><option v-for="c in COMPRESSIONS" :key="c.id" :value="c.id">{{ c.label }}</option></select>
       </div>
@@ -220,7 +220,7 @@ async function downloadAll() {
         <label>输出格式</label>
         <select v-model="outFmt"><option v-for="f in CREATE_FORMATS" :key="f.ext" :value="f.ext">{{ f.label }}</option></select>
       </div>
-      <div class="field" v-if="outFmt !== 'zip'">
+      <div class="field" v-if="outFmt === 'tar.gz'">
         <label>压缩方式</label>
         <select v-model="compression"><option v-for="c in COMPRESSIONS" :key="c.id" :value="c.id">{{ c.label }}</option></select>
       </div>

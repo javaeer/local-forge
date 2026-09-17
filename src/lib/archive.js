@@ -144,3 +144,44 @@ export async function merge(files, { outExt = 'zip', compression = 'NONE', onpro
   if (outExt === 'zip') return createZip(all, { onprogress: (p) => onprogress && onprogress(80 + Math.round(p * 0.2)) })
   return createArchive(all, { outputFileName: outName, compression, onprogress: (p) => onprogress && onprogress(80 + Math.round(p * 0.2)) })
 }
+
+// ---------- 分卷 ZIP 解压（PKWARE spanned / 7-Zip 分卷）----------
+// 命名形态 A（zip.js / WinZip spanned）：name.z01, name.z02, ..., name.zip（末卷为 .zip）
+// 命名形态 B（7-Zip 分卷）：name.zip.001, name.zip.002, ...（无单独 .zip）
+function splitPartKey(name) {
+  const n = name.toLowerCase()
+  const m = n.match(/\.z(\d{1,3})$/)
+  if (m) return { kind: 'z', num: parseInt(m[1], 10) } // 形态 A 的 .z01…（排在 .zip 之前）
+  if (n.endsWith('.zip')) return { kind: 'zip', num: Infinity } // 形态 A 末卷
+  const m2 = n.match(/\.(\d{2,4})$/)
+  if (m2) return { kind: 'num', num: parseInt(m2[1], 10) } // 形态 B 的 .001…
+  return null
+}
+
+// 判断一批文件是否构成一个分卷 ZIP 集合（≥2 个且命名均符合上述规则）
+export function isSplitZipSet(fileList) {
+  if (!fileList || fileList.length < 2) return false
+  const keys = fileList.map((f) => splitPartKey(f.name))
+  return keys.every((k) => k !== null)
+}
+
+// 将多卷按顺序拼接为一个 Blob，再走通用解压
+export async function extractSplitZip(fileList, { password } = {}) {
+  const parts = fileList
+    .map((f) => ({ f, k: splitPartKey(f.name) }))
+    .filter((p) => p.k !== null)
+    .sort((a, b) => (a.k.kind === b.k.kind ? a.k.num - b.k.num : a.k.kind === 'zip' ? 1 : b.k.kind === 'zip' ? -1 : a.k.kind.localeCompare(b.k.kind)))
+  const bufs = await Promise.all(parts.map((p) => p.f.arrayBuffer()))
+  let total = 0
+  for (const b of bufs) total += b.byteLength
+  const merged = new Uint8Array(total)
+  let off = 0
+  for (const b of bufs) {
+    merged.set(new Uint8Array(b), off)
+    off += b.byteLength
+  }
+  // 用首卷名推导出合并后的文件名（去掉分卷后缀）
+  const base = fileList[0].name.replace(/\.z\d{1,3}$/i, '').replace(/\.zip\.\d{2,4}$/i, '').replace(/\.zip$/i, '')
+  const mergedFile = new File([merged], (base || 'archive') + '.zip')
+  return extract(mergedFile, { password })
+}

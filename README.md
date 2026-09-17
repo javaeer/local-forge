@@ -13,30 +13,32 @@
   <a href="https://github.com/javaeer/local-forge/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/javaeer/local-forge/ci.yml?branch=main&label=build" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/javaeer/local-forge" alt="license" /></a>
   <a href="https://github.com/javaeer/local-forge/releases"><img src="https://img.shields.io/github/v/release/javaeer/local-forge" alt="release" /></a>
-  <a href="https://forge.freedev.app/"><img src="https://img.shields.io/badge/demo-online-blue" alt="demo" /></a>
+  <a href="http://forge.freedev.app/"><img src="https://img.shields.io/website?url=http%3A%2F%2Fforge.freedev.app%2F&label=demo" alt="demo" /></a>
   <img src="https://img.shields.io/badge/made%20with-Vue%203-42b883" alt="vue" />
   <img src="https://img.shields.io/badge/100%25-client--side-0f172a" alt="client-side" />
 </p>
 
-> **LocalForge** 受 easyzip 启发，在本地浏览器里提供同类文件处理能力并做了扩展：
+> **LocalForge** 受 ezyzip.pro 启发，在本地浏览器里提供同类文件处理能力并做了扩展：
 > 没有后端、没有上传、没有追踪。文件在你自己的设备里被 zip.js / libarchive.js / ffmpeg.wasm 处理完毕即销毁。
 
 ---
 
 ## 在线体验
 
-[本地工坊](http://forge.freedev.app/)
+**[本地工坊](http://forge.freedev.app/)** —— Your files never leave your browser.
+
+---
 
 ## 功能矩阵
 
 | 分类 | 能力 | 实现 |
 |---|---|---|
-| **ZIP 工具箱** | 压缩为 ZIP（AES-256 密码、分卷拆分、压缩级别）／解压（含加密）／多归档合并／格式互转 | [@zip.js/zip.js](https://github.com/gildas-lormeau/zip.js) 2.15 |
+| **ZIP 工具箱** | 压缩为 ZIP（AES-256 密码、分卷拆分、压缩级别）／解压（含加密）／**分卷 ZIP 解压（多卷自动合并）**／多归档合并／格式互转 | [@zip.js/zip.js](https://github.com/gildas-lormeau/zip.js) 2.15 |
 | **创建归档** | ZIP / TAR / TAR.GZ（自研可靠写入器，正确处理嵌套路径） | 自研 `writers.js`（USTAR） |
-| **解压 / 提取** | RAR / 7Z / TAR / ISO / APK / DMG / WIM / DNG 等 200+ 格式 | [libarchive.js](https://github.com/libarchive/libarchive.js) 2.0 (WASM) |
-| **媒体转换** | MP4↔WebM↔MOV、MP4→MP3、WAV↔MP3、降码率压缩；支持从 ZIP 内提取媒体 | [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm) 0.12（多线程优先 → 单线程回退 → CDN） |
+| **解压 / 提取** | RAR / 7Z / TAR / ISO / APK / DMG / WIM / DNG 等 200+ 格式；**分卷 ZIP 合并解压** | [libarchive.js](https://github.com/libarchive/libarchive.js) 2.0 (WASM) |
+| **媒体转换** | MP4↔WebM↔MOV、MP4→MP3、WAV↔MP3、降码率压缩；**支持从 ZIP 内提取媒体** | [@ffmpeg/ffmpeg](https://github.com/ffmpegwasm/ffmpeg.wasm) 0.12（多线程优先 → 单线程回退 → CDN） |
 | **图片** | PNG / JPG / WEBP 互转、有损压缩、本地预览 | Canvas API |
-| **PDF** | 重压缩（内嵌图像重压 + 对象流去重） | [pdf-lib](https://github.com/Hopding/pdf-lib) |
+| **PDF** | 重压缩（内嵌图像重压 + 对象流去重）／**逐页预览（pdf.js 本地渲染）／合并多个 PDF／拆分为单页** | [pdf-lib](https://github.com/Hopding/pdf-lib) + [pdfjs-dist](https://github.com/mozilla/pdf.js) |
 | **分享 / 安全** | WebRTC P2P 直传（手动 SDP 信令，无后端）；ZIP 密码字典恢复；归档修复 | WebRTC / 本地引擎 |
 
 > **关于 7Z / ISO / XZ / ZST / BZ2 的「创建」**：这些格式需要原版专有的 WASM 编码模块（网页端不可得），
@@ -67,8 +69,9 @@ BASE_URL=http://localhost:4173 pnpm test:e2e        # 针对预览构建
 ```
 
 `pnpm test:e2e` 用 `puppeteer-core` + 真实 Chromium 驱动浏览器，覆盖：ZIP/TAR/TAR.GZ 创建（含嵌套路径）、
-AES 密码加解密回环、无密码/错密码正确拒绝、格式转换、多归档合并、不支持格式报错、归档修复、嵌套 tar 提取——
-全部通过且控制台零运行时错误（`_e2e_media.mjs` / `_e2e_media2.mjs` 另覆盖媒体内核）。
+AES 密码加解密回环、无密码/错密码正确拒绝、格式转换、多归档合并、不支持格式报错、归档修复、嵌套 tar 提取、
+**分卷 ZIP 合并解压**、**PDF 合并/拆分为单页**——全部通过且控制台零运行时错误
+（`_e2e_media.mjs` / `_e2e_media2.mjs` 另覆盖媒体内核与 ZIP 内提取媒体）。
 
 ---
 
@@ -143,10 +146,9 @@ public/ffmpeg-st/    ffmpeg 单线程内核（跨源隔离不可用时的回退�
 
 ## 致谢
 
-> **声明**：LocalForge 是一个独立的开源项目，与 easyzip 无任何隶属、合作或背书关系；其名称仅在与「灵感来源」相关的语境下被引用。
+> **声明**：LocalForge 是一个独立的开源项目，与 ezyzip.pro 无任何隶属、合作或背书关系；其名称仅在与「灵感来源」相关的语境下被引用。
 
-- 灵感来自 [easyzip](https://easyzip/)；
-- 核心引擎依赖 [@zip.js/zip.js](https://github.com/gildas-lormeau/zip.js)、[libarchive.js](https://github.com/libarchive/libarchive.js)、[@ffmpeg/ffmpeg (ffmpeg.wasm)](https://github.com/ffmpegwasm/ffmpeg.wasm)、[pdf-lib](https://github.com/Hopding/pdf-lib)；
+- 灵感来自 [ezyzip.pro](https://ezyzip.pro/)；- 核心引擎依赖 [@zip.js/zip.js](https://github.com/gildas-lormeau/zip.js)、[libarchive.js](https://github.com/libarchive/libarchive.js)、[@ffmpeg/ffmpeg (ffmpeg.wasm)](https://github.com/ffmpegwasm/ffmpeg.wasm)、[pdf-lib](https://github.com/Hopding/pdf-lib)；
 - 图标来自 [Bootstrap Icons](https://icons.getbootstrap.com/)。
 
 ## 许可证

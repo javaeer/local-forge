@@ -1,0 +1,47 @@
+name: Bug report / 缺陷报告
+description: 报告一个可复现的问题
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量提供可复现的信息，便于我们快速定位。
+  - type: input
+    id: env
+    attributes:
+      label: 环境
+      description: 浏览器与版本、操作系统、LocalForge 版本/commit
+      placeholder: "Chrome 120 / macOS 14 / commit abc123"
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: 复现步骤
+      description: 一步步操作，让我们能复现
+      placeholder: |
+        1. 打开 /zip-extract
+        2. 拖入 sample-with-password.zip
+        3. 输入密码 ezyzip
+        4. 点击解压
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: 实际结果
+      description: 含控制台报错（F12 → Console）截图或文本
+    validations:
+      required: true
+  - type: textarea
+    id: files
+    attributes:
+      label: 样本文件（可选）
+      description: 可附上触发问题的样本（注意勿包含隐私内容）

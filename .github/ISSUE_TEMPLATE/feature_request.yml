@@ -1,0 +1,32 @@
+name: Feature request / 功能建议
+description: 提出一个新功能或改进
+title: "[feat] "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: 想要解决的问题
+      description: 这个功能要解决什么痛点？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 期望的方案
+      description: 你希望怎样实现？可附草图/参考
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 备选方案 / 参考
+      description: 其他思路或类似工具的做法
+  - type: checkboxes
+    id: scope
+    attributes:
+      label: 影响范围
+      options:
+        - label: 仅前端 UI
+        - label: 涉及引擎/内核（wasm）
+        - label: 涉及新的外部依赖
