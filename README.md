@@ -13,7 +13,7 @@
   <a href="https://github.com/javaeer/local-forge/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/javaeer/local-forge/ci.yml?branch=main&label=build" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/javaeer/local-forge" alt="license" /></a>
   <a href="https://github.com/javaeer/local-forge/releases"><img src="https://img.shields.io/github/v/release/javaeer/local-forge" alt="release" /></a>
-  <a href="https://local-forge.vercel.app"><img src="https://img.shields.io/badge/demo-online-blue" alt="demo" /></a>
+  <a href="https://forge.freedev.app/"><img src="https://img.shields.io/badge/demo-online-blue" alt="demo" /></a>
   <img src="https://img.shields.io/badge/made%20with-Vue%203-42b883" alt="vue" />
   <img src="https://img.shields.io/badge/100%25-client--side-0f172a" alt="client-side" />
 </p>
@@ -22,6 +22,10 @@
 > 没有后端、没有上传、没有追踪。文件在你自己的设备里被 zip.js / libarchive.js / ffmpeg.wasm 处理完毕即销毁。
 
 ---
+
+## 在线体验
+
+[本地工坊](http://forge.freedev.app/)
 
 ## 功能矩阵
 
