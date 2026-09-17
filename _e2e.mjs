@@ -1,8 +1,10 @@
-// 全量复刻引擎端到端验证（真实浏览器，每次调用都用 fresh File，逐步容错）
+// 引擎端到端验证（真实浏览器，每次调用都用 fresh File，逐步容错）
 import puppeteer from 'puppeteer-core'
 
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
+
 const browser = await puppeteer.launch({
-  executablePath: '/usr/bin/chromium',
+  executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
   headless: 'new',
   args: ['--no-sandbox', '--disable-setuid-sandbox', '--enable-features=SharedArrayBuffer'],
 })
@@ -11,7 +13,7 @@ const errors = []
 page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE: ' + m.text()) })
 page.on('pageerror', (e) => errors.push('PAGEERR: ' + e.message))
 
-await page.goto('http://localhost:5173/', { waitUntil: 'networkidle0' })
+await page.goto(BASE_URL + '/', { waitUntil: 'networkidle0' })
 
 const result = await page.evaluate(async () => {
   const mod = await import('/src/lib/archive.js')

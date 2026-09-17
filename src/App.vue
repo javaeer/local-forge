@@ -7,7 +7,7 @@ import { RouterLink, RouterView } from 'vue-router'
     <header class="topbar">
       <RouterLink to="/" class="brand">
         <i class="bi bi-box-seam"></i>
-        <span>Local Forge <b>Lite</b></span>
+        <span>LocalForge</span>
       </RouterLink>
       <nav class="nav">
         <RouterLink to="/zip-compress"><i class="bi bi-file-earmark-zip"></i> 压缩</RouterLink>
@@ -23,7 +23,30 @@ import { RouterLink, RouterView } from 'vue-router'
     </main>
 
     <footer class="footer">
-      纯前端实现 · 文件不上传服务器 · 基于 zip.js · libarchive.js · ffmpeg.wasm
+      <nav class="foot-nav">
+        <RouterLink to="/about">关于</RouterLink>
+        <RouterLink to="/privacy">隐私协议</RouterLink>
+        <a href="https://github.com/javaeer/local-forge" target="_blank" rel="noopener">GitHub</a>
+      </nav>
+      <div>纯前端实现 · 文件不上传服务器 · 基于 zip.js · libarchive.js · ffmpeg.wasm</div>
     </footer>
   </div>
 </template>
+
+<style scoped>
+.foot-nav {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  margin-bottom: 6px;
+  flex-wrap: wrap;
+}
+.foot-nav a {
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 13px;
+}
+.foot-nav a:hover {
+  text-decoration: underline;
+}
+</style>

@@ -1,12 +1,38 @@
 {
   "name": "local-forge",
-  "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "private": false,
   "type": "module",
+  "description": "LocalForge · 纯浏览器端的本地文件工具箱：压缩/解压/转换/分享全部在本地完成，文件不上传任何服务器。",
+  "license": "MIT",
+  "author": "LocalForge Contributors",
+  "homepage": "https://github.com/javaeer/local-forge#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/javaeer/local-forge.git"
+  },
+  "bugs": {
+    "url": "https://github.com/javaeer/local-forge/issues"
+  },
+  "keywords": [
+    "zip",
+    "unzip",
+    "archive",
+    "compress",
+    "ffmpeg",
+    "pdf",
+    "webrtc",
+    "p2p",
+    "client-side",
+    "offline",
+    "vue",
+    "vite"
+  ],
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:e2e": "node _e2e.mjs"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",
@@ -17,7 +43,6 @@
     "libarchive.js": "^2.0.2",
     "pdf-lib": "^1.17.1",
     "vue": "^3.5.42",
-    "vue-i18n": "^11.4.12",
     "vue-router": "^5.3.1"
   },
   "devDependencies": {

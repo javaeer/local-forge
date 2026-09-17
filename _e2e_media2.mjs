@@ -2,8 +2,9 @@
 // crossOriginIsolated 守卫后能走通，并记录用到的内核类型与耗时。
 import puppeteer from 'puppeteer-core'
 
+const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
 const browser = await puppeteer.launch({
-  executablePath: '/usr/bin/chromium',
+  executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
   headless: 'new',
   protocolTimeout: 300000,
   args: ['--no-sandbox', '--disable-setuid-sandbox', '--enable-features=SharedArrayBuffer'],
@@ -12,7 +13,7 @@ const page = await browser.newPage()
 const logs = []
 page.on('console', (m) => logs.push('[' + m.type() + '] ' + m.text()))
 page.on('pageerror', (e) => logs.push('[PAGEERR] ' + e.message))
-await page.goto('http://localhost:5173/media-convert', { waitUntil: 'networkidle0' })
+await page.goto(BASE_URL + '/media-convert', { waitUntil: 'networkidle0' })
 
 const r = await page.evaluate(async () => {
   const iso = self.crossOriginIsolated

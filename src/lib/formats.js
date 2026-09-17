@@ -18,7 +18,7 @@ export const COMPRESSIONS = [
   { id: 'LRZIP', label: 'LRZIP' },
 ]
 
-// ezyzip.pro 完整工具目录（按能力归类，全部可纯前端复刻）
+// ezyzip.pro 完整工具目录（按能力归类，全部可纯前端实现）
 export const TOOLS = [
   {
     group: 'ZIP 工具箱',
