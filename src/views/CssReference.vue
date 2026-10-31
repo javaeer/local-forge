@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onUnmounted } from 'vue'
 import { D, CATEGORY_ORDER, getVisual, hlCSS } from '../lib/cssref.js'
 
 const search = ref('')
@@ -43,7 +43,11 @@ function copyCode() {
 
 // 键盘：Esc 关闭详情
 function onKey(e) { if (e.key === 'Escape') closeDetail() }
-if (typeof window !== 'undefined') window.addEventListener('keydown', onKey)
+if (typeof window !== 'undefined') {
+  window.addEventListener('keydown', onKey)
+  // 路由切换后及时解绑全局监听，避免 SPA 中监听器泄漏
+  onUnmounted(() => window.removeEventListener('keydown', onKey))
+}
 </script>
 
 <template>
