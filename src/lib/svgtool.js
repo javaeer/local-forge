@@ -337,8 +337,8 @@ export class SVGTool {
     if (!rgb) return svg;
     const hex6 = '#' + rgb.map(c => c.toString(16).padStart(2,'0')).join('');
     const hex3 = (hex6[1]===hex6[3] && hex6[3]===hex6[5]) ? `#${hex6[1]}${hex6[3]}${hex6[5]}` : null;
-    const rgbStr = `rgb\\(\s*${rgb[0]}\s*,\s*${rgb[1]}\s*,\s*${rgb[2]}\s*\)`;
-    const rgbaStr = `rgba\\(\s*${rgb[0]}\s*,\s*${rgb[1]}\s*,\s*${rgb[2]}\s*,\s*([\d.]+)\s*\)`;
+    const rgbStr = String.raw`rgb\(\s*${rgb[0]}\s*,\s*${rgb[1]}\s*,\s*${rgb[2]}\s*\)`;
+    const rgbaStr = String.raw`rgba\(\s*${rgb[0]}\s*,\s*${rgb[1]}\s*,\s*${rgb[2]}\s*,\s*([\d.]+)\s*\)`;
     const finalNewColor = SVGTool.shortenColor(newColor);
     const newRgb = SVGTool.colorToRgb(finalNewColor);
     let result = svg;
@@ -428,6 +428,27 @@ export class SVGTool {
     s = s.replace(/(?:href|xlink:href|src)\s*=\s*["']\s*javascript:[^"']*["']/gi, '$1=""');
     return s;
   }
+}
+
+// 引擎自检：覆盖纯算法与浏览器端管线，供 SelfTestPanel「运行全部自检」调用。
+export async function selfTest() {
+  const items = []
+  const T = async (id, title, fn) => {
+    try { const detail = await fn(); items.push({ id, title, ok: true, detail }) }
+    catch (e) { items.push({ id, title, ok: false, error: { message: e.message, stack: e.stack } }) }
+  }
+  const sample = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100"><!-- c --><rect fill="#ff0000"/><path d="M0 0L10 10" stroke="#345678"/></svg>'
+  await T('getViewBox', '解析 viewBox', () => { const v = SVGTool.getViewBox(sample); if (!v || v.join(' ') !== '0 0 100 100') throw new Error('viewBox 解析错误'); return v.join(' ') })
+  await T('extractColors', '提取颜色', () => { const c = SVGTool.extractColors(sample); if (!c.includes('#ff0000') || !c.includes('#345678')) throw new Error('颜色提取缺失'); return c.length + ' 色' })
+  await T('compress', '压缩去注释/空白', () => { const s = SVGTool.compress(sample); if (s.includes('<!--') || s.length >= sample.length) throw new Error('压缩无效'); return s.length + ' 字节' })
+  await T('extremeCompress', '极致压缩去 class', () => { const s = SVGTool.extremeCompress(sample); if (/class\s*=/.test(s)) throw new Error('仍含 class'); return s.length + ' 字节' })
+  await T('replaceColor', 'rgb() 重着色', () => { const s = SVGTool.replaceColor(sample.replace('#ff0000', 'rgb(255,0,0)'), 'rgb(255,0,0)', '#00ff00'); if (!s.includes('#00ff00') && !s.includes('#0f0')) throw new Error('rgb 重着色失败'); return 'ok' })
+  await T('sanitizeSVG', 'XSS 净化', () => { const s = SVGTool.sanitizeSVG('<svg onload="x()"><script>bad()</script></svg>'); if (/on\w+=/.test(s) || /<script/i.test(s)) throw new Error('净化失败'); return 'ok' })
+  await T('base64-roundtrip', 'Base64 往返', () => { const d = SVGTool.fromBase64(SVGTool.removeDataURIPrefix(SVGTool.addDataURIPrefix(SVGTool.toBase64(sample)))); if (d !== sample) throw new Error('往返不一致'); return 'ok' })
+  await T('resizeToWidth', '按宽度缩放', () => { const s = SVGTool.resizeToWidth(sample, 50); if (!/width="50"/.test(s)) throw new Error('缩放失败'); return 'ok' })
+  await T('format', '格式化带缩进', () => { const s = SVGTool.format(sample); if (!s.includes('<svg')) throw new Error('格式化失败'); return 'ok' })
+  await T('analyzeOptimization', '优化分析', () => { const r = SVGTool.analyzeOptimization(sample); if (typeof r.originalSize !== 'number') throw new Error('结构异常'); return 'ok' })
+  return { module: 'svgtool', items }
 }
 
 export default SVGTool;
