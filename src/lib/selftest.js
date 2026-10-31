@@ -27,6 +27,9 @@ export async function runAllSelfTests() {
     { id: 'exif', load: () => import('./exif.js'), fn: 'selfTest' },
     { id: 'text', load: () => import('./text.js'), fn: 'selfTest' },
     { id: 'ocr', load: () => import('./ocr.js'), fn: 'selfTest' },
+    // 本次合并进来的 SVG 工具箱 / CSS 速查表：selfTest 内联于各自模块
+    { id: 'svgtool', load: () => import('./svgtool.js'), fn: 'selfTest' },
+    { id: 'cssref', load: () => import('./cssref.selftest.js'), fn: 'selfTest' },
   ]
   const results = []
   for (const m of modules) {
