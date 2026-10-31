@@ -23,6 +23,8 @@ const views = {
   ExifTool: () => import('../views/ExifTool.vue'),
   TextTool: () => import('../views/TextTool.vue'),
   OcrTool: () => import('../views/OcrTool.vue'),
+  SvgTool: () => import('../views/SvgTool.vue'),
+  CssReference: () => import('../views/CssReference.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -48,6 +50,8 @@ const fileToPath = {
   'ExifTool.vue': '/exif',
   'TextTool.vue': '/text',
   'OcrTool.vue': '/ocr',
+  'SvgTool.vue': '/svg-tool',
+  'CssReference.vue': '/css-reference',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }
