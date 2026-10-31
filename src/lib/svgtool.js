@@ -1,5 +1,5 @@
 // ===================== SVG 工具类 (Pro 增强版) =====================
-// 纯前端、零依赖的 SVG 处理内核：解析 / 压缩 / 格式化 / 重着色 / 缩放 / Base64。
+// 纯前端、零依赖的 SVG 处理内核：解析 / 压缩 / 格式化 / 重着色 / 缩放 / Base64 / 安全净化。
 // 仅使用浏览器原生 API（DOMParser / XMLSerializer / TextEncoder / btoa 等），
 // 与 LocalForge「纯浏览器端、文件不上传」的理念一致。
 export class SVGTool {
@@ -135,7 +135,7 @@ export class SVGTool {
       ...opts
     };
     let r = svg;
-    if (o.removeXMLDecl) r = r.replace(/<\?xml[^?]*\?>/s*/gi, '');
+    if (o.removeXMLDecl) r = r.replace(/<\?xml[^?]*\?>\s*/gi, '');
     if (o.removeDoctype) r = r.replace(/<!DOCTYPE[^>]*>\s*/gi, '');
     if (o.removeComments) r = r.replace(/<!--[\s\S]*?-->/g, '');
     if (o.removeMetadata) {
@@ -147,7 +147,7 @@ export class SVGTool {
     if (o.removeVersion) r = r.replace(/\s+version\s*=\s*["'][^"']*["']/gi, '');
     if (o.removeUnusedNamespaces) {
       r = r.replace(/\s+xmlns:([a-zA-Z0-9_-]+)\s*=\s*["'][^"']*["']/gi, (match, prefix) => {
-        if (!new RegExp(`<[^>]*\\b${prefix}:`, 'i').test(r)) return '';
+        if (!new RegExp(`<[^>]*\b${prefix}:`, 'i').test(r)) return '';
         return match;
       });
     }
@@ -197,7 +197,7 @@ export class SVGTool {
 
   static compressPathData(d, prec = 2) {
     if (!d) return d;
-    const tokens = d.match(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d*\.?\d+|\d+\.\d*)(?:[eE][-+]?\d+)?/g) || [];
+    const tokens = d.match(/[MmLlHhVvCcSsQqTtAaZz]|[-+]?(?:\d*\.?\d+|\d+\.\d+)(?:[eE][-+]?\d+)?/g) || [];
     const res = tokens.map(t => /^[a-z]$/i.test(t) ? t : SVGTool._fmtNum(parseFloat(t), prec));
     let out = '';
     for (let i = 0; i < res.length; i++) {
@@ -264,7 +264,7 @@ export class SVGTool {
   static compressPathDataWithSimplification(d, precision=2, tolerance=0.5) {
     if (!d) return d;
     if (/[CcSsQqTtAa]/.test(d)) return SVGTool.compressPathData(d, precision);
-    const tokens = d.match(/[MmLlHhVvZz]|[-+]?(?:\d*\.?\d+|\d+\.\d*)(?:[eE][-+]?\d+)?/g) || [];
+    const tokens = d.match(/[MmLlHhVvZz]|[-+]?(?:\d*\.?\d+|\d+\.\d+)(?:[eE][-+]?\d+)?/g) || [];
     if (tokens.length < 7) return SVGTool.compressPathData(d, precision);
     const points = []; let cx=0, cy=0, startX=0, startY=0, cmd='';
     for (let i=0; i<tokens.length; i++) {
@@ -389,7 +389,7 @@ export class SVGTool {
         if (t.startsWith('<') && !t.startsWith('</') && !t.endsWith('/>') && !t.includes('?>')) level++;
       }
       return result.replace(/\n\s*\n/g,'\n').trim();
-    } catch(e) { return svg.replace(/><\//g,'>\n</').replace(/></g,'>\n<'); }
+    } catch(e) { return svg.replace(/>\s*<\//g,'>\n</').replace(/></g,'>\n<'); }
   }
 
   static minify(svg) { return svg.replace(/<!--[\s\S]*?-->/g,'').replace(/>\s+</g,'><').replace(/\s{2,}/g,' ').trim(); }
@@ -417,6 +417,17 @@ export class SVGTool {
   static addDataURIPrefix(b64) { return /^data:/.test(b64) ? b64 : 'data:image/svg+xml;base64,' + b64; }
   static removeDataURIPrefix(uri) { const m = uri.match(/^data:[^;]*;base64,(.+)$/i); return m ? m[1] : uri; }
   static isDataURI(str) { return /^data:/i.test(str); }
+
+  // 安全净化：预览前剥离 <script>、事件处理属性与 javascript: 协议，防止 XSS。
+  static sanitizeSVG(svg) {
+    if (!svg) return '';
+    let s = String(svg);
+    s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    s = s.replace(/<script\b[^>]*\/?>/gi, '');
+    s = s.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
+    s = s.replace(/(?:href|xlink:href|src)\s*=\s*["']\s*javascript:[^"']*["']/gi, '$1=""');
+    return s;
+  }
 }
 
 export default SVGTool;
