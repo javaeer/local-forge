@@ -103,4 +103,11 @@ export const TOOLS = [
       { to: '/repair', icon: 'bi-wrench', title: '修复归档', desc: '尽力修复损坏的 ZIP/7Z/RAR' },
     ],
   },
+  {
+    group: '开发者工具',
+    items: [
+      { to: '/svg-tool', icon: 'bi-bounding-box', title: 'SVG 工具箱', desc: '压缩 / 格式化 / 缩放 / 重着色 / Base64 / 优化，纯本地' },
+      { to: '/css-reference', icon: 'bi-palette', title: 'CSS 属性速查', desc: '选择器 / 布局 / 盒模型 / 视觉 / 文字 / 变换 / 动画' },
+    ],
+  },
 ]
