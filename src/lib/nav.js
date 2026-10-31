@@ -22,13 +22,15 @@ export const NAV = [
   { path: '/exif', title: '照片隐私清理', titleKey: 'nav.exif', icon: 'bi-eraser', group: '校验 / 隐私', groupKey: 'group.verify', keywords: 'exif 隐私 gps 定位 清理 元数据 照片' },
   { path: '/text', title: '文本 / 编码工具箱', titleKey: 'nav.text', icon: 'bi-code-slash', group: '校验 / 隐私', groupKey: 'group.verify', keywords: '文本 json base64 jwt 正则 时间戳 uuid 密码 编码' },
   { path: '/doc-convert', title: '文档转换', short: '文档', titleKey: 'nav.docConvert', shortKey: 'nav.docConvertShort', icon: 'bi-file-earmark-arrow-down', group: '校验 / 隐私', groupKey: 'group.verify', keywords: 'markdown pdf html 文档 转换 导出 md' },
+  { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', icon: 'bi-bounding-box', group: '开发者工具', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
+  { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', icon: 'bi-palette', group: '开发者工具', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },
   { path: '/about', title: '关于', titleKey: 'nav.about', icon: 'bi-info-circle', group: '关于', groupKey: 'group.about', keywords: 'about 关于 开源 技术栈' },
   { path: '/privacy', title: '隐私协议', titleKey: 'nav.privacy', icon: 'bi-shield-lock', group: '关于', groupKey: 'group.about', keywords: '隐私 privacy 协议 零上传' },
 ]
 
 export const NAV_GROUPS = [
-  '常用', '压缩 / 归档', '媒体', '图片', 'PDF', '二维码 / 识别', '校验 / 隐私', '分享 / 安全', '关于',
+  '常用', '压缩 / 归档', '媒体', '图片', 'PDF', '二维码 / 识别', '校验 / 隐私', '分享 / 安全', '开发者工具', '关于',
 ]
 
 export function navByPath(path) {
