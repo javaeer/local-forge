@@ -78,11 +78,11 @@ export async function selfTest() {
     return '原 ' + c.inSize + 'B → ' + c.outSize + 'B'
   })
   await T('preview', 'pdf.js 预览加载', async () => {
-    const td = await import('./test-deps.js')
-    td.pdfjs.GlobalWorkerOptions.workerSrc = td.workerUrl
+    const { pdfjs, ensurePdfWorker, pdfWorkerSourceLabel } = await import('./pdfworker.js')
+    const src = await ensurePdfWorker()
     const f = await mk('A')
-    const doc = await td.pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()), isEvalSupported: false }).promise
-    return doc.numPages + ' 页'
+    const doc = await pdfjs.getDocument({ data: new Uint8Array(await f.arrayBuffer()), isEvalSupported: false }).promise
+    return doc.numPages + ' 页（' + (pdfWorkerSourceLabel() || src) + '）'
   })
 
   return { module: 'PDF', items }

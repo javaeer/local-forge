@@ -47,7 +47,8 @@
     "test:e2e:imagepro": "node _e2e_imagepro.mjs",
     "test:e2e:doc": "node _e2e_doc.mjs",
     "test:e2e:i18n": "node _e2e_i18n.mjs",
-    "report:kernels": "node scripts/kernel-report.mjs"
+    "report:kernels": "node scripts/kernel-report.mjs",
+    "prune:infinityfree": "node scripts/prune-for-infinityfree.mjs"
   },
   "dependencies": {
     "@ffmpeg/ffmpeg": "^0.12.15",

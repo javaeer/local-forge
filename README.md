@@ -79,6 +79,7 @@ pnpm test:e2e:imagepro       # 图片改尺寸 / 水印
 pnpm test:e2e:doc            # Markdown → PDF / HTML
 pnpm test:e2e:i18n           # 中日英韩西五语切换
 pnpm report:kernels          # 内核体积报告（构建产物 vs 实际下载）
+pnpm prune:infinityfree      # 生成 InfinityFree 兼容产物（剔除超限文件 + 专用 .htaccess）
 ```
 
 测试基于 `puppeteer-core` + 真实 Chromium 驱动浏览器。针对构建产物运行时，用
@@ -101,10 +102,56 @@ LocalForge 是纯静态站点，构建产物即 `dist/`。任意静态托管均�
 | **Vercel** | `vercel.json` | ✅ | 大文件上限宽松，可直接托管 32MB ffmpeg wasm |
 | **Netlify** | `netlify.toml` | ✅ | 同上 |
 | **Cloudflare Pages** | `public/_headers` + `public/_redirects` | ✅ | ⚠️ 免费版单文件上限 25MB，**32MB 的 ffmpeg wasm 无法上传**，会自动回退到 jsDelivr CDN（功能正常，运行时从 CDN 拉内核） |
+| **Nginx / 宝塔** | 见 `deploy-fix/nginx.conf` | ✅ | 需手动配置 wasm MIME + COOP/COEP + SPA 回退 |
+| **Apache / cPanel** | 见 `deploy-fix/.htaccess` | ✅ | 同上 |
 | **GitHub Pages** | 需自行加 `base` 并在 Actions 注入 `COOP/COEP` 头 | ⚠️ 默认无 | 未配置跨源隔离时回退单线程内核；GitHub Pages 不易自定义响应头，建议优先前三者或自定义域名 + Cloudflare |
+| **InfinityFree** | `pnpm prune:infinityfree` | ⚠️ 不可用 | 单文件上限 10MB(JS 1MB) 且有禁用的 .htaccess 指令 → 见下方专节 |
 
 所有配置文件都为 `/` 设置了 `Cross-Origin-Opener-Policy: same-origin` 与 `Cross-Origin-Embedder-Policy: require-corp`，
 并配置 SPA 回退（`/* → /index.html`），确保 vue-router 深链接可用。
+
+### 部署到 InfinityFree（免费主机）
+
+InfinityFree 有**硬性单文件上限**（HTML/PHP/JS 1MB、其他 10MB），超限文件会被**静默删除**。
+原始 `dist/` 中 `ffmpeg-core.wasm`(32MB) 等 5 个文件会阵亡，必须用裁剪版：
+
+```bash
+pnpm build
+pnpm prune:infinityfree        # 生成 dist-infinityfree/（自动剔除超限文件 + 专用 .htaccess）
+```
+
+把 `dist-infinityfree/` 内容上传到 `htdocs/`。剔除的 ffmpeg / tesseract 内核会由代码内置的
+**CDN 兜底链路**自动接管（首次使用需联网，之后浏览器缓存复用），PDF worker 亦有同等兜底。
+
+> ⚠️ InfinityFree 禁用了 `Header` / `Expires` 指令（写了会整站 502），因此**无法开启跨源隔离**，
+> 多线程 ffmpeg 不可用，媒体转换自动降级为单线程。仅建议用于学习/演示，
+> 正式发布请优先 Vercel / Netlify / Cloudflare Pages。
+
+---
+
+## 媒体内核策略（适配不同托管环境）
+
+ffmpeg 内核按需加载，支持三种策略，通过 URL 参数或持久化配置切换：
+
+| 策略 | 行为 | 适用场景 |
+|---|---|---|
+| `auto`（默认） | 本地MT → CDN-MT → 本地ST → CDN-ST | 常规部署，本地内核优先（省流量、离线可用） |
+| `cdn` | **CDN-MT → 本地MT → CDN-ST → 本地ST** | **有单文件上限的免费主机**：不占主机空间，多线程照常可用 |
+| `st` | 直接单线程 | 诊断 / 无 SharedArrayBuffer 环境 |
+
+切换方式（二选一）：
+
+```
+https://你的域名/?lf-core=cdn        # 访问一次即写入 localStorage，之后一直生效
+```
+
+```js
+localStorage.setItem('lf-core', 'cdn')   // 或在控制台设置
+```
+
+> **重要**：`cdn` 策略下**多线程不会退化**——`@ffmpeg/util` 的 `toBlobURL` 会把 CDN 资源
+> 转成同源 blob，因此不违反 `COEP: require-corp`，跨源隔离照常生效。
+> 代价是首次加载需联网拉取约 32MB 内核（之后由浏览器缓存复用）。
 
 ### 一键部署
 

@@ -66,8 +66,8 @@ async function preview() {
   message.value = { type: 'info', text: '解析 PDF 中…' }
   try {
     const pdfjs = await import('pdfjs-dist')
-    const workerUrl = (await import('pdfjs-dist/build/pdf.worker.min.mjs?url')).default
-    pdfjs.GlobalWorkerOptions.workerSrc = workerUrl
+    const { ensurePdfWorker } = await import('../lib/pdfworker.js')
+    await ensurePdfWorker()
     const data = new Uint8Array(await file.value.arrayBuffer())
     const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise
     const out = []

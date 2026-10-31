@@ -57,10 +57,10 @@ export async function imagesToPdf(files, { pageSize = 'fit', onprogress } = {}) 
 
 /* ---------------- PDF → 图片 ---------------- */
 export async function pdfToImages(file, { scale = 2, format = 'image/png', onprogress } = {}) {
-  const td = await import('./test-deps.js')
-  td.pdfjs.GlobalWorkerOptions.workerSrc = td.workerUrl
+  const { pdfjs, ensurePdfWorker } = await import('./pdfworker.js')
+  await ensurePdfWorker()
   const data = new Uint8Array(await file.arrayBuffer())
-  const doc = await td.pdfjs.getDocument({ data, isEvalSupported: false }).promise
+  const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise
   const parts = []
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i)
@@ -185,10 +185,10 @@ export async function organizePdf(file, { order = null, rotations = {}, remove =
 
 /* ---------------- 提取文本 / 读取信息 ---------------- */
 export async function extractPdfText(file, { onprogress } = {}) {
-  const td = await import('./test-deps.js')
-  td.pdfjs.GlobalWorkerOptions.workerSrc = td.workerUrl
+  const { pdfjs, ensurePdfWorker } = await import('./pdfworker.js')
+  await ensurePdfWorker()
   const data = new Uint8Array(await file.arrayBuffer())
-  const doc = await td.pdfjs.getDocument({ data, isEvalSupported: false }).promise
+  const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise
   const pages = []
   for (let i = 1; i <= doc.numPages; i++) {
     const page = await doc.getPage(i)

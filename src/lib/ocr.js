@@ -144,10 +144,10 @@ export async function recognizeImage(image, { lang = 'chi_sim+eng' } = {}) {
  *        pages 支持 "1-3,5,8-" 这样的页码表达式，留空表示全部页。
  */
 export async function recognizePdf(file, { lang = 'chi_sim+eng', scale = 2, pages = '', onprogress } = {}) {
-  const td = await import('./test-deps.js')
-  td.pdfjs.GlobalWorkerOptions.workerSrc = td.workerUrl
+  const { pdfjs, ensurePdfWorker } = await import('./pdfworker.js')
+  await ensurePdfWorker()
   const data = new Uint8Array(await file.arrayBuffer())
-  const doc = await td.pdfjs.getDocument({ data, isEvalSupported: false }).promise
+  const doc = await pdfjs.getDocument({ data, isEvalSupported: false }).promise
   const wanted = parsePages(pages, doc.numPages)
   const { worker: w, source } = await getWorker(lang)
   const results = []

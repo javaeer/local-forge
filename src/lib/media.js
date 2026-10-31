@@ -29,10 +29,26 @@ export function onProgress(cb) {
 let onCoreLoad = null
 export function setCoreLoadHook(cb) { onCoreLoad = cb }
 
-// 内核偏好：'auto' = 本地MT→CDN-MT→本地ST→CDN-ST；'st' = 直接单线程（自检环境更稳、更快）
+// 内核偏好：
+//   'auto' = 本地MT → CDN-MT → 本地ST → CDN-ST   （默认：本地优先，省流量）
+//   'cdn'  = CDN-MT → 本地MT → CDN-ST → 本地ST   （CDN 优先：不占主机空间，绕开单文件上限）
+//   'st'   = 直接单线程（自检环境更稳、更快）
+// 提示：Settings 的"内核策略"或 URL 参数 ?lf-core=cdn 可切换。
 let corePreference = 'auto'
 export function setCorePreference(p) {
-  corePreference = p === 'st' ? 'st' : 'auto'
+  corePreference = p === 'st' ? 'st' : p === 'cdn' ? 'cdn' : 'auto'
+}
+export function corePreferenceLabel() { return corePreference }
+
+// CDN 优先时的探测：先用 HEAD 确认 CDN 确实可达（避免离线环境白等超时）。
+let cdnProbe = null
+async function cdnReachable() {
+  if (cdnProbe !== null) return cdnProbe
+  try {
+    const res = await fetch(`${CDN_MT}/ffmpeg-core.js`, { method: 'HEAD', cache: 'no-store' })
+    cdnProbe = res.ok
+  } catch { cdnProbe = false }
+  return cdnProbe
 }
 
 // 记录实际生效的内核层级，供自检 / 视图回显（如 "本地多线程" / "CDN 单线程"）。
@@ -74,8 +90,16 @@ async function loadCoreTiered() {
     try { await tryLoad(() => stURLs('/ffmpeg-st'), '本地单线程（指定）'); return }
     catch (e) { console.warn('[media] 指定单线程内核加载失败，回退自动选择：', e) }
   }
-  // 1) 本地多线程（主力）：需跨源隔离。部署已强制 COOP/COEP，多数情况命中此层。
+
+  // 'cdn' 模式：CDN 多线程优先（不占主机空间，绕开免费主机的单文件上限）。
+  // 用 toBlobURL 把 CDN 资源转成同源 blob，因此不违反 COEP:require-corp，跨源隔离下同样可用。
+  if (corePreference === 'cdn' && self.crossOriginIsolated && await cdnReachable()) {
+    try { await tryLoad(() => mtURLs(CDN_MT), 'CDN 多线程（指定）'); return }
+    catch (e) { console.warn('[media] CDN 多线程内核加载失败，回退本地：', e) }
+  }
+
   if (self.crossOriginIsolated) {
+    // 1) 本地多线程（主力）：需跨源隔离。部署已强制 COOP/COEP，多数情况命中此层。
     try { await tryLoad(() => mtURLs('/ffmpeg'), '本地多线程'); return }
     catch (e) { console.warn('[media] 本地多线程内核加载失败，回退 CDN 多线程：', e) }
     // 2) CDN 多线程（本地 MT 缺失/损坏时的第一兜底）
@@ -192,4 +216,29 @@ export async function selfTestST() {
     return data.byteLength + 'B'
   })
   return { module: '媒体', items }
+}
+
+// ---------------------------------------------------------------------------
+// 内核策略的全局初始化：URL 参数 > localStorage > 默认 'auto'
+//   ?lf-core=cdn   多线程内核走 CDN（不占主机空间，适合有单文件上限的免费主机）
+//   ?lf-core=local 强制本地内核
+//   ?lf-core=st    单线程
+// 该策略在应用启动时应用一次，用户无需改代码即可适配不同托管环境。
+// ---------------------------------------------------------------------------
+export function initCorePreference() {
+  try {
+    let choice = ''
+    try {
+      const u = new URL(self.location.href)
+      choice = u.searchParams.get('lf-core') || ''
+    } catch { /* ignore */ }
+    if (!choice) {
+      try { choice = localStorage.getItem('lf-core') || '' } catch { /* ignore */ }
+    }
+    if (choice) {
+      setCorePreference(choice)
+      try { localStorage.setItem('lf-core', choice) } catch { /* ignore */ }
+    }
+  } catch { /* ignore */ }
+  return corePreference
 }
