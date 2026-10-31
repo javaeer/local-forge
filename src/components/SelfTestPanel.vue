@@ -74,6 +74,9 @@ const VIEW_ROUTES = [
   { path: '/exif', file: 'ExifTool.vue' },
   { path: '/text', file: 'TextTool.vue' },
   { path: '/ocr', file: 'OcrTool.vue' },
+  // 本次合并进来的新视图，须与 router 的 NAV / fileToPath 保持同步
+  { path: '/svg-tool', file: 'SvgTool.vue' },
+  { path: '/css-reference', file: 'CssReference.vue' },
 ]
 async function runViewSmoke() {
   viewLoading.value = true
