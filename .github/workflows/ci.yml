@@ -13,10 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # pnpm >= 10：仓库根目录的 pnpm-workspace.yaml 使用了 pnpm 10 才支持的
+      # `allowBuilds` 字段（且不再声明 packages 字段），pnpm 9 会因为
+      # “packages field missing or empty” 直接报错，导致后续步骤全部跳过。
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9
+          version: 10
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -40,7 +43,7 @@ jobs:
   #   steps:
   #     - uses: actions/checkout@v4
   #     - uses: pnpm/action-setup@v4
-  #       with: { version: 9 }
+  #       with: { version: 10 }
   #     - uses: actions/setup-node@v4
   #       with: { node-version: 22, cache: pnpm, cache-dependency-path: pnpm-lock.yaml }
   #     - run: pnpm install --frozen-lockfile
