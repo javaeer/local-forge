@@ -93,7 +93,7 @@ export const VIEW_MESSAGES = {
         title: 'Extract ZIP',
         sub: 'Extract ZIP files right in your browser — files never leave your device. Supports encrypted ZIP (enter password) and split ZIP (drop all .z01/.z02/…/.zip volumes at once to auto-merge).',
         helpTitle: 'How to use',
-        help: '<ol class="howto"><li>Drop a ZIP file; for split volumes (.z01/.z02/…/.zip), drop them all at once to auto-merge.</li><li>For encrypted archives, enter the password above and click "Re-read" to decrypt and list contents.</li><li>Click a file\'s download button, or "Download all" to export in bulk.</li></ol>',
+        help: '<ol class="howto"><li>Drop a ZIP file; for split volumes (.z01/.z02/…/.zip), drop them all at once to auto-merge.</li><li>For encrypted archives, enter the password above and click "Re-read" to decrypt and list contents.</li><li>Click a file’s download button, or "Download all" to export in bulk.</li></ol>',
         dropHint: 'Drop a ZIP file (for volumes, drop all at once)',
         dropSingle: 'ZIP',
         dropFormats: '.ZIP / .Z01 / .Z02 …',
