@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import { Archive } from 'libarchive.js'
 import DropZone from '../components/DropZone.vue'
 import { formatSize, downloadBlob, basename } from '../utils.js'
+import { T } from '../lib/i18n.dev.js'
 
 let initialized = false
 async function ensureInit() {
@@ -33,9 +34,9 @@ async function onFiles(list) {
       .filter(([path]) => !path.endsWith('/'))
       .map(([path, cf]) => ({ name: path, size: cf?.size || 0, _cf: cf }))
     sourceName.value = file.name
-    if (!entries.value.length) message.value = { type: 'err', text: '未能识别该归档内的文件。' }
+    if (!entries.value.length) message.value = { type: 'err', text: T('views.archiveExtract.msgNoFiles') }
   } catch (e) {
-    message.value = { type: 'err', text: '解压失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('views.archiveExtract.msgFail', { msg: e.message || e }) }
   } finally {
     busy.value = false
   }
@@ -51,26 +52,25 @@ async function downloadAll() {
     try {
       await downloadOne(item)
     } catch (e) {
-      message.value = { type: 'err', text: '部分文件下载失败：' + (e.message || e) }
+      message.value = { type: 'err', text: T('views.archiveExtract.msgFail', { msg: e.message || e }) }
     }
   }
 }
 </script>
 
 <template>
-  <h1 class="page-title">多格式解压</h1>
+  <h1 class="page-title">{{ T('views.archiveExtract.title') }}</h1>
   <p class="page-sub">
-    基于开源 <b>libarchive.js</b>（libarchive 的 WebAssembly 移植）实现，
-    支持 ZIP / RAR / 7Z / TAR / ISO 等 200+ 格式——替代原版自研的 18 个专有 WASM 模块。
+    {{ T('views.archiveExtract.sub') }}
   </p>
 
-  <DropZone :multiple="false" hint="拖放任意归档文件到此处（ZIP/RAR/7Z/TAR/ISO…）" @files="onFiles" />
+  <DropZone :multiple="false" :hint="T('views.archiveExtract.dropHint')" @files="onFiles" />
 
   <div v-if="sourceName" class="panel">
     <div class="row">
-      <span class="status">源文件：<b style="color:var(--txt)">{{ sourceName }}</b> · 共 {{ entries.length }} 个文件</span>
+      <span class="status">{{ T('views.archiveExtract.sourceLabel') }}：<b style="color:var(--txt)">{{ sourceName }}</b> · {{ T('views.archiveExtract.fileCount', { n: entries.length }) }}</span>
       <button class="btn green" :disabled="!entries.length" @click="downloadAll">
-        <i class="bi bi-download"></i> 下载全部
+        <i class="bi bi-download"></i> {{ T('views.archiveExtract.btnDownloadAll') }}
       </button>
     </div>
 
@@ -85,7 +85,7 @@ async function downloadAll() {
       </li>
     </ul>
 
-    <div v-if="busy" class="status">解压中…</div>
+    <div v-if="busy" class="status">{{ T('views.archiveExtract.statusWorking') }}</div>
     <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>
   </div>
 </template>
