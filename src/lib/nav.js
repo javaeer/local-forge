@@ -1,7 +1,11 @@
 // 统一导航模型：侧边栏、命令面板(Ctrl/Cmd+K)、路由 meta 共用同一份数据源。
 // 只收录"真实可达的路由"，不堆砌 query 变体，保证客户端可达性。
 // title/short 保留中文默认值（回退与命令面板匹配用），i18n 通过 titleKey/shortKey 覆盖显示。
-import { t } from './i18n.js'
+import { t, locale } from './i18n.js'
+import { tDev } from './i18n.dev.js'
+
+// 新功能词条（开发者工具等）放在独立补充包，未命中时回退主 i18n
+export const T = (key) => (key ? tDev(key, locale.value, t) : '')
 
 export const NAV = [
   { path: '/', title: '首页', titleKey: 'nav.home', icon: 'bi-house', group: '常用', groupKey: 'group.common', keywords: 'home 首页 开始' },
@@ -41,17 +45,17 @@ export function navByPath(path) {
 // i18n 辅助：优先用 i18n key，未接入时回退中文
 export function navTitle(n) {
   if (!n) return ''
-  return n.titleKey ? t(n.titleKey) : n.title
+  return n.titleKey ? T(n.titleKey) : n.title
 }
 export function navShort(n) {
   if (!n) return ''
-  if (n.shortKey) return t(n.shortKey)
+  if (n.shortKey) return T(n.shortKey)
   if (n.short) return n.short
   return navTitle(n).split(' ')[0]
 }
 export function groupLabel(g) {
   const item = NAV.find((n) => n.group === g)
-  return item && item.groupKey ? t(item.groupKey) : g
+  return item && item.groupKey ? T(item.groupKey) : g
 }
 
 // 移动端底部标签栏：只放最常用的 4 个主入口（其余走顶部搜索/命令面板）
