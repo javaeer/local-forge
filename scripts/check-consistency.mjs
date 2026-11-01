@@ -155,7 +155,7 @@ check('css-cat-i18n', 'F. CSS 分类名（动态拼接 key）5 语言齐全', ()
   const bad = []
   for (const c of cssCats) {
     // 每个分类在每个语言块里都要出现一次（5 语言）
-    const n = (cssCatSrc.match(new RegExp(`(?:[{,]|^)\\s*${c}\\s*:\\s*['"`]`, 'gm')) || []).length
+    const n = (cssCatSrc.match(new RegExp(`(?:[{,]|^)\\s*${c}\\s*:\\s*['"\`]`, 'gm')) || []).length
     if (n < 5) bad.push(`${c}(${n}/5)`)
   }
   if (bad.length) fail('分类名缺语言：' + bad.join(', '))
@@ -167,7 +167,7 @@ check('home-card-i18n', 'G. 首页卡片 / 分组 key 5 语言齐全', () => {
   const bad = []
   for (const k of cardKeys) {
     const leaf = k.split('.').pop()
-    const n = (homeSrc.match(new RegExp(`(?:[{,]|^)\\s*${leaf}\\s*:\\s*['"`]`, 'gm')) || []).length
+    const n = (homeSrc.match(new RegExp(`(?:[{,]|^)\\s*${leaf}\\s*:\\s*['"\`]`, 'gm')) || []).length
     if (n < 5) bad.push(`${k}(${n}/5)`)
   }
   if (bad.length) fail('卡片词条缺语言：' + bad.join(', '))
