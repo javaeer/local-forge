@@ -379,7 +379,7 @@ export const t = (key, params) => {
   let s = get(locale.value)
   if (s == null) s = get('zh-CN')
   if (s == null) {
-    if (import.meta.env.DEV) console.warn('[i18n] missing key:', key)
+    if (import.meta.env?.DEV) console.warn('[i18n] missing key:', key)
     return key
   }
   if (params) {
