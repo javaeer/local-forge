@@ -7,6 +7,8 @@
 //   C. router 的每个视图都被 SelfTestPanel 的 VIEW_ROUTES 覆盖（渲染冒烟测试不漏）
 //   D. TOOLS（首页卡片）的路径在 fileToPath 中存在（首页不死链）
 //   E. 所有 i18n key 都能在词条文件里找到（缺 key 会回退成 key 本身）
+//   F. CSS 分类名（动态拼接 key）5 语言齐全
+//   G. 首页卡片 / 分组（动态拼接 key）5 语言齐全
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -67,14 +69,31 @@ for (const src of i18nSrcs) {
 }
 
 // 视图里通过 T('...') 使用的 key
+// 注意：形如 T('css.cat.' + key) 属「动态拼接」，运行时才确定，跳过（由断言 F 单独守护）
 const viewTKeys = new Set()
 try {
   for (const f of readdirSync(join(root, 'src/views'))) {
     if (!f.endsWith('.vue')) continue
     const src = read(`src/views/${f}`)
-    for (const m of src.matchAll(/\bT\(\s*'([^']+)'/g)) viewTKeys.add(m[1])
+    for (const m of src.matchAll(/\bT\(\s*'([^']+)'(?!\s*\+)/g)) viewTKeys.add(m[1])
   }
 } catch { /* 目录不存在则跳过 */ }
+
+// CSS 分类名（CssReference 用 T('css.cat.' + key) 动态拼接，静态扫描抓不到）
+const cssCats = (() => {
+  try {
+    const block = read('src/lib/cssref.js').match(/CATEGORY_ORDER\s*=\s*\[([\s\S]*?)\]/)
+    return block ? [...block[1].matchAll(/'([^']+)'/g)].map((m) => m[1]) : []
+  } catch { return [] }
+})()
+const cssCatSrc = (() => { try { return read('src/lib/i18n.css.js') } catch { return '' } })()
+
+// 首页卡片 key（formats.js 的 groupKey / titleKey / descKey，与 css.cat 一样是运行时拼接引用）
+const cardKeys = [...formatsSrc.matchAll(/(?:groupKey|titleKey|descKey):\s*'([^']+)'/g)].map((m) => m[1])
+// 首页词条按语言分文件：i18n.home.zh.js / en / ja / ko / es
+const homeSrc = ['zh', 'en', 'ja', 'ko', 'es']
+  .map((l) => { try { return read(`src/lib/i18n.home.${l}.js`) } catch { return '' } })
+  .join('\n')
 
 // ---------- 断言 ----------
 check('parse', '数据源解析', () => {
@@ -129,6 +148,30 @@ check('i18n-key-exists', 'E. i18n key 均存在', () => {
   const missing = [...keys].filter((k) => !i18nKeys.has(k.split('.').pop()))
   if (missing.length) fail('词条缺失：' + missing.join(', '))
   return `校验 ${keys.size} 个 key（导航 ${keys.size - viewTKeys.size} + 视图 ${viewTKeys.size}）均存在`
+})
+
+check('css-cat-i18n', 'F. CSS 分类名（动态拼接 key）5 语言齐全', () => {
+  if (!cssCats.length) fail('未能从 cssref.js 解析 CATEGORY_ORDER')
+  const bad = []
+  for (const c of cssCats) {
+    // 每个分类在每个语言块里都要出现一次（5 语言）
+    const n = (cssCatSrc.match(new RegExp(`(?:[{,]|^)\\s*${c}\\s*:\\s*['"`]`, 'gm')) || []).length
+    if (n < 5) bad.push(`${c}(${n}/5)`)
+  }
+  if (bad.length) fail('分类名缺语言：' + bad.join(', '))
+  return `${cssCats.length} 个分类 × 5 语言齐全`
+})
+
+check('home-card-i18n', 'G. 首页卡片 / 分组 key 5 语言齐全', () => {
+  if (!cardKeys.length) fail('formats.js 未解析到 groupKey / titleKey / descKey')
+  const bad = []
+  for (const k of cardKeys) {
+    const leaf = k.split('.').pop()
+    const n = (homeSrc.match(new RegExp(`(?:[{,]|^)\\s*${leaf}\\s*:\\s*['"`]`, 'gm')) || []).length
+    if (n < 5) bad.push(`${k}(${n}/5)`)
+  }
+  if (bad.length) fail('卡片词条缺语言：' + bad.join(', '))
+  return `${cardKeys.length} 个卡片 / 分组 key × 5 语言齐全`
 })
 
 // ---------- 报告 ----------

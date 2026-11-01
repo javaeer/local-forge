@@ -1,10 +1,11 @@
 // 端到端验证 MediaConvert 真实转换（WAV→MP3），确认 convertMedia 在移除了
 // crossOriginIsolated 守卫后能走通，并记录用到的内核类型与耗时。
+// 经由 tests/run.mjs 统一注入 BASE / BASE_URL / CHROMIUM_PATH / CHROME_PATH。
 import puppeteer from 'puppeteer-core'
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
+const BASE_URL = process.env.BASE_URL || process.env.BASE || 'http://localhost:5173'
 const browser = await puppeteer.launch({
-  executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
+  executablePath: process.env.CHROMIUM_PATH || process.env.CHROME_PATH || '/usr/bin/chromium',
   headless: 'new',
   protocolTimeout: 300000,
   args: ['--no-sandbox', '--disable-setuid-sandbox', '--enable-features=SharedArrayBuffer'],
@@ -38,4 +39,10 @@ const r = await page.evaluate(async () => {
 })
 console.log('MEDIA CONVERT:', JSON.stringify(r))
 console.log('LOGS:', logs.slice(0, 8).join('\n'))
+
+// —— 断言（此前本脚本无断言、无退出码，永远“通过”）——
+if (!r || !r.ok || !(r.outSize > 0)) {
+  throw new Error('✗ MEDIA CONVERT 转换失败，未产出有效文件：' + JSON.stringify(r))
+}
+console.log('✓ MEDIA CONVERT 通过（' + r.type + ', ' + r.outSize + ' bytes, ' + r.ms + 'ms）')
 await browser.close()

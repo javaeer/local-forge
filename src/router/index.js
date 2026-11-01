@@ -1,5 +1,8 @@
+import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import { NAV } from '../lib/nav.js'
+import { T } from '../lib/i18n.dev.js'
+import { locale } from '../lib/i18n.js'
 
 // 路由级懒加载：各视图改为动态 import，首屏只加载 Home，
 // ffmpeg / OCR 等重量视图在用户真正进入时才按需拉取，显著降低首屏 JS 体积。
@@ -56,12 +59,22 @@ const fileToPath = {
   'Privacy.vue': '/privacy',
 }
 
+const navOf = (path) => NAV.find((n) => n.path === path) || {}
+
 const routes = Object.entries(fileToPath).map(([file, path]) => ({
   path,
   name: path === '/' ? 'home' : path.slice(1),
   component: views[file.replace('.vue', '')],
-  meta: { title: (NAV.find((n) => n.path === path) || {}).title || '', icon: (NAV.find((n) => n.path === path) || {}).icon || '' },
+  // 只存 key，真正的文案在渲染时按当前语言取（见 pageTitle）
+  meta: { titleKey: navOf(path).titleKey || '', icon: navOf(path).icon || '' },
 }))
+
+// 页面标题按「当前语言」实时生成：LocalForge · <本地化标题>
+export function pageTitle(routeLike) {
+  const n = navOf((routeLike && routeLike.path) || '/')
+  const label = n.titleKey ? T(n.titleKey) : (n.title || '')
+  return label ? `LocalForge · ${label}` : 'LocalForge'
+}
 
 const router = createRouter({
   history: createWebHistory(),
@@ -69,10 +82,14 @@ const router = createRouter({
   scrollBehavior: () => ({ top: 0 }),
 })
 
-// 同步页面标题
+// 同步页面标题（导航时按当前语言渲染）
 router.afterEach((to) => {
-  const t = to.meta && to.meta.title ? `LocalForge · ${to.meta.title}` : 'LocalForge'
-  document.title = t
+  document.title = pageTitle(to)
+})
+
+// SPA 内切换语言不会触发导航，这里补一次标题同步（afterEach 只在路由变化时跑）
+watch(locale, () => {
+  document.title = pageTitle(router.currentRoute.value)
 })
 
 export default router
