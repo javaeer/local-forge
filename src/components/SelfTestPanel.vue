@@ -57,15 +57,19 @@ const viewLoading = ref(false)
 const viewResults = ref([])
 // 静态分析友好的方式：用 import.meta.glob 预生成视图模块映射，避免动态字符串导入警告
 const viewModules = import.meta.glob('../views/*.vue')
+// VIEW_ROUTES 须与 router 的 fileToPath 完全一致（由 scripts/check-consistency.mjs 断言）
 const VIEW_ROUTES = [
+  { path: '/', file: 'Home.vue' },
   { path: '/zip-compress', file: 'ZipCompress.vue' },
   { path: '/zip-extract', file: 'ZipExtract.vue' },
   { path: '/archive', file: 'ArchiveTool.vue' },
   { path: '/media-convert', file: 'MediaConvert.vue' },
   { path: '/media-pro', file: 'MediaPro.vue' },
   { path: '/image-convert', file: 'ImageConvert.vue' },
+  { path: '/batch', file: 'BatchQueue.vue' },
   { path: '/pdf-tools', file: 'PdfTools.vue' },
   { path: '/pdf-pro', file: 'PdfPro.vue' },
+  { path: '/doc-convert', file: 'DocConvert.vue' },
   { path: '/share-files', file: 'ShareFiles.vue' },
   { path: '/password-recovery', file: 'PasswordRecovery.vue' },
   { path: '/repair', file: 'Repair.vue' },
@@ -74,9 +78,10 @@ const VIEW_ROUTES = [
   { path: '/exif', file: 'ExifTool.vue' },
   { path: '/text', file: 'TextTool.vue' },
   { path: '/ocr', file: 'OcrTool.vue' },
-  // 本次合并进来的新视图，须与 router 的 NAV / fileToPath 保持同步
   { path: '/svg-tool', file: 'SvgTool.vue' },
   { path: '/css-reference', file: 'CssReference.vue' },
+  { path: '/about', file: 'About.vue' },
+  { path: '/privacy', file: 'Privacy.vue' },
 ]
 async function runViewSmoke() {
   viewLoading.value = true
