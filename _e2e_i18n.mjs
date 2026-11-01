@@ -1,7 +1,7 @@
 // B-4 多语言 e2e（扩展版）：在真实浏览器中验证中日英韩西五种语言的
 // ①切换与 <html lang> 同步 ②localStorage 持久化 ③侧栏分组/条目本地化
 // ④开发者工具页面（SVG 工具箱 / CSS 速查）本地化 ⑤文档标题本地化
-// ⑥不出现未翻译的原始 key（nav.xxx / svg.xxx / group.xxx …）
+// ⑥首页英雄区与 45 张工具卡片本地化 ⑦不出现未翻译的原始 key
 // 运行：pnpm build && pnpm preview & BASE=http://127.0.0.1:4173/ node _e2e_i18n.mjs
 import puppeteer from 'puppeteer-core'
 
@@ -15,7 +15,8 @@ function check(name, ok, detail = '') {
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
-// ——— 本地化「不变量」检测器（用 \u 转义书写，避免源文件编码问题） ———
+// ——— 本地化「不变量」检测器 ———
+// 说明：全部用 \uXXXX 转义书写，避免依赖源文件编码导致字符区间被写歪。
 // 汉字（含扩展 A / 兼容表意文字）
 const RE_CJK = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 // 日文假名
@@ -116,6 +117,14 @@ try {
     if (c.lang === 'en' || c.lang === 'es-ES') {
       check(`B4：切到 ${c.name} → 文档标题无中文`, !RE_CJK.test(titleNow), titleNow)
     }
+
+    // —— 首页英雄区 + 45 张工具卡片 ——
+    const homeTexts = await page.evaluate(() =>
+      Array.from(document.querySelectorAll('.hero-badge, .hero-title, .hero-sub, .hero-pills .tag, .cat-title, .tool-card h3, .tool-card p'))
+        .map((el) => el.textContent.trim())
+        .filter(Boolean))
+    check(`B4：${c.name} 首页读到卡片文案`, homeTexts.length >= 90, String(homeTexts.length))
+    assertLocalized(`B4：${c.name} 首页卡片`, c.lang, homeTexts)
 
     // —— 侧栏分组 + 导航条目 ——
     const navTexts = await page.evaluate(() =>
