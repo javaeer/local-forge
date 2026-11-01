@@ -6,6 +6,7 @@ import { NAV, navByPath, navTitle } from '../lib/nav.js'
 import { getHistory, clearHistory } from '../lib/history.js'
 import { typeOfName, TYPE_META, FILTER_ORDER, FILTER_LABEL_KEY } from '../lib/filetype.js'
 import { t, tr, locale } from '../lib/i18n.js'
+import { T } from '../lib/i18n.dev.js'
 import SelfTestPanel from '../components/SelfTestPanel.vue'
 import OfflineCores from '../components/OfflineCores.vue'
 import HelpTip from '../components/HelpTip.vue'
@@ -71,13 +72,13 @@ onMounted(loadRecent)
   </section>
 
   <!-- 工具分组 -->
-  <div v-for="g in TOOLS" :key="g.group" class="cat">
-    <h2 class="cat-title"><i class="bi bi-collection"></i> {{ g.group }}</h2>
+  <div v-for="g in TOOLS" :key="g.groupKey || g.group" class="cat">
+    <h2 class="cat-title"><i class="bi bi-collection"></i> {{ T(g.groupKey) }}</h2>
     <div class="tools">
       <RouterLink v-for="item in g.items" :key="item.to" :to="item.to" class="tool-card">
         <i class="bi" :class="item.icon"></i>
-        <h3>{{ item.title }}</h3>
-        <p>{{ item.desc }}</p>
+        <h3>{{ T(item.titleKey) }}</h3>
+        <p>{{ T(item.descKey) }}</p>
       </RouterLink>
     </div>
   </div>
@@ -128,7 +129,7 @@ onMounted(loadRecent)
       <li><b style="color:var(--txt)">upng-js（类 TinyPNG）量化</b>图片有损压缩 + 保透明，全程零上传</li>
       <li><b style="color:var(--txt)">WebRTC</b> 点对点文件直传（P2P 分享，手动信令，无需服务器）</li>
       <li>
-        <b style="color:var(--txt)">二维码双向能力</b>：生成用 <b style="color:var(--txt)">qrcode</b>，
+        <b style="color:var(--txt)">二维码双向能力</b>：生成用 <b style="color:var(--txt)">qrcode</b>,
         识别用 <b style="color:var(--txt)">zxing-wasm</b>（ZXing-C++ WASM 本地打包，原生 BarcodeDetector 优先）——
         取代已停更的 jsQR / html5-qrcode，覆盖 QR · DataMatrix · Aztec · EAN · Code128 · PDF417 等 20+ 码制
       </li>
