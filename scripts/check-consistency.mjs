@@ -7,7 +7,8 @@
 //   C. router 的每个视图都被 SelfTestPanel 的 VIEW_ROUTES 覆盖（渲染冒烟测试不漏）
 //   D. TOOLS（首页卡片）的路径在 fileToPath 中存在（首页不死链）
 //   E. 所有 i18n key 都能在词条文件里找到（缺 key 会回退成 key 本身）
-//   F. CSS 分类名（CssReference 用 T('css.cat.' + key) 动态拼接，E 抓不到）5 语言齐全
+//   F. CSS 分类名（动态拼接 key）5 语言齐全
+//   G. 首页卡片 / 分组（动态拼接 key）5 语言齐全
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -87,6 +88,13 @@ const cssCats = (() => {
 })()
 const cssCatSrc = (() => { try { return read('src/lib/i18n.css.js') } catch { return '' } })()
 
+// 首页卡片 key（formats.js 的 groupKey / titleKey / descKey，与 css.cat 一样是运行时拼接引用）
+const cardKeys = [...formatsSrc.matchAll(/(?:groupKey|titleKey|descKey):\s*'([^']+)'/g)].map((m) => m[1])
+// 首页词条按语言分文件：i18n.home.zh.js / en / ja / ko / es
+const homeSrc = ['zh', 'en', 'ja', 'ko', 'es']
+  .map((l) => { try { return read(`src/lib/i18n.home.${l}.js`) } catch { return '' } })
+  .join('\n')
+
 // ---------- 断言 ----------
 check('parse', '数据源解析', () => {
   if (navItems.length < 20) fail(`NAV 解析过少：${navItems.length}`)
@@ -147,11 +155,23 @@ check('css-cat-i18n', 'F. CSS 分类名（动态拼接 key）5 语言齐全', ()
   const bad = []
   for (const c of cssCats) {
     // 每个分类在每个语言块里都要出现一次（5 语言）
-    const n = (cssCatSrc.match(new RegExp(`(?:[{,]|^)\\s*${c}\\s*:\\s*['"\`]`, 'gm')) || []).length
+    const n = (cssCatSrc.match(new RegExp(`(?:[{,]|^)\\s*${c}\\s*:\\s*['"`]`, 'gm')) || []).length
     if (n < 5) bad.push(`${c}(${n}/5)`)
   }
   if (bad.length) fail('分类名缺语言：' + bad.join(', '))
   return `${cssCats.length} 个分类 × 5 语言齐全`
+})
+
+check('home-card-i18n', 'G. 首页卡片 / 分组 key 5 语言齐全', () => {
+  if (!cardKeys.length) fail('formats.js 未解析到 groupKey / titleKey / descKey')
+  const bad = []
+  for (const k of cardKeys) {
+    const leaf = k.split('.').pop()
+    const n = (homeSrc.match(new RegExp(`(?:[{,]|^)\\s*${leaf}\\s*:\\s*['"`]`, 'gm')) || []).length
+    if (n < 5) bad.push(`${k}(${n}/5)`)
+  }
+  if (bad.length) fail('卡片词条缺语言：' + bad.join(', '))
+  return `${cardKeys.length} 个卡片 / 分组 key × 5 语言齐全`
 })
 
 // ---------- 报告 ----------
