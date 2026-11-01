@@ -32,6 +32,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "prebuild": "node scripts/fetch-wasm.mjs",
+    "predev": "node scripts/fetch-wasm.mjs",
     "check:consistency": "node scripts/check-consistency.mjs",
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "test": "node tests/run.mjs",

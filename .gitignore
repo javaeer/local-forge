@@ -22,4 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# 体积优化（阶段 D）：WASM 内核不进 Git。
+# ffmpeg（单/多线程）×2、tesseract、libarchive 共约 80MB，此前直接提交在 public/ 下。
+# 现已 gitignore，改由 scripts/fetch-wasm.mjs 在 build / dev 前从 CDN 拉取，
+# 运行时与离线机制（public/sw.js 的 CORE_GROUPS 仍指向本地 /ffmpeg 等路径）保持不变。
+public/ffmpeg/
+public/ffmpeg-st/
+public/tesseract/
+public/libarchive/
 /dist-infinityfree/
