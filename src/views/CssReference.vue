@@ -17,7 +17,8 @@ const categories = computed(() => {
       const [desc] = cat.props[p]
       return p.toLowerCase().includes(q) || desc.toLowerCase().includes(q)
     })
-    return { key, label: cat.label, color: cat.color, props }
+    // 分类名走 i18n（cssref.js 的 label 是「中文 · English」双语兜底，非当前语言）
+    return { key, label: T('css.cat.' + key), color: cat.color, props }
   }).filter((c) => c.props.length > 0)
 })
 
@@ -30,7 +31,7 @@ function openDetail(prop, catKey) {
     prop,
     catKey,
     catColor: cat.color,
-    catLabel: cat.label,
+    catLabel: T('css.cat.' + catKey),
     desc,
     code,
     vis: getVisual(prop, catKey),
