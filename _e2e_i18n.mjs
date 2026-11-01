@@ -110,6 +110,12 @@ try {
     check(`B4：切到 ${c.name} → <html lang>`, got.lang === c.lang, got.lang)
     check(`B4：切到 ${c.name} → 持久化`, got.stored === c.lang, got.stored)
     check(`B4：切到 ${c.name} → 搜索文案本地化`, c.expect.test(got.text), got.text)
+    // 切语言不触发导航：标题必须由 watch(locale) 同步（否则会残留上一个语言的标题）
+    const titleNow = await page.evaluate(() => document.title)
+    check(`B4：切到 ${c.name} → 文档标题即时同步`, !!titleNow && !RE_KEY_LEAK.test(titleNow), titleNow)
+    if (c.lang === 'en' || c.lang === 'es-ES') {
+      check(`B4：切到 ${c.name} → 文档标题无中文`, !RE_CJK.test(titleNow), titleNow)
+    }
 
     // —— 侧栏分组 + 导航条目 ——
     const navTexts = await page.evaluate(() =>
