@@ -31,6 +31,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # 一致性护栏：静态断言 NAV / router / VIEW_ROUTES / 首页卡片 / i18n key 四处数据源互不漂移。
+      # 零依赖（纯 node 扫描源码），放在 build 之前以便快速失败。
+      - name: Consistency guardrails
+        run: node scripts/check-consistency.mjs
+
       - name: Build
         run: pnpm build
 
