@@ -15,13 +15,13 @@ function check(name, ok, detail = '') {
 }
 const wait = (ms) => new Promise((r) => setTimeout(r, ms))
 
-// ——— 本地化「不变量」检测器 ———
+// ——— 本地化「不变量」检测器（用 \u 转义书写，避免源文件编码问题） ———
 // 汉字（含扩展 A / 兼容表意文字）
-const RE_CJK = /[㐀-䶿一-鿿豈-﫿]/
+const RE_CJK = /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/
 // 日文假名
-const RE_KANA = /[぀-ヿ]/
+const RE_KANA = /[\u3040-\u30FF]/
 // 韩文谚文
-const RE_HANGUL = /[가-힯]/
+const RE_HANGUL = /[\uAC00-\uD7AF]/
 // 未翻译的 i18n key：形如 nav.svgTool / group.dev / svg.title
 const RE_KEY_LEAK = /(?:^|[\s(（"'>/])((?:nav|group|app|home|footer|svg|css|tools)\.[A-Za-z][A-Za-z0-9_]*)/
 
@@ -41,7 +41,7 @@ function assertScript(where, loc, texts) {
   const joined = texts.join(' ')
   if (loc === 'en' || loc === 'es-ES') {
     const hit = RE_CJK.test(joined) || RE_KANA.test(joined) || RE_HANGUL.test(joined)
-    check(`${where}：${loc} 下无中日韩残留`, !hit, hit ? (joined.match(/.{0,20}[㐀-鿿぀-ヿ가-힯].{0,20}/) || [''])[0] : '')
+    check(`${where}：${loc} 下无中日韩残留`, !hit, hit ? (joined.match(/.{0,20}[\u4E00-\u9FFF\u3040-\u30FF\uAC00-\uD7AF].{0,20}/) || [''])[0] : '')
   } else if (loc === 'ja-JP') {
     check(`${where}：ja-JP 含日文假名`, RE_KANA.test(joined), sample(texts, 2))
   } else if (loc === 'ko-KR') {
