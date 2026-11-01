@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import SVGTool from '../lib/svgtool.js'
+import { T } from '../lib/i18n.dev.js'
 
 const SAMPLE = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
   <!-- 示例图标 -->
@@ -44,52 +45,52 @@ const sizeInfo = computed(() => {
 
 function setMsg(type, text) { message.value = { type, text } }
 
-function loadSample() { source.value = SAMPLE; output.value = ''; setMsg('info', '已载入示例 SVG。') }
+function loadSample() { source.value = SAMPLE; output.value = ''; setMsg('info', T('svg.loadedSample')) }
 function clearAll() { source.value = ''; output.value = ''; message.value = null }
 function onPickFile() { fileInput.value && fileInput.value.click() }
 function onFile(e) {
   const f = e.target.files && e.target.files[0]
   if (!f) return
   const r = new FileReader()
-  r.onload = () => { source.value = String(r.result); output.value = ''; setMsg('ok', `已载入 ${f.name}`); }
+  r.onload = () => { source.value = String(r.result); output.value = ''; setMsg('ok', T('svg.loadedFile', { name: f.name })); }
   r.readAsText(f)
   e.target.value = ''
 }
 
 function runInfo() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   const s = SVGTool.getSize(source.value)
   const cols = SVGTool.extractColors(source.value)
   const vb = SVGTool.getViewBox(source.value)
   output.value = [
-    `viewBox: ${vb ? vb.join(' ') : '(无)'}`,
-    `width:   ${s.width ?? '(无)'}`,
-    `height:  ${s.height ?? '(无)'}`,
-    `颜色数:  ${cols.length}`,
-    `颜色:    ${cols.join(', ') || '(无)'}`,
+    T('svg.infoViewBox', { v: vb ? vb.join(' ') : T('svg.none') }),
+    T('svg.infoWidth', { v: s.width ?? T('svg.none') }),
+    T('svg.infoHeight', { v: s.height ?? T('svg.none') }),
+    T('svg.infoColorCount', { n: cols.length }),
+    T('svg.infoColors', { v: cols.join(', ') || T('svg.none') }),
   ].join('\n')
-  setMsg('ok', `解析完成：尺寸 ${s.width ?? '?'} × ${s.height ?? '?'}，提取 ${cols.length} 种颜色。`)
+  setMsg('ok', T('svg.parsed', { w: s.width ?? '?', h: s.height ?? '?', n: cols.length }))
 }
 
 function runCompress(extreme) {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   output.value = extreme ? SVGTool.extremeCompress(source.value) : SVGTool.compress(source.value)
-  setMsg('ok', '压缩完成。')
+  setMsg('ok', T('svg.compressed'))
 }
 
 function runFormat() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   output.value = SVGTool.format(source.value)
-  setMsg('ok', '已格式化（带缩进）。')
+  setMsg('ok', T('svg.formatted'))
 }
 function runMinify() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   output.value = SVGTool.minify(source.value)
-  setMsg('ok', '已最小化。')
+  setMsg('ok', T('svg.minified'))
 }
 
 function runResize() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   let r = source.value
   try {
     if (resizeMode.value === 'width') r = SVGTool.resizeToWidth(source.value, Number(dimW.value))
@@ -99,48 +100,48 @@ function runResize() {
     else if (resizeMode.value === 'set') r = SVGTool.setSize(source.value, Number(dimW.value), Number(dimH.value))
     else if (resizeMode.value === 'viewbox') r = SVGTool.resizeViewBox(source.value, Number(dimW.value), Number(dimH.value))
     output.value = r
-    setMsg('ok', '缩放完成。')
-  } catch (e) { setMsg('err', '缩放失败：' + (e.message || e)) }
+    setMsg('ok', T('svg.resized'))
+  } catch (e) { setMsg('err', T('svg.resizeFailed', { msg: e.message || e })) }
 }
 
 function runRecolor() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
-  if (!selColor.value) return setMsg('err', '请选择要替换的颜色。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
+  if (!selColor.value) return setMsg('err', T('svg.needColor'))
   output.value = SVGTool.replaceColor(source.value, selColor.value, newColor.value)
-  setMsg('ok', `已将 ${selColor.value} 替换为 ${newColor.value}。`)
+  setMsg('ok', T('svg.recolored', { from: selColor.value, to: newColor.value }))
 }
 
 function runBase64() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   if (b64mode.value === 'encode') {
     output.value = SVGTool.addDataURIPrefix(SVGTool.toBase64(source.value))
-    setMsg('ok', '已编码为 Base64 Data URI，可直接用于 <img src> 或 CSS background。')
+    setMsg('ok', T('svg.encoded'))
   } else {
     const raw = SVGTool.removeDataURIPrefix(source.value.trim())
-    try { output.value = SVGTool.fromBase64(raw) } catch (e) { return setMsg('err', '解码失败：' + (e.message || e)) }
-    setMsg('ok', '已解码为 SVG 源码。')
+    try { output.value = SVGTool.fromBase64(raw) } catch (e) { return setMsg('err', T('svg.decodeFailed', { msg: e.message || e })) }
+    setMsg('ok', T('svg.decoded'))
   }
 }
 
 function runOptimize() {
-  if (!source.value.trim()) return setMsg('err', '请输入 SVG 源码。')
+  if (!source.value.trim()) return setMsg('err', T('svg.needSource'))
   const rep = SVGTool.analyzeOptimization(source.value)
   const lines = rep.issues.length
-    ? rep.issues.map((i) => `· [${i.severity}] ${i.msg}\n  ${i.detail}（≈ 可省 ${i.savings} 字节）`)
-    : ['未发现明显可优化项，已较精简。']
-  output.value = `原始大小: ${rep.originalSize} 字节\n预计可省: ${rep.potentialSavings} 字节\n\n${lines.join('\n')}`
-  setMsg('ok', `分析完成：预计可节省 ${rep.potentialSavings} 字节。`)
+    ? rep.issues.map((i) => T('svg.optIssue', { severity: i.severity, msg: i.msg, detail: i.detail, savings: i.savings }))
+    : [T('svg.noOptimize')]
+  output.value = `${T('svg.origSize', { n: rep.originalSize })}\n${T('svg.savings', { n: rep.potentialSavings })}\n\n${lines.join('\n')}`
+  setMsg('ok', T('svg.analyzed', { n: rep.potentialSavings }))
 }
 
-const TABS = [
-  { id: 'info', label: '信息' },
-  { id: 'compress', label: '压缩' },
-  { id: 'format', label: '美化' },
-  { id: 'resize', label: '缩放' },
-  { id: 'recolor', label: '重着色' },
-  { id: 'base64', label: '编码' },
-  { id: 'optimize', label: '优化' },
-]
+const TABS = computed(() => [
+  { id: 'info', label: T('svg.tabInfo') },
+  { id: 'compress', label: T('svg.tabCompress') },
+  { id: 'format', label: T('svg.tabFormat') },
+  { id: 'resize', label: T('svg.tabResize') },
+  { id: 'recolor', label: T('svg.tabRecolor') },
+  { id: 'base64', label: T('svg.tabBase64') },
+  { id: 'optimize', label: T('svg.tabOptimize') },
+])
 
 function copyOutput() { output.value && navigator.clipboard && navigator.clipboard.writeText(output.value) }
 function downloadOutput() {
@@ -155,26 +156,26 @@ function downloadOutput() {
 </script>
 
 <template>
-  <h1 class="page-title">SVG 工具箱</h1>
+  <h1 class="page-title">{{ T('svg.title') }}</h1>
   <p class="page-sub">
-    纯浏览器端 SVG 处理：解析 · 压缩 · 美化 · 缩放 · 重着色 · Base64 · 优化分析。文件与文本均不上传，零依赖。
+    {{ T('svg.subtitle') }}
   </p>
 
   <div class="panel">
     <div class="row wrap">
-      <button class="btn" type="button" @click="loadSample"><i class="bi bi-lightning-charge"></i> 载入示例</button>
-      <button class="btn ghost" type="button" @click="onPickFile"><i class="bi bi-folder2-open"></i> 选择 .svg 文件</button>
-      <button class="btn ghost" type="button" @click="clearAll"><i class="bi bi-eraser"></i> 清空</button>
+      <button class="btn" type="button" @click="loadSample"><i class="bi bi-lightning-charge"></i> {{ T('svg.loadSample') }}</button>
+      <button class="btn ghost" type="button" @click="onPickFile"><i class="bi bi-folder2-open"></i> {{ T('svg.pickFile') }}</button>
+      <button class="btn ghost" type="button" @click="clearAll"><i class="bi bi-eraser"></i> {{ T('svg.clear') }}</button>
       <input ref="fileInput" type="file" accept=".svg,image/svg+xml" hidden @change="onFile" />
     </div>
 
     <label class="field" style="margin-top:10px">
-      <span>SVG 源码</span>
-      <textarea v-model="source" rows="8" spellcheck="false" placeholder="在此粘贴 SVG 源码，或点击「选择 .svg 文件」…"></textarea>
+      <span>{{ T('svg.source') }}</span>
+      <textarea v-model="source" rows="8" spellcheck="false" :placeholder="T('svg.sourcePh')"></textarea>
     </label>
 
     <div v-if="previewHTML" class="svg-preview">
-      <div class="svg-preview-label">实时预览（已净化）</div>
+      <div class="svg-preview-label">{{ T('svg.preview') }}</div>
       <div class="svg-preview-box" v-html="previewHTML"></div>
     </div>
   </div>
@@ -189,17 +190,17 @@ function downloadOutput() {
   <!-- 压缩 -->
   <div v-if="tab === 'compress'" class="panel">
     <div class="row wrap">
-      <button class="btn" type="button" @click="runCompress(false)"><i class="bi bi-arrows-collapse"></i> 标准压缩</button>
-      <button class="btn ghost" type="button" @click="runCompress(true)"><i class="bi bi-battery-half"></i> 极致压缩</button>
+      <button class="btn" type="button" @click="runCompress(false)"><i class="bi bi-arrows-collapse"></i> {{ T('svg.standardCompress') }}</button>
+      <button class="btn ghost" type="button" @click="runCompress(true)"><i class="bi bi-battery-half"></i> {{ T('svg.extremeCompress') }}</button>
     </div>
-    <p class="hint">标准压缩保留 class、默认属性；极致压缩会移除 class、t、p-id 等非必要属性，路径精度降至 1 位小数。</p>
+    <p class="hint">{{ T('svg.compressHint') }}</p>
   </div>
 
   <!-- 美化 -->
   <div v-else-if="tab === 'format'" class="panel">
     <div class="row wrap">
-      <button class="btn" type="button" @click="runFormat"><i class="bi bi-body-text"></i> 格式化（缩进）</button>
-      <button class="btn ghost" type="button" @click="runMinify"><i class="bi bi-text-wrap"></i> 最小化</button>
+      <button class="btn" type="button" @click="runFormat"><i class="bi bi-body-text"></i> {{ T('svg.formatBtn') }}</button>
+      <button class="btn ghost" type="button" @click="runMinify"><i class="bi bi-text-wrap"></i> {{ T('svg.minifyBtn') }}</button>
     </div>
   </div>
 
@@ -207,25 +208,25 @@ function downloadOutput() {
   <div v-else-if="tab === 'resize'" class="panel">
     <div class="row wrap">
       <div class="field">
-        <span>模式</span>
+        <span>{{ T('svg.mode') }}</span>
         <select v-model="resizeMode">
-          <option value="width">按宽度等比</option>
-          <option value="height">按高度等比</option>
-          <option value="set">固定尺寸</option>
-          <option value="contain">Contain 适配</option>
-          <option value="cover">Cover 覆盖</option>
-          <option value="viewbox">改 viewBox</option>
+          <option value="width">{{ T('svg.modeWidth') }}</option>
+          <option value="height">{{ T('svg.modeHeight') }}</option>
+          <option value="set">{{ T('svg.modeSet') }}</option>
+          <option value="contain">{{ T('svg.modeContain') }}</option>
+          <option value="cover">{{ T('svg.modeCover') }}</option>
+          <option value="viewbox">{{ T('svg.modeViewBox') }}</option>
         </select>
       </div>
       <div class="field">
-        <span>宽 / 目标 W</span>
+        <span>{{ T('svg.dimW') }}</span>
         <input type="number" v-model="dimW" style="width:110px" />
       </div>
       <div class="field" v-if="resizeMode !== 'width'">
-        <span>高 / 目标 H</span>
+        <span>{{ T('svg.dimH') }}</span>
         <input type="number" v-model="dimH" style="width:110px" />
       </div>
-      <button class="btn" type="button" @click="runResize"><i class="bi bi-arrows-fullscreen"></i> 缩放</button>
+      <button class="btn" type="button" @click="runResize"><i class="bi bi-arrows-fullscreen"></i> {{ T('svg.resizeBtn') }}</button>
     </div>
   </div>
 
@@ -234,59 +235,59 @@ function downloadOutput() {
     <template v-if="colors.length">
       <div class="row wrap">
         <div class="field">
-          <span>选择颜色</span>
+          <span>{{ T('svg.selColor') }}</span>
           <select v-model="selColor">
             <option v-for="c in colors" :key="c" :value="c">{{ c }}</option>
           </select>
         </div>
         <div class="field">
-          <span>新颜色</span>
+          <span>{{ T('svg.newColor') }}</span>
           <input type="color" v-model="newColor" style="width:54px;height:38px;padding:2px" />
         </div>
-        <button class="btn" type="button" @click="runRecolor"><i class="bi bi-droplet"></i> 替换颜色</button>
+        <button class="btn" type="button" @click="runRecolor"><i class="bi bi-droplet"></i> {{ T('svg.replaceBtn') }}</button>
       </div>
       <div class="palette">
         <span v-for="c in colors" :key="c" class="swatch" :style="{ background: c }" :title="c"></span>
       </div>
     </template>
-    <p v-else class="hint">未提取到颜色，请先输入含 fill/stroke 等颜色的 SVG。</p>
+    <p v-else class="hint">{{ T('svg.noColorHint') }}</p>
   </div>
 
   <!-- 编码 -->
   <div v-else-if="tab === 'base64'" class="panel">
     <div class="row wrap">
       <div class="field">
-        <span>方向</span>
+        <span>{{ T('svg.direction') }}</span>
         <select v-model="b64mode">
-          <option value="encode">编码为 Base64</option>
-          <option value="decode">从 Base64 解码</option>
+          <option value="encode">{{ T('svg.encodeB64') }}</option>
+          <option value="decode">{{ T('svg.decodeB64') }}</option>
         </select>
       </div>
-      <button class="btn" type="button" @click="runBase64"><i class="bi bi-code-slash"></i> 执行</button>
+      <button class="btn" type="button" @click="runBase64"><i class="bi bi-code-slash"></i> {{ T('svg.run') }}</button>
     </div>
   </div>
 
   <!-- 优化 -->
   <div v-else-if="tab === 'optimize'" class="panel">
     <div class="row wrap">
-      <button class="btn" type="button" @click="runOptimize"><i class="bi bi-graph-up"></i> 分析可优化项</button>
+      <button class="btn" type="button" @click="runOptimize"><i class="bi bi-graph-up"></i> {{ T('svg.analyzeBtn') }}</button>
     </div>
   </div>
 
   <!-- 信息（默认） -->
   <div v-else class="panel">
     <div class="row wrap">
-      <button class="btn" type="button" @click="runInfo"><i class="bi bi-info-circle"></i> 解析信息</button>
+      <button class="btn" type="button" @click="runInfo"><i class="bi bi-info-circle"></i> {{ T('svg.infoBtn') }}</button>
     </div>
-    <p class="hint">解析 viewBox、尺寸、提取全部颜色。其余可视化操作请切换到上方选项卡。</p>
+    <p class="hint">{{ T('svg.infoHint') }}</p>
   </div>
 
   <!-- 输出 -->
   <div v-if="output" class="panel">
     <div class="row wrap" style="margin-top:0">
-      <span v-if="sizeInfo" class="kpi"><span class="num">{{ sizeInfo.ratio }}%</span><span class="lbl">体积变化（原 {{ sizeInfo.o }} → {{ sizeInfo.n }} 字节）</span></span>
-      <button class="btn ghost sm" type="button" @click="copyOutput"><i class="bi bi-clipboard"></i> 复制</button>
-      <button class="btn green sm" type="button" @click="downloadOutput"><i class="bi bi-download"></i> 下载 output.svg</button>
+      <span v-if="sizeInfo" class="kpi"><span class="num">{{ sizeInfo.ratio }}%</span><span class="lbl">{{ T('svg.sizeChange', { o: sizeInfo.o, n: sizeInfo.n }) }}</span></span>
+      <button class="btn ghost sm" type="button" @click="copyOutput"><i class="bi bi-clipboard"></i> {{ T('svg.copy') }}</button>
+      <button class="btn green sm" type="button" @click="downloadOutput"><i class="bi bi-download"></i> {{ T('svg.download') }}</button>
     </div>
     <textarea v-model="output" rows="10" spellcheck="false" class="out-area"></textarea>
   </div>
