@@ -1,0 +1,142 @@
+// 一致性护栏：静态扫描源码，断言四处数据源互不漂移。
+// 零依赖（不 import 业务模块，避免 vue / DOM 环境要求），本地与 CI 均可直接 `node` 运行。
+//
+// 覆盖的断言：
+//   A. NAV 每条必须有 titleKey 与 groupKey（缺 key 会让侧边栏直接显示原始 key 串）
+//   B. NAV 的每条路由在 router 的 fileToPath 中存在（导航不死链）
+//   C. router 的每个视图都被 SelfTestPanel 的 VIEW_ROUTES 覆盖（渲染冒烟测试不漏）
+//   D. TOOLS（首页卡片）的路径在 fileToPath 中存在（首页不死链）
+//   E. 所有 i18n key 都能在词条文件里找到（缺 key 会回退成 key 本身）
+import { readFileSync, readdirSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, join } from 'node:path'
+
+const root = join(dirname(fileURLToPath(import.meta.url)), '..')
+const read = (p) => readFileSync(join(root, p), 'utf8')
+
+const results = []
+const check = (id, title, fn) => {
+  try {
+    const detail = fn()
+    results.push({ id, ok: true, title, detail })
+  } catch (e) {
+    results.push({ id, ok: false, title, error: e.message })
+  }
+}
+const fail = (msg) => { throw new Error(msg) }
+
+const navSrc = read('src/lib/nav.js')
+const routerSrc = read('src/router/index.js')
+const panelSrc = read('src/components/SelfTestPanel.vue')
+const formatsSrc = read('src/lib/formats.js')
+const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js'].map(read)
+
+// ---------- 解析 ----------
+// NAV 条目：逐行抽取（每行一个对象字面量）
+const navItems = []
+for (const line of navSrc.split('\n')) {
+  const m = line.match(/\{\s*path:\s*'([^']+)'/)
+  if (!m) continue
+  navItems.push({
+    path: m[1],
+    titleKey: (line.match(/titleKey:\s*'([^']+)'/) || [])[1],
+    groupKey: (line.match(/groupKey:\s*'([^']+)'/) || [])[1],
+    shortKey: (line.match(/shortKey:\s*'([^']+)'/) || [])[1],
+    group: (line.match(/group:\s*'([^']+)'/) || [])[1],
+  })
+}
+
+// router 的 fileToPath：'File.vue': '/path'
+const fileToPath = {}
+for (const m of routerSrc.matchAll(/'([A-Za-z0-9_]+\.vue)':\s*'(\/[^']*)'/g)) fileToPath[m[1]] = m[2]
+const routerPaths = new Set(Object.values(fileToPath))
+
+// SelfTestPanel 的 VIEW_ROUTES：{ path: '/x', file: 'X.vue' }
+const viewRoutes = []
+for (const m of panelSrc.matchAll(/\{\s*path:\s*'([^']+)',\s*file:\s*'([^']+)'\s*\}/g)) {
+  viewRoutes.push({ path: m[1], file: m[2] })
+}
+
+// 首页卡片：to: '/xxx?query'
+const cardTos = [...formatsSrc.matchAll(/to:\s*'([^']+)'/g)].map((m) => m[1])
+
+// i18n 词条里出现过的所有 key 名（前面为 { 或 , ，兼容 `nav: { key: 'x' }` 单行写法）
+const i18nKeys = new Set()
+for (const src of i18nSrcs) {
+  for (const m of src.matchAll(/[{,]\s*([A-Za-z][A-Za-z0-9_]*):\s*['"`]/g)) i18nKeys.add(m[1])
+}
+
+// 视图里通过 T('...') 使用的 key
+const viewTKeys = new Set()
+try {
+  for (const f of readdirSync(join(root, 'src/views'))) {
+    if (!f.endsWith('.vue')) continue
+    const src = read(`src/views/${f}`)
+    for (const m of src.matchAll(/\bT\(\s*'([^']+)'/g)) viewTKeys.add(m[1])
+  }
+} catch { /* 目录不存在则跳过 */ }
+
+// ---------- 断言 ----------
+check('parse', '数据源解析', () => {
+  if (navItems.length < 20) fail(`NAV 解析过少：${navItems.length}`)
+  if (Object.keys(fileToPath).length < 20) fail(`fileToPath 解析过少：${Object.keys(fileToPath).length}`)
+  if (viewRoutes.length < 10) fail(`VIEW_ROUTES 解析过少：${viewRoutes.length}`)
+  if (cardTos.length < 20) fail(`首页卡片解析过少：${cardTos.length}`)
+  return `NAV ${navItems.length} · 视图 ${Object.keys(fileToPath).length} · 冒烟 ${viewRoutes.length} · 卡片 ${cardTos.length}`
+})
+
+check('nav-i18n-keys', 'A. NAV 必填 titleKey / groupKey', () => {
+  const bad = navItems.filter((n) => !n.titleKey || !n.groupKey)
+  if (bad.length) fail('缺 key 的条目：' + bad.map((n) => n.path).join(', '))
+  return `${navItems.length} 条路由均已接入 i18n`
+})
+
+check('nav-deadlink', 'B. NAV 路由在 router 中存在', () => {
+  const bad = navItems.filter((n) => n.path !== '/' && !routerPaths.has(n.path))
+  if (bad.length) fail('导航死链：' + bad.map((n) => n.path).join(', '))
+  return `${navItems.length} 条导航路径均可达`
+})
+
+check('view-smoke-coverage', 'C. router 视图被 VIEW_ROUTES 全覆盖', () => {
+  const covered = new Map(viewRoutes.map((v) => [v.file, v.path]))
+  const missing = []
+  for (const [file, path] of Object.entries(fileToPath)) {
+    if (!covered.has(file)) missing.push(`${file}(${path})`)
+    else if (covered.get(file) !== path) missing.push(`${file}: 路径不一致 ${covered.get(file)} ≠ ${path}`)
+  }
+  if (missing.length) fail('未被渲染冒烟覆盖：' + missing.join(', '))
+  return `${Object.keys(fileToPath).length} 个视图全部纳入渲染自检`
+})
+
+check('card-deadlink', 'D. 首页卡片路径可达', () => {
+  const bad = []
+  for (const to of cardTos) {
+    const p = to.split('?')[0]
+    if (!routerPaths.has(p)) bad.push(to)
+  }
+  if (bad.length) fail('卡片死链：' + bad.join(', '))
+  return `${cardTos.length} 张卡片路径均可达`
+})
+
+check('i18n-key-exists', 'E. i18n key 均存在', () => {
+  const keys = new Set()
+  for (const n of navItems) {
+    if (n.titleKey) keys.add(n.titleKey)
+    if (n.shortKey) keys.add(n.shortKey)
+    if (n.groupKey) keys.add(n.groupKey)
+  }
+  for (const k of viewTKeys) keys.add(k)
+  const missing = [...keys].filter((k) => !i18nKeys.has(k.split('.').pop()))
+  if (missing.length) fail('词条缺失：' + missing.join(', '))
+  return `校验 ${keys.size} 个 key（导航 ${keys.size - viewTKeys.size} + 视图 ${viewTKeys.size}）均存在`
+})
+
+// ---------- 报告 ----------
+let pass = 0
+console.log('=== 一致性护栏 ===')
+for (const r of results) {
+  console.log(`${r.ok ? '✓ PASS' : '✗ FAIL'} | ${r.id} | ${r.title}${r.ok ? (r.detail ? ' — ' + r.detail : '') : ' — ' + r.error}`)
+  if (r.ok) pass++
+}
+console.log(`\n结果：${pass}/${results.length} 通过`)
+process.exit(pass === results.length ? 0 : 1)

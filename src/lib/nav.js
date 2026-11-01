@@ -1,7 +1,11 @@
 // 统一导航模型：侧边栏、命令面板(Ctrl/Cmd+K)、路由 meta 共用同一份数据源。
 // 只收录"真实可达的路由"，不堆砌 query 变体，保证客户端可达性。
 // title/short 保留中文默认值（回退与命令面板匹配用），i18n 通过 titleKey/shortKey 覆盖显示。
-import { t } from './i18n.js'
+import { t, locale } from './i18n.js'
+import { tDev } from './i18n.dev.js'
+
+// 新功能词条（开发者工具等）放在独立补充包，未命中时回退主 i18n
+export const T = (key) => (key ? tDev(key, locale.value, t) : '')
 
 export const NAV = [
   { path: '/', title: '首页', titleKey: 'nav.home', icon: 'bi-house', group: '常用', groupKey: 'group.common', keywords: 'home 首页 开始' },
@@ -20,10 +24,11 @@ export const NAV = [
   { path: '/ocr', title: 'OCR 文字识别', short: 'OCR', titleKey: 'nav.ocr', shortKey: 'nav.ocrShort', icon: 'bi-card-text', group: '二维码 / 识别', groupKey: 'group.qr', keywords: 'ocr 识别 文字 扫描件 图片转文字 tesseract' },
   { path: '/hash', title: '文件哈希校验', short: '哈希', titleKey: 'nav.hash', shortKey: 'nav.hashShort', icon: 'bi-shield-check', group: '校验 / 隐私', groupKey: 'group.verify', keywords: '哈希 hash md5 sha256 crc32 blake3 校验 重复 查重' },
   { path: '/exif', title: '照片隐私清理', titleKey: 'nav.exif', icon: 'bi-eraser', group: '校验 / 隐私', groupKey: 'group.verify', keywords: 'exif 隐私 gps 定位 清理 元数据 照片' },
-  { path: '/text', title: '文本 / 编码工具箱', titleKey: 'nav.text', icon: 'bi-code-slash', group: '校验 / 隐私', groupKey: 'group.verify', keywords: '文本 json base64 jwt 正则 时间戳 uuid 密码 编码' },
+  // 文本 / 编码工具箱：JSON · Base64 · JWT · 正则 · 时间戳 · UUID 均为开发者向能力，归入「开发者工具」
+  { path: '/text', title: '文本 / 编码工具箱', titleKey: 'nav.text', icon: 'bi-code-slash', group: '开发者工具', groupKey: 'group.dev', keywords: '文本 json base64 jwt 正则 时间戳 uuid 密码 编码' },
   { path: '/doc-convert', title: '文档转换', short: '文档', titleKey: 'nav.docConvert', shortKey: 'nav.docConvertShort', icon: 'bi-file-earmark-arrow-down', group: '校验 / 隐私', groupKey: 'group.verify', keywords: 'markdown pdf html 文档 转换 导出 md' },
-  { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', icon: 'bi-bounding-box', group: '开发者工具', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
-  { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', icon: 'bi-palette', group: '开发者工具', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
+  { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', titleKey: 'nav.svgTool', shortKey: 'nav.svgToolShort', icon: 'bi-bounding-box', group: '开发者工具', groupKey: 'group.dev', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
+  { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', titleKey: 'nav.cssReference', shortKey: 'nav.cssReferenceShort', icon: 'bi-palette', group: '开发者工具', groupKey: 'group.dev', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },
   { path: '/about', title: '关于', titleKey: 'nav.about', icon: 'bi-info-circle', group: '关于', groupKey: 'group.about', keywords: 'about 关于 开源 技术栈' },
   { path: '/privacy', title: '隐私协议', titleKey: 'nav.privacy', icon: 'bi-shield-lock', group: '关于', groupKey: 'group.about', keywords: '隐私 privacy 协议 零上传' },
@@ -40,17 +45,17 @@ export function navByPath(path) {
 // i18n 辅助：优先用 i18n key，未接入时回退中文
 export function navTitle(n) {
   if (!n) return ''
-  return n.titleKey ? t(n.titleKey) : n.title
+  return n.titleKey ? T(n.titleKey) : n.title
 }
 export function navShort(n) {
   if (!n) return ''
-  if (n.shortKey) return t(n.shortKey)
+  if (n.shortKey) return T(n.shortKey)
   if (n.short) return n.short
   return navTitle(n).split(' ')[0]
 }
 export function groupLabel(g) {
   const item = NAV.find((n) => n.group === g)
-  return item && item.groupKey ? t(item.groupKey) : g
+  return item && item.groupKey ? T(item.groupKey) : g
 }
 
 // 移动端底部标签栏：只放最常用的 4 个主入口（其余走顶部搜索/命令面板）

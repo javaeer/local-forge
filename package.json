@@ -32,6 +32,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "check:consistency": "node scripts/check-consistency.mjs",
     "test:e2e": "node _e2e.mjs",
     "test:e2e:image": "node _e2e_image.mjs",
     "test:e2e:image:ui": "node _e2e_image_component.mjs",

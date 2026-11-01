@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onUnmounted } from 'vue'
 import { D, CATEGORY_ORDER, getVisual, hlCSS } from '../lib/cssref.js'
+import { T } from '../lib/i18n.dev.js'
 
 const search = ref('')
 const activeCat = ref('all')
@@ -51,9 +52,9 @@ if (typeof window !== 'undefined') {
 </script>
 
 <template>
-  <h1 class="page-title">CSS 属性速查表</h1>
+  <h1 class="page-title">{{ T('css.title') }}</h1>
   <p class="page-sub">
-    选择器 · 布局 · 盒模型 · 视觉 · 文字 · 变换 · 动画 —— 点击任意属性查看详解、示例代码与可视化图示。
+    {{ T('css.subtitle') }}
   </p>
 
   <!-- 搜索 + 分类切换 -->
@@ -62,15 +63,15 @@ if (typeof window !== 'undefined') {
       <i class="bi bi-search"></i>
       <input
         v-model="search" type="text" class="css-input"
-        placeholder="搜索属性或选择器…"
+        :placeholder="T('css.searchPh')"
       />
-      <span v-if="search" class="match-count">{{ totalMatch }} 个匹配</span>
+      <span v-if="search" class="match-count">{{ T('css.matchCount', { n: totalMatch }) }}</span>
     </div>
     <div class="cat-pills">
       <button
         type="button" class="cat-pill" :class="{ on: activeCat === 'all' }"
         @click="activeCat = 'all'"
-      >全部</button>
+      >{{ T('css.all') }}</button>
       <button
         v-for="c in categories" :key="c.key" type="button"
         class="cat-pill" :class="{ on: activeCat === c.key }"
@@ -81,7 +82,7 @@ if (typeof window !== 'undefined') {
 
   <!-- 分类区块 -->
   <section v-for="c in categories" v-show="activeCat === 'all' || activeCat === c.key" :key="c.key" class="cat css-cat">
-    <h2 class="cat-title"><i class="bi bi-collection"></i> {{ c.label }} <span class="cnt">({{ c.props.length }})</span></h2>
+    <h2 class="cat-title"><i class="bi bi-collection"></i> {{ c.label }} <span class="cnt">{{ T('css.count', { n: c.props.length }) }}</span></h2>
     <div class="props">
       <button
         v-for="p in c.props" :key="p" type="button" class="tag prop-chip"
@@ -103,14 +104,14 @@ if (typeof window !== 'undefined') {
 
       <p class="css-desc">{{ detail.desc }}</p>
 
-      <div class="css-sub">可视化图示</div>
+      <div class="css-sub">{{ T('css.visual') }}</div>
       <!-- getVisual 输出的是受控的内联 HTML（源数据来自本仓库，安全） -->
       <div class="css-vis" v-html="detail.vis"></div>
 
-      <div class="css-sub">示例代码</div>
+      <div class="css-sub">{{ T('css.sampleCode') }}</div>
       <div class="cblk css-code">
         <button class="cpbtn" type="button" @click="copyCode">
-          <i class="bi bi-clipboard"></i> 复制
+          <i class="bi bi-clipboard"></i> {{ T('css.copy') }}
         </button>
         <code v-html="hlCSS(detail.code)"></code>
       </div>
