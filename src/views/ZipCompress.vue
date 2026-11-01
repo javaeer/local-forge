@@ -9,6 +9,7 @@ import { createZip } from '../lib/archive.js'
 import { formatSize, downloadBlob } from '../utils.js'
 import { consumePending } from '../lib/workflow.js'
 import { pushToast } from '../lib/toast.js'
+import { T } from '../lib/i18n.dev.js'
 
 const route = useRoute()
 const files = ref([])
@@ -28,7 +29,7 @@ onMounted(() => {
   const pending = consumePending()
   if (pending && pending.files.length) {
     onFiles(pending.files)
-    pushToast('info', `已从「${pending.from}」载入 ${pending.files.length} 个文件`)
+    pushToast('info', T('views.zipCompress.toastLoaded', { from: pending.from, n: pending.files.length }))
   }
 })
 
@@ -41,7 +42,7 @@ async function compress() {
   if (!files.value.length) return
   busy.value = true
   progress.value = 0
-  message.value = { type: 'info', text: '正在压缩…' }
+  message.value = { type: 'info', text: T('views.zipCompress.msgCompressing') }
   try {
     const blob = await createZip(files.value, {
       password: password.value,
@@ -50,12 +51,14 @@ async function compress() {
       onprogress: (p) => (progress.value = p),
     })
     result.value = blob
+    const pwPart = password.value ? T('views.zipCompress.encNote') : ''
+    const splitPart = splitSize.value ? T('views.zipCompress.splitNote', { n: splitSize.value }) : ''
     message.value = {
       type: 'ok',
-      text: `压缩完成，生成 ${formatSize(blob.size)} 的 ZIP${password.value ? '（AES-256 加密）' : ''}${splitSize.value ? `（分卷 ${splitSize.value}MB）` : ''}。`,
+      text: T('views.zipCompress.msgDone', { size: formatSize(blob.size), pw: pwPart, split: splitPart }),
     }
   } catch (e) {
-    message.value = { type: 'err', text: '压缩失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('views.zipCompress.msgFail', { msg: e.message || e }) }
   } finally {
     busy.value = false
   }
@@ -66,46 +69,41 @@ function download() {
 </script>
 
 <template>
-  <h1 class="page-title">压缩为 ZIP</h1>
-  <p class="page-sub">多文件 / 文件夹打包成 ZIP。支持 AES-256 密码、压缩级别、分卷拆分，全部在浏览器本地多线程完成。</p>
+  <h1 class="page-title">{{ T('views.zipCompress.title') }}</h1>
+  <p class="page-sub">{{ T('views.zipCompress.sub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-steps" open>
-    <ol class="howto">
-      <li>拖入要打包的文件，或勾选「文件夹模式」后选择整个文件夹。</li>
-      <li>按需设置：<b>压缩级别</b>（标准即可）、<b>加密密码</b>（留空则不加密）、<b>分卷大小</b>（0 表示不拆分）。</li>
-      <li>点「开始压缩」，完成后下载 <code>archive.zip</code>。</li>
-    </ol>
-    <p style="margin:8px 0 0">加密采用 AES-256，密码仅用于本机打包，不会被上传。</p>
+  <HelpTip :title="T('views.zipCompress.helpTitle')" icon="bi-steps" open>
+    <div v-html="T('views.zipCompress.help')"></div>
   </HelpTip>
 
-  <DropZone :multiple="!folderMode" :directory="folderMode" single="文件" hint="拖放文件或文件夹到此处" formats="任意文件 / 文件夹" @files="onFiles" />
+  <DropZone :multiple="!folderMode" :directory="folderMode" :single="T('views.zipCompress.dropSingle')" :hint="T('views.zipCompress.dropHint')" :formats="T('views.zipCompress.dropFormats')" @files="onFiles" />
 
   <div v-if="files.length" class="panel">
     <div class="row wrap" style="margin-top:0">
-      <StatusPill v-if="busy" state="working" label="压缩中…" />
-      <StatusPill v-else-if="result" state="done" label="已生成 ZIP" />
+      <StatusPill v-if="busy" state="working" :label="T('views.zipCompress.statusWorking')" />
+      <StatusPill v-else-if="result" state="done" :label="T('views.zipCompress.statusDone')" />
       <StatusPill v-else-if="message && message.type === 'err'" state="error" :label="message.text" />
     </div>
     <div class="row wrap">
       <div class="field">
-        <label>压缩级别</label>
+        <label>{{ T('views.zipCompress.levelLabel') }}</label>
         <select v-model="level">
-          <option :value="0">存储（不压缩）</option>
-          <option :value="1">最快</option>
-          <option :value="6">标准</option>
-          <option :value="9">最佳</option>
+          <option :value="0">{{ T('views.zipCompress.levelStore') }}</option>
+          <option :value="1">{{ T('views.zipCompress.levelFast') }}</option>
+          <option :value="6">{{ T('views.zipCompress.levelStandard') }}</option>
+          <option :value="9">{{ T('views.zipCompress.levelBest') }}</option>
         </select>
       </div>
       <div class="field">
-        <label>加密密码（可选）</label>
-        <input type="password" v-model="password" placeholder="留空则不加密" style="width:200px" />
+        <label>{{ T('views.zipCompress.pwdLabel') }}</label>
+        <input type="password" v-model="password" :placeholder="T('views.zipCompress.pwdPh')" style="width:200px" />
       </div>
       <div class="field">
-        <label>分卷大小（MB，0=不拆分）</label>
+        <label>{{ T('views.zipCompress.splitLabel') }}</label>
         <input type="number" min="0" v-model="splitSize" style="width:120px" />
       </div>
-      <label class="check"><input type="checkbox" v-model="folderMode" /> 文件夹模式</label>
-      <button class="btn" :disabled="busy" @click="compress"><i class="bi bi-file-earmark-zip"></i> 开始压缩</button>
+      <label class="check"><input type="checkbox" v-model="folderMode" /> {{ T('views.zipCompress.folderMode') }}</label>
+      <button class="btn" :disabled="busy" @click="compress"><i class="bi bi-file-earmark-zip"></i> {{ T('views.zipCompress.btnCompress') }}</button>
     </div>
 
     <ul class="files">
@@ -120,8 +118,8 @@ function download() {
     <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>
 
     <button v-if="result" class="btn green" @click="download">
-      <i class="bi bi-download"></i> 下载 archive.zip ({{ formatSize(result.size) }})
+      <i class="bi bi-download"></i> {{ T('views.zipCompress.btnDownload') }} ({{ formatSize(result.size) }})
     </button>
-    <NextSteps v-if="result" from="/zip-compress" :files="[{ blob: result, name: 'archive.zip' }]" />
+    <NextSteps v-if="result" from="/zip-compress" :files="[{ blob: result, name: 'archive.zip' }]" :title="T('views.zipCompress.nextTitle')" />
   </div>
 </template>

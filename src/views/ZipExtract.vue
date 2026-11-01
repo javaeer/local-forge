@@ -7,6 +7,7 @@ import StatusPill from '../components/StatusPill.vue'
 import NextSteps from '../components/NextSteps.vue'
 import { isSplitZipSet, extractSplitZip } from '../lib/archive.js'
 import { formatSize, downloadBlob, basename } from '../utils.js'
+import { T } from '../lib/i18n.dev.js'
 
 const archive = ref(null)
 const splitSet = ref(null) // 分卷集合（若用户一次拖入多卷）
@@ -53,8 +54,8 @@ async function readEntries() {
       // 分卷：交给引擎按顺序拼接后解压
       const list = await extractSplitZip(splitSet.value, { password: password.value })
       entries.value = list.map((e) => ({ name: e.name, dir: false, size: e.size, _blob: e.getBlob }))
-      if (!entries.value.length) message.value = { type: 'err', text: '该分卷 ZIP 为空或无法读取。' }
-      else message.value = { type: 'ok', text: `已合并 ${splitSet.value.length} 个分卷并解压。` }
+      if (!entries.value.length) message.value = { type: 'err', text: T('views.zipExtract.msgEmpty') }
+      else message.value = { type: 'ok', text: T('views.zipExtract.msgSplitDone', { n: splitSet.value.length }) }
       return
     }
     const reader = new ZipReader(new BlobReader(archive.value), { password: password.value || undefined })
@@ -67,9 +68,9 @@ async function readEntries() {
       _reader: reader,
     }))
     await reader.close()
-    if (!entries.value.length) message.value = { type: 'err', text: '该 ZIP 为空或无法读取。' }
+    if (!entries.value.length) message.value = { type: 'err', text: T('views.zipExtract.msgEmpty') }
   } catch (e) {
-    message.value = { type: 'err', text: '读取失败：' + (e.message || e) + '（若为加密 ZIP，请填写密码后点「重新读取」）' }
+    message.value = { type: 'err', text: T('views.zipExtract.msgReadFail', { msg: e.message || e }) }
   } finally {
     busy.value = false
   }
@@ -99,35 +100,31 @@ async function downloadAll() {
 </script>
 
 <template>
-  <h1 class="page-title">解压 ZIP</h1>
-  <p class="page-sub">在浏览器内解压 ZIP 文件，文件不会离开你的设备。支持加密 ZIP（填写密码）与<b>分卷 ZIP</b>（一次拖入全部 .z01/.z02/…/.zip 分卷自动合并解压）。</p>
+  <h1 class="page-title">{{ T('views.zipExtract.title') }}</h1>
+  <p class="page-sub">{{ T('views.zipExtract.sub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-steps" open>
-    <ol class="howto">
-      <li>拖入 ZIP 文件；若是<b>分卷</b>（.z01/.z02/…/.zip），请一次全部拖入，会自动合并。</li>
-      <li>加密包在上方填写密码，点「重新读取」即可解密列出内容。</li>
-      <li>点单个文件的下载按钮，或「下载全部」批量导出。</li>
-    </ol>
+  <HelpTip :title="T('views.zipExtract.helpTitle')" icon="bi-steps" open>
+    <div v-html="T('views.zipExtract.help')"></div>
   </HelpTip>
 
-  <DropZone :multiple="true" accept=".zip,.z01,.z02,.z03,.z04,.z05" single="ZIP" hint="拖放 ZIP 文件（分卷则一次拖入所有分卷）" formats=".ZIP / .Z01 / .Z02 …" @files="onFiles" />
+  <DropZone :multiple="true" accept=".zip,.z01,.z02,.z03,.z04,.z05" :single="T('views.zipExtract.dropSingle')" :hint="T('views.zipExtract.dropHint')" :formats="T('views.zipExtract.dropFormats')" @files="onFiles" />
 
   <div v-if="archive" class="panel">
     <div class="row wrap" style="margin-top:0">
-      <StatusPill v-if="busy" state="working" label="读取中…" />
-      <StatusPill v-else-if="message && message.type === 'ok'" state="done" label="已就绪" />
+      <StatusPill v-if="busy" state="working" :label="T('views.zipExtract.statusWorking')" />
+      <StatusPill v-else-if="message && message.type === 'ok'" state="done" :label="T('views.zipExtract.statusDone')" />
       <StatusPill v-else-if="message && message.type === 'err'" state="error" :label="message.text" />
     </div>
     <div class="row">
       <div class="field">
-        <label>密码（如加密）</label>
-        <input type="password" v-model="password" placeholder="留空" style="width:180px" />
+        <label>{{ T('views.zipExtract.pwdLabel') }}</label>
+        <input type="password" v-model="password" :placeholder="T('views.zipExtract.pwdPh')" style="width:180px" />
       </div>
       <button class="btn ghost" :disabled="busy || !entries.length" @click="downloadAll">
-        <i class="bi bi-download"></i> 下载全部
+        <i class="bi bi-download"></i> {{ T('views.zipExtract.btnDownloadAll') }}
       </button>
       <button class="btn ghost" :disabled="busy || !archive" @click="readEntries">
-        <i class="bi bi-arrow-clockwise"></i> 重新读取
+        <i class="bi bi-arrow-clockwise"></i> {{ T('views.zipExtract.btnReread') }}
       </button>
     </div>
 
@@ -142,11 +139,11 @@ async function downloadAll() {
       </li>
     </ul>
 
-    <div v-if="busy" class="status">读取中…</div>
+    <div v-if="busy" class="status">{{ T('views.zipExtract.statusWorking') }}</div>
     <div v-if="progress" class="progress"><span :style="{ width: progress + '%' }"></span></div>
     <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>
 
     <NextSteps v-if="nonDirEntries.length" from="/zip-extract" :get-files="collectEntries"
-      :title="`下一步（含 ${nonDirEntries.length} 个文件）`" />
+      :title="T('views.zipExtract.nextTitle', { n: nonDirEntries.length })" />
   </div>
 </template>
