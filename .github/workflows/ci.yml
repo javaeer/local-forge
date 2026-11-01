@@ -44,6 +44,10 @@ jobs:
       - name: Build
         run: pnpm build
 
+      # 产物体积预算检查（阶段 D）：防单 chunk / 应用代码 / WASM 内核反常膨胀。
+      - name: Bundle size budget
+        run: node scripts/check-bundle-size.mjs
+
   # 纯逻辑单元测试（零 DOM 依赖，node --test 跑），快、稳，普通 CI 必跑。
   unit:
     name: Unit tests
