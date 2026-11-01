@@ -3,7 +3,7 @@
 // 7Z / ISO / XZ / ZST / BZ2 等创建需原版专有 WASM 模块，仅作解压源，不在此列。
 export const CREATE_FORMATS = [
   { ext: 'zip', label: 'ZIP', note: '通用压缩包（支持密码/分卷）' },
-  { ext: 'tar', label: 'TAR', note: '未压缩归档（USTAR）' },
+  { ext: 'tar', label: 'TAR', note: '未压缩 tar 归档（USTAR）' },
   { ext: 'tar.gz', label: 'TAR.GZ', note: 'gzip 压缩' },
 ]
 
@@ -14,6 +14,7 @@ export const COMPRESSIONS = [
 ]
 
 // 工具目录（按能力归类，全部为本地已实现且可正常使用的功能，无死链）
+// 分组名与 nav.js 的 group 保持一致，避免首页与侧边栏归类不一致。
 export const TOOLS = [
   {
     group: 'ZIP 工具箱',
@@ -72,12 +73,11 @@ export const TOOLS = [
     ],
   },
   {
-    group: '校验 / 隐私 / 文本',
+    group: '校验 / 隐私',
     items: [
       { to: '/hash', icon: 'bi-shield-check', title: '文件哈希校验', desc: 'MD5/SHA-256/CRC32/BLAKE3… 核对下载文件是否被篡改' },
       { to: '/hash?tab=dup', icon: 'bi-copy', title: '重复文件查找', desc: '按内容（SHA-256）找出完全相同的冗余文件' },
       { to: '/exif', icon: 'bi-eraser', title: '照片隐私清理', desc: '查看并清除 GPS 定位、设备序列号与拍摄时间（画质无损）' },
-      { to: '/text', icon: 'bi-code-slash', title: '文本 / 编码工具箱', desc: 'JSON · Base64 · JWT · 正则 · 时间戳 · UUID · 密码 · 摘要' },
       { to: '/ocr', icon: 'bi-card-text', title: 'OCR 图片转文字', desc: '截图 / 照片 / 扫描件提取文字（本地 Tesseract 内核）' },
       { to: '/ocr?tab=pdf', icon: 'bi-file-earmark-text', title: '扫描版 PDF 识别', desc: '逐页 OCR，支持页码范围与逐页打包 ZIP' },
     ],
@@ -106,6 +106,7 @@ export const TOOLS = [
   {
     group: '开发者工具',
     items: [
+      { to: '/text', icon: 'bi-code-slash', title: '文本 / 编码工具箱', desc: 'JSON · Base64 · JWT · 正则 · 时间戳 · UUID · 密码 · 摘要' },
       { to: '/svg-tool', icon: 'bi-bounding-box', title: 'SVG 工具箱', desc: '压缩 / 格式化 / 缩放 / 重着色 / Base64 / 优化，纯本地' },
       { to: '/css-reference', icon: 'bi-palette', title: 'CSS 属性速查', desc: '选择器 / 布局 / 盒模型 / 视觉 / 文字 / 变换 / 动画' },
     ],
