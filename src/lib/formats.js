@@ -111,6 +111,7 @@ export const TOOLS = [
       { to: '/text', icon: 'bi-code-slash', titleKey: 'home.t.textTool', descKey: 'home.d.textTool', title: '文本 / 编码工具箱', desc: 'JSON · Base64 · JWT · 正则 · 时间戳 · UUID · 密码 · 摘要' },
       { to: '/svg-tool', icon: 'bi-bounding-box', titleKey: 'home.t.svgTool', descKey: 'home.d.svgTool', title: 'SVG 工具箱', desc: '压缩 / 格式化 / 缩放 / 重着色 / Base64 / 优化，纯本地' },
       { to: '/css-reference', icon: 'bi-palette', titleKey: 'home.t.cssRef', descKey: 'home.d.cssRef', title: 'CSS 属性速查', desc: '选择器 / 布局 / 盒模型 / 视觉 / 文字 / 变换 / 动画' },
+      { to: '/wechat-article', icon: 'bi-wechat', titleKey: 'home.t.wechatArticle', descKey: 'home.d.wechatArticle', title: '公众号排版', desc: 'Markdown → 微信兼容内联 HTML，本地排版后一键复制到公众号' },
     ],
   },
 ]

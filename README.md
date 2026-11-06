@@ -5,7 +5,7 @@
 <h1 align="center">LocalForge</h1>
 
 <p align="center">
-  <b>纯浏览器端的本地文件工具箱</b> —— 压缩、解压、格式转换、媒体转码、PDF 处理、P2P 直传，<br/>
+  <b>纯浏览器端的本地文件工具箱</b> —— 压缩、解压、格式转换、媒体转码、PDF 处理、公众号排版、P2P 直传，<br/>
   <b>全部在本地完成，文件不上传任何服务器。</b>
 </p>
 
@@ -40,6 +40,7 @@
 | **图片** | PNG / JPG / WEBP 互转、有损压缩（TinyPNG 同款 PNG 量化保透明）、**改尺寸（等比/精确/填满）**、**文字水印（9 宫格 + 平铺）**、本地预览 | Canvas API + [upng-js](https://github.com/photopea/UPNG.js) |
 | **批处理队列** | 一次拖入多份文件，套用同一操作 + 预设（网页优化 / 极限压缩 / 去 EXIF / 改尺寸 / 水印 / PDF 瘦身 / 打包），串行执行、逐项进度、可取消、结果可打包 ZIP | 复用各引擎，`src/lib/batch.js` |
 | **文档转换** | Markdown → PDF / HTML（自带零依赖解析器）；含中日韩时 PDF 自动切换 canvas 渲染通道，无需内嵌字体 | 自研 `docconvert.js` + pdf-lib |
+| **公众号排版** | Markdown → 微信兼容的**纯内联样式 HTML**：多主题、刊头/卡片/指标等结构化模块、脚注、代码高亮、外链转参考资料、本地图片内嵌、静态规范自检，一键复制富文本到剪贴板 | 自研零依赖内核 [`src/lib/wechat.js`](src/lib/wechat.js)（无新增依赖、不调用任何微信接口） |
 | **PDF** | 重压缩（内嵌图像重压 + 对象流去重）／**逐页预览（pdf.js 本地渲染）／合并多个 PDF／拆分为单页** | [pdf-lib](https://github.com/Hopding/pdf-lib) + [pdfjs-dist](https://github.com/mozilla/pdf.js) |
 | **分享 / 安全** | WebRTC P2P 直传（手动 SDP 信令，无后端）；ZIP 密码字典恢复；归档修复 | WebRTC / 本地引擎 |
 | **PWA / 离线** | 可安装（manifest + Service Worker）；**按需预缓存 WASM 内核**，断网也能用；缓存策略：外壳 network-first、内核 cache-first、静态资源 stale-while-revalidate | 自研 `public/sw.js` |
@@ -77,6 +78,7 @@ pnpm test:e2e:progress       # 阶段进度模型
 pnpm test:e2e:batch          # 批处理队列
 pnpm test:e2e:imagepro       # 图片改尺寸 / 水印
 pnpm test:e2e:doc            # Markdown → PDF / HTML
+pnpm test:e2e:wechat         # 公众号排版（产物结构 / 规范自检 / 零跨域请求）
 pnpm test:e2e:i18n           # 中日英韩西五语切换
 pnpm report:kernels          # 内核体积报告（构建产物 vs 实际下载）
 pnpm prune:infinityfree      # 生成 InfinityFree 兼容产物（剔除超限文件 + 专用 .htaccess）
@@ -166,6 +168,7 @@ Netlify / Cloudflare Pages 直接连接仓库并选用 `pnpm build` + `dist` 同
 
 - **关于 / 隐私协议页面**：站点提供独立的「关于」与「隐私协议」页面（页脚可达）。隐私协议已就第三方广告（Google AdSense 等）的数据收集、Cookie 与退出方式作出声明，为后续接入广告预留合规基础；实际接入广告前，页面不加载任何广告脚本、不收集数据。
 - **零上传**：所有处理在浏览器内通过 WebAssembly 完成，没有任何文件离开你的设备。
+- **公众号排版不联网**：Markdown 编译、本地图片转 DataURL、静态规范自检全部在浏览器内完成；不调用微信接口、不上传图片、不拉取 CDN。产物只写入剪贴板或下载为 HTML，发布动作（粘贴到公众号后台）始终由你手动完成。
 - **零追踪**：无分析、无遥测、无第三方请求（除非回退到 jsDelivr 拉取 ffmpeg 内核）。
 - **P2P 直传**：分享功能用 WebRTC 点对点传输，信令靠手动复制 SDP，不经中心服务器。
 - 解析不可信归档/媒体仍有理论攻击面（zip bomb、路径穿越、内核解析漏洞），请勿用它处理来源不明的文件。
@@ -181,11 +184,15 @@ src/lib/writers.js   可靠的 ZIP/TAR/TAR.GZ 写入器（USTAR，正确处理�
 src/lib/media.js     ffmpeg 媒体转换封装（本地多线程优先，回退单线程 / CDN）
 src/lib/pdf.js       PDF 重压缩
 src/lib/formats.js   格式与压缩选项 + 完整工具目录
+src/lib/wechat.js    公众号排版内核：Markdown → 微信兼容内联 HTML（零依赖纯函数，可独立单测）
 src/views/           Home / ZipCompress / ZipExtract / ArchiveTool /
-                     MediaConvert / ImageConvert / PdfTools /
-                     ShareFiles / PasswordRecovery / Repair /
+                     MediaConvert / ImageConvert / PdfTools / DocConvert /
+                     WechatArticle / ShareFiles / PasswordRecovery / Repair /
                      About / Privacy
 src/components/      DropZone.vue 拖拽上传 / AdSlot.vue 广告位预留（接 AdSense 用）
+tests/unit/wechat.test.mjs          公众号排版内核单测（Node 原生 test，无需浏览器）
+_e2e_wechat.mjs                    公众号排版浏览器端 e2e
+docs/wechat-article-local-plan.md   纯本地化落地规划与技术选型
 public/libarchive/   libarchive.js 的 worker 与 wasm（不被打包，置于 public）
 public/ffmpeg/       ffmpeg 多线程内核（本地打包，离线可用）
 public/ffmpeg-st/    ffmpeg 单线程内核（跨源隔离不可用时的回退）
@@ -200,6 +207,7 @@ public/ffmpeg-st/    ffmpeg 单线程内核（跨源隔离不可用时的回退�
 - [x] ~~批量图片压缩队列与进度~~（已上线「批处理队列」，支持多种操作 + 预设）
 - [x] ~~PWA 可安装 + 离线内核按需预缓存~~
 - [x] ~~Markdown → PDF / HTML 文档转换~~
+- [x] ~~Markdown → 微信公众号排版（纯本地内联 HTML + 富文本剪贴板）~~
 - [ ] 7Z / ISO 创建（待可行的开源 WASM 编码方案）
 - [ ] 目录拖拽保留结构（webkitRelativePath）
 - [ ] 接入 Google AdSense 等第三方广告（`AdSlot` 组件已预留，待申请广告账号后填充 `data-ad-client` / `data-ad-slot`）

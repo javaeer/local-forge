@@ -61,11 +61,11 @@ test('timestampToDate / dateToTimestamp 互转', () => {
 })
 
 test('regexTest 按 (source, flags, text) 返回匹配数', () => {
-  const r = regexTest('\d+', 'g', 'abc123 456')
+  const r = regexTest('\\d+', 'g', 'abc123 456')
   assert.equal(r.count, 2)
   assert.equal(r.matches[0].match, '123')
   // 无匹配也应返回 count=0 而非抛错
-  assert.equal(regexTest('\d+', 'g', 'no digits').count, 0)
+  assert.equal(regexTest('\\d+', 'g', 'no digits').count, 0)
 })
 
 test('regexTest 非法正则抛错（交由上层 UI 兜底）', () => {

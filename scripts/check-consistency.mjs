@@ -31,7 +31,9 @@ const navSrc = read('src/lib/nav.js')
 const routerSrc = read('src/router/index.js')
 const panelSrc = read('src/components/SelfTestPanel.vue')
 const formatsSrc = read('src/lib/formats.js')
-const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js'].map(read)
+// i18n.views.js 承载全部 views.* 词条（视图 T('views.xxx') 的落点）；
+// 漏扫会让断言 E 把真实存在的词条误报为缺失。
+const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js', 'src/lib/i18n.views.js'].map(read)
 
 // ---------- 解析 ----------
 // NAV 条目：逐行抽取（每行一个对象字面量）

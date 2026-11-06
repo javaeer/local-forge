@@ -70,6 +70,7 @@ const VIEW_ROUTES = [
   { path: '/pdf-tools', file: 'PdfTools.vue' },
   { path: '/pdf-pro', file: 'PdfPro.vue' },
   { path: '/doc-convert', file: 'DocConvert.vue' },
+  { path: '/wechat-article', file: 'WechatArticle.vue' },
   { path: '/share-files', file: 'ShareFiles.vue' },
   { path: '/password-recovery', file: 'PasswordRecovery.vue' },
   { path: '/repair', file: 'Repair.vue' },

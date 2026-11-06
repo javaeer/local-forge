@@ -1,7 +1,7 @@
 // B-4 多语言 e2e（扩展版）：在真实浏览器中验证中日英韩西五种语言的
 // ①切换与 <html lang> 同步 ②localStorage 持久化 ③侧栏分组/条目本地化
 // ④开发者工具页面（SVG 工具箱 / CSS 速查）本地化 ⑤文档标题本地化
-// ⑥首页英雄区与 45 张工具卡片本地化 ⑦不出现未翻译的原始 key
+// ⑥首页英雄区与 46 张工具卡片本地化 ⑦不出现未翻译的原始 key
 // 运行：pnpm build && pnpm preview & BASE=http://127.0.0.1:4173/ node _e2e_i18n.mjs
 import puppeteer from 'puppeteer-core'
 
@@ -118,7 +118,7 @@ try {
       check(`B4：切到 ${c.name} → 文档标题无中文`, !RE_CJK.test(titleNow), titleNow)
     }
 
-    // —— 首页英雄区 + 45 张工具卡片 ——
+    // —— 首页英雄区 + 46 张工具卡片 ——
     const homeTexts = await page.evaluate(() =>
       Array.from(document.querySelectorAll('.hero-badge, .hero-title, .hero-sub, .hero-pills .tag, .cat-title, .tool-card h3, .tool-card p'))
         .map((el) => el.textContent.trim())
