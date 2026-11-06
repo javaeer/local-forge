@@ -1,5 +1,6 @@
 // 公众号排版 e2e（core 组）：在真实浏览器里验证「纯本地编译 → 微信兼容内联 HTML」链路。
-// 覆盖：页面挂载、文章产物结构硬约束、规范自检、主题/编辑响应式重编译、隐私不变量（零跨域请求）。
+// 覆盖：页面挂载、文章产物结构硬约束、规范自检、主题/编辑响应式重编译、
+// 多端输出（微信↔通用渲染器）、文章模板、元数据校对、草稿历史、隐私不变量（零跨域请求）。
 // 运行：pnpm build && pnpm test:e2e:wechat（run.mjs 注入 BASE / CHROME_PATH 并拉起 preview）
 import puppeteer from 'puppeteer-core'
 
@@ -102,6 +103,64 @@ try {
   await wait(350)
   const afterEdit = await page.$eval('iframe.preview', (el) => el.getAttribute('srcdoc') || '')
   check('编辑 Markdown 后预览实时更新', afterEdit.includes('端到端测试标题') && afterEdit !== beforeEdit)
+
+  // —— 本轮「全员落地」新增能力的浏览器端验证 ——
+  // 多端输出：先给一份带外链的 Markdown（上一步编辑用例把示例文档换成了无链接短文），
+  // 第 2 个 select 是输出平台。切到知乎后应走通用语义渲染器，不再包 <span leaf="">，
+  // 并保留外链（微信目标会把外链折叠为文末参考资料）。
+  await page.evaluate(() => {
+    const ta = document.querySelector('textarea.md-input')
+    ta.value = '# 多端输出测试\n\n参考 [doocs/md](https://github.com/doocs/md) 与 [微信开发者](https://developers.weixin.qq.com/)。\n'
+    ta.dispatchEvent(new Event('input', { bubbles: true }))
+  })
+  await wait(300)
+  const beforeTarget = await page.$eval('iframe.preview', (el) => el.getAttribute('srcdoc') || '')
+  await page.evaluate(() => {
+    const sel = document.querySelectorAll('select')[1]
+    sel.value = 'zhihu'
+    sel.dispatchEvent(new Event('change', { bubbles: true }))
+  })
+  await wait(350)
+  const zhihu = await page.$eval('iframe.preview', (el) => el.getAttribute('srcdoc') || '')
+  check('切换输出平台到知乎后走通用渲染器（无 leaf 包裹且保留外链）',
+    !!zhihu && zhihu !== beforeTarget && !zhihu.includes('<span leaf=""') && /<a [^>]*href=/.test(zhihu))
+
+  await page.evaluate(() => {
+    const sel = document.querySelectorAll('select')[1]
+    sel.value = 'wechat'
+    sel.dispatchEvent(new Event('change', { bubbles: true }))
+  })
+  await wait(350)
+  const back = await page.$eval('iframe.preview', (el) => el.getAttribute('srcdoc') || '')
+  check('切回微信公众号目标后恢复内联 + leaf 结构', back.includes('<span leaf=""'))
+
+  // 文章模板：第 3 个 select 选 tutorial，点「应用模板」应覆盖 Markdown 编辑区
+  const beforeTpl = await page.$eval('textarea.md-input', (el) => el.value)
+  await page.evaluate(() => {
+    const sel = document.querySelectorAll('select')[2]
+    sel.value = 'tutorial'
+    sel.dispatchEvent(new Event('change', { bubbles: true }))
+    const btn = [...document.querySelectorAll('button.btn')].find((b) => b.querySelector('.bi-check2-square'))
+    if (btn) btn.click()
+  })
+  await wait(350)
+  const afterTpl = await page.$eval('textarea.md-input', (el) => el.value)
+  check('应用文章模板后 Markdown 被替换为模板内容', !!afterTpl && afterTpl !== beforeTpl && afterTpl.length > 40)
+
+  // 元数据校对 + 草稿历史（本地 localStorage，不联网）
+  const metaTags = await page.$$eval('.meta-grid .tag', (els) => els.length)
+  check('元数据校对区展示字数 / 阅读时长 / 图片 / 外链统计', metaTags >= 4, `${metaTags} 项`)
+  await page.evaluate(() => {
+    const btn = [...document.querySelectorAll('button.btn')].find((b) => b.querySelector('.bi-save'))
+    if (btn) btn.click()
+  })
+  await wait(250)
+  const draftInfo = await page.evaluate(() => ({
+    rows: document.querySelectorAll('.draft-row').length,
+    stored: (() => { try { return !!localStorage.getItem('localforge.wechat.drafts') } catch { return false } })(),
+  }))
+  check('保存草稿后本地出现可恢复条目（localStorage，最多 10 份）',
+    draftInfo.rows >= 1 && draftInfo.stored, `rows=${draftInfo.rows}`)
 
   check('隐私不变量：无任何跨域网络请求', crossOrigin.length === 0, crossOrigin.slice(0, 3).join(' | '))
   check('页面无控制台 / 运行时错误', errors.length === 0, errors.slice(0, 2).join(' | '))

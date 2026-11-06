@@ -46,12 +46,20 @@ export const FLOWS = {
   ],
   '/ocr': [
     { to: '/text', labelKey: 'wf.toText' },
+    { to: '/wechat-article', labelKey: 'wf.toWechat' },
   ],
   '/qr-code': [
     { to: '/text', labelKey: 'wf.toText' },
+    { to: '/wechat-article', labelKey: 'wf.toWechat' },
   ],
   '/text': [
     { to: '/qr-code', labelKey: 'wf.toQr' },
+    { to: '/wechat-article', labelKey: 'wf.toWechat' },
+  ],
+  // 公众号排版：产出 HTML / 离线发布包，可送去打包归档或文本工具继续处理
+  '/wechat-article': [
+    { to: '/zip-compress', labelKey: 'wf.toZip' },
+    { to: '/text', labelKey: 'wf.toText' },
   ],
 }
 
@@ -117,6 +125,7 @@ export const WF_LABELS = {
   'wf.toPdf2img': { 'zh-CN': '转为图片', en: 'Convert to images', 'ja-JP': '画像に変換', 'ko-KR': '이미지로 변환', 'es-ES': 'Convertir a imágenes' },
   'wf.toGif': { 'zh-CN': '转为 GIF', en: 'Convert to GIF', 'ja-JP': 'GIFに変換', 'ko-KR': 'GIF로 변환', 'es-ES': 'Convertir a GIF' },
   'wf.toText': { 'zh-CN': '送去文本工具', en: 'Send to Text Tools', 'ja-JP': 'テキストツールへ送る', 'ko-KR': '텍스트 도구로 보내기', 'es-ES': 'Enviar a Herramientas de texto' },
+  'wf.toWechat': { 'zh-CN': '送去公众号排版', en: 'Send to WeChat Article', 'ja-JP': '公衆号レイアウトへ送る', 'ko-KR': '공중호 레이아웃으로 보내기', 'es-ES': 'Enviar a Artículo WeChat' },
 }
 
 export function wfLabel(labelKey, locale) {

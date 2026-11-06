@@ -13,6 +13,12 @@
  *  - 新增 'PRECACHE_CORES' / 'CLEAR_CORES' / 'CORE_STATUS' 三类消息，
  *    页面可按需把指定内核拉进 CORE_CACHE，并可查询已缓存情况。
  *  - 预缓存过程通过 'PRECACHE_PROGRESS' 回传进度（已下载字节 / 总数）。
+ *
+ * 公众号排版（/wechat-article）说明：
+ *  - wechat.js / wechat-extra.js 是零依赖纯 JS 内核，产物是懒加载 JS chunk，
+ *    由上面的 stale-while-revalidate 自动缓存，首次访问后即可断网使用；
+ *  - 它不依赖任何 WASM 内核，因此不列入 CORE_GROUPS（零内核 = 天然离线），
+ *    'CORE_STATUS' 响应里以 offlineNative 字段显式声明这一事实。
  */
 const VERSION = 'lf-v2'
 const SHELL_CACHE = VERSION + '-shell'
@@ -20,6 +26,9 @@ const ASSET_CACHE = VERSION + '-assets'
 const CORE_CACHE = VERSION + '-cores'
 
 const CORE_URL_RE = /\/(ffmpeg|ffmpeg-st|tesseract|libarchive)\//
+
+// 零 WASM 内核依赖、首次访问后即可离线使用的工具（声明式，供 CORE_STATUS 上报）
+const OFFLINE_NATIVE_TOOLS = ['/wechat-article']
 
 // 预缓存：应用外壳（构建产物由运行时 stale-while-revalidate 覆盖）
 const SHELL_ASSETS = [
@@ -120,7 +129,7 @@ self.addEventListener('message', (e) => {
   } else if (data.type === 'CLEAR_CORES') {
     caches.delete(CORE_CACHE).then(() => client && client.postMessage({ type: 'CORES_CLEARED' }))
   } else if (data.type === 'CORE_STATUS') {
-    coreStatus().then((groups) => client && client.postMessage({ type: 'CORE_STATUS', groups }))
+    coreStatus().then((groups) => client && client.postMessage({ type: 'CORE_STATUS', groups, offlineNative: OFFLINE_NATIVE_TOOLS }))
   } else if (data.type === 'SKIP_WAITING') {
     self.skipWaiting()
   }

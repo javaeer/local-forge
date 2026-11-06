@@ -41,6 +41,21 @@ try {
   check('桌面默认：底部标签栏隐藏', d.tabbar === 'none', `tabbar=${d.tabbar}`)
   let o = await noOverflow(); check('桌面默认：无横向溢出', !o, o)
 
+  // 汉堡按钮：顶栏布局没有侧栏，点击应打开「全部工具」命令面板（曾因绑错函数成为死按钮）
+  await page.click('.nav-toggle')
+  await new Promise((r) => setTimeout(r, 250))
+  check('桌面顶栏：汉堡按钮打开命令面板（非死按钮）',
+    await page.evaluate(() => !!document.querySelector('.palette')))
+  // 键盘：input 与 scrim 曾同时监听 keydown 并冒泡，导致一次按键跳 2 项
+  const idxOf = () => page.evaluate(() => [...document.querySelectorAll('.p-item')].findIndex((e) => e.classList.contains('active')))
+  const step0 = await idxOf()
+  await page.keyboard.press('ArrowDown')
+  await new Promise((r) => setTimeout(r, 150))
+  const step1 = await idxOf()
+  check('命令面板：一次 ArrowDown 只前进 1 项', step1 - step0 === 1, `${step0} → ${step1}`)
+  await page.keyboard.press('Escape')
+  await new Promise((r) => setTimeout(r, 200))
+
   // 切换到侧栏布局
   await page.click('[data-testid="layout-toggle"]')
   await new Promise((r) => setTimeout(r, 350))
@@ -57,6 +72,16 @@ try {
   await new Promise((r) => setTimeout(r, 350))
   const expanded = await page.evaluate(() => Math.round(document.querySelector('.sidebar').getBoundingClientRect().width))
   check('侧栏悬停展开', expanded > 200, `width=${expanded}`)
+
+  // 桌面侧栏布局：汉堡按钮应切换窄栏（原实现绑成了「打开抽屉」，桌面无效果）
+  await page.click('.nav-toggle')
+  await new Promise((r) => setTimeout(r, 300))
+  check('桌面侧栏：汉堡按钮展开窄栏',
+    !(await page.evaluate(() => document.querySelector('.sidebar').classList.contains('collapsed'))))
+  await page.click('.nav-toggle')
+  await new Promise((r) => setTimeout(r, 300))
+  check('桌面侧栏：再次点击收起窄栏',
+    await page.evaluate(() => document.querySelector('.sidebar').classList.contains('collapsed')))
 
   // 切回顶栏
   await page.click('[data-testid="layout-toggle"]')

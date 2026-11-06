@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { NAV, NAV_GROUPS, searchNav } from '../lib/nav.js'
+import { NAV, NAV_GROUPS, searchNav, navTitle, groupLabel } from '../lib/nav.js'
+import { t } from '../lib/i18n.js'
 
 const props = defineProps({ open: { type: Boolean, default: false } })
 const emit = defineEmits(['update:open'])
@@ -50,25 +51,25 @@ function onInput() {
 <template>
   <transition name="palette">
     <div v-if="open" class="palette-scrim" @click.self="close" @keydown="onKey">
-      <div class="palette" role="dialog" aria-label="搜索工具" aria-modal="true">
+      <div class="palette" role="dialog" :aria-label="t('app.search')" aria-modal="true">
         <div class="p-input">
           <i class="bi bi-search"></i>
           <input
             ref="inputEl"
             v-model="query"
             @input="onInput"
-            @keydown="onKey"
+            @keydown.stop="onKey"
             type="text"
-            placeholder="搜索工具…（如 二维码 / zip / ocr）"
-            aria-label="搜索工具"
+            :placeholder="t('app.searchPlaceholder')"
+            :aria-label="t('app.search')"
           />
           <kbd class="p-esc">Esc</kbd>
         </div>
         <div class="p-list">
           <template v-for="g in grouped" :key="g.group">
-            <div class="p-group">{{ g.group }}</div>
+            <div class="p-group">{{ groupLabel(g.group) }}</div>
             <button
-              v-for="(n, i) in g.items"
+              v-for="n in g.items"
               :key="n.path"
               class="p-item"
               :class="{ active: flat.indexOf(n) === active }"
@@ -76,16 +77,16 @@ function onInput() {
               @click="go(n)"
             >
               <i class="bi" :class="n.icon"></i>
-              <span class="p-title">{{ n.title }}</span>
+              <span class="p-title">{{ navTitle(n) }}</span>
               <span class="p-path">{{ n.path }}</span>
             </button>
           </template>
-          <div v-if="!flat.length" class="p-empty">没有匹配的工具</div>
+          <div v-if="!flat.length" class="p-empty">{{ t('app.noResults') }}</div>
         </div>
         <div class="p-foot">
-          <span><kbd>↑</kbd><kbd>↓</kbd> 选择</span>
-          <span><kbd>↵</kbd> 打开</span>
-          <span><kbd>Esc</kbd> 关闭</span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> {{ t('app.keySelect') }}</span>
+          <span><kbd>↵</kbd> {{ t('app.keyOpen') }}</span>
+          <span><kbd>Esc</kbd> {{ t('app.keyClose') }}</span>
         </div>
       </div>
     </div>

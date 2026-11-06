@@ -134,6 +134,29 @@ try {
     check(`B4：${c.name} 侧栏读到导航文本`, navTexts.length >= 10, String(navTexts.length))
     assertLocalized(`B4：${c.name} 侧栏导航`, c.lang, navTexts)
 
+    // —— 命令面板：工具名 / 分组名 / 占位符 / 页脚（曾全部写死中文）——
+    await page.keyboard.down('Control'); await page.keyboard.press('KeyK'); await page.keyboard.up('Control')
+    await wait(280)
+    const pal = await page.evaluate(() => ({
+      titles: Array.from(document.querySelectorAll('.p-title')).map((e) => e.textContent.trim()),
+      groups: Array.from(document.querySelectorAll('.p-group')).map((e) => e.textContent.trim()),
+      placeholder: (document.querySelector('.p-input input') || {}).placeholder || '',
+      foot: (document.querySelector('.p-foot') || {}).textContent || '',
+    }))
+    check(`B4：${c.name} 命令面板读到工具与分组`, pal.titles.length >= 20 && pal.groups.length >= 8,
+      `titles=${pal.titles.length} groups=${pal.groups.length}`)
+    assertLocalized(`B4：${c.name} 命令面板`, c.lang,
+      [...pal.titles, ...pal.groups, pal.placeholder, pal.foot])
+    if (c.lang === 'en') {
+      // 搜索需覆盖「当前语言标题」，不能只认中文默认值
+      await page.type('.p-input input', 'Article')
+      await wait(220)
+      const hits = await page.evaluate(() => Array.from(document.querySelectorAll('.p-title')).map((e) => e.textContent.trim()))
+      check('B4：命令面板可按当前语言标题搜索（Article）', hits.some((x) => /WeChat/i.test(x)), hits.join(' | '))
+    }
+    await page.keyboard.press('Escape')
+    await wait(200)
+
     // —— 开发者工具页面 ——
     for (const p of ['svg-tool', 'css-reference']) {
       await page.goto(BASE + p, { waitUntil: 'networkidle0' })

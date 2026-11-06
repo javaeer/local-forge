@@ -28,6 +28,13 @@ const langOpen = ref(false)
 function pickLocale(l) { setLocale(l); langOpen.value = false }
 function toggleLangMenu() { langOpen.value = !langOpen.value }
 function toggleCollapsed() { sidebarCollapsed.value = !sidebarCollapsed.value }
+// 汉堡按钮三态：顶栏布局（没有侧栏）→ 打开「全部工具」；移动端侧栏布局 → 打开抽屉；桌面侧栏 → 切换窄栏。
+// 修复：原实现把 v-if / v-else 两支的处理函数写反了，两种桌面布局下该按钮都是「点了没反应」的死按钮。
+function onNavToggle() {
+  if (!isSidebar.value) { paletteOpen.value = true; return }
+  if (window.matchMedia('(max-width: 960px)').matches) { sidebarOpen.value = true; return }
+  toggleCollapsed()
+}
 function switchLayout(v) {
   layout.value = v
   setLayout(v)
@@ -136,12 +143,10 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
       <!-- 顶栏：sidebar 布局下仅在移动端显示；topbar 布局下始终显示 -->
       <header class="topbar" :class="{ 'only-mobile': isSidebar }">
         <button
-          v-if="isSidebar"
-          class="nav-toggle" type="button" @click="sidebarOpen = true" :aria-label="t('app.openMenu')"
+          class="nav-toggle" type="button" @click="onNavToggle"
+          :aria-label="isSidebar ? t('app.openMenu') : t('app.allTools')"
+          :title="isSidebar ? t('app.openMenu') : t('app.allTools')"
         >
-          <i class="bi bi-list"></i>
-        </button>
-        <button v-else class="nav-toggle" type="button" @click="toggleCollapsed" :aria-label="t('app.expandSidebar')">
           <i class="bi bi-list"></i>
         </button>
 

@@ -59,23 +59,29 @@ export function groupLabel(g) {
   return item && item.groupKey ? T(item.groupKey) : g
 }
 
-// 移动端底部标签栏：只放最常用的 4 个主入口（其余走顶部搜索/命令面板）
+// 移动端底部标签栏：5 个主入口（+ App.vue 里的「全部」按钮共 6 个），其余走命令面板
 export const TAB_ITEMS = ['/', '/zip-compress', '/image-convert', '/qr-code', '/ocr'].map(
   (p) => NAV.find((n) => n.path === p),
 ).filter(Boolean)
 
-// 简单的"关键字 + 标题"模糊匹配，给命令面板用
+// 简单的"关键字 + 标题"模糊匹配，给命令面板用。
+// 检索范围包含「中文默认值 + 当前语言标题/短名 + 当前语言分组名」，
+// 否则非中文界面下按屏幕上看到的名称（如英文 "WeChat Article"）会搜不到。
 export function searchNav(query) {
   const q = (query || '').trim().toLowerCase()
   if (!q) return NAV
   const terms = q.split(/\s+/)
   return NAV
     .map((n) => {
-      const hay = (n.title + ' ' + (n.keywords || '') + ' ' + n.group).toLowerCase()
+      const title = navTitle(n)
+      const hay = [
+        n.title, n.short || '', title, navShort(n),
+        n.keywords || '', n.group, groupLabel(n.group),
+      ].join(' ').toLowerCase()
       let score = 0
       for (const t of terms) {
         if (!hay.includes(t)) return null
-        if (n.title.toLowerCase().includes(t)) score += 3
+        if (title.toLowerCase().includes(t)) score += 3
         if ((n.keywords || '').toLowerCase().includes(t)) score += 1
       }
       return { ...n, score }
