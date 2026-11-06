@@ -9,13 +9,14 @@
 //   desc    CI 输出里展示的说明
 export const SUITES = [
   // —— core：快、稳，CI 默认跑 ——
-  { id: 'i18n', file: '_e2e_i18n.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '多语言 5 语种切换 + 本地化不变量（含首页 46 卡片 / 命令面板 / 本地化搜索）' },
+  { id: 'i18n', file: '_e2e_i18n.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '多语言 5 语种切换 + 本地化不变量（含首页 47 卡片 / 命令面板 / 本地化搜索）' },
   { id: 'layout', file: '_e2e_layout.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '侧栏/顶栏/移动端布局切换 + 汉堡按钮三态 + 命令面板键盘导航' },
   { id: 'features', file: '_e2e_features.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '核心功能端到端冒烟' },
   { id: 'qrcode', file: '_e2e_qrcode.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '二维码生成 / 识别' },
   { id: 'progress', file: '_e2e_progress.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '阶段化进度条' },
   { id: 'doc', file: '_e2e_doc.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '文档转换（Markdown → PDF/HTML）' },
   { id: 'wechat', file: '_e2e_wechat.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '公众号排版（产物结构 · 规范自检 · 多端输出 · 模板/草稿 · 零跨域请求）' },
+  { id: 'appicon', file: '_e2e_app_icon.mjs', server: 'preview', group: 'core', timeout: 180000, desc: 'App 图标生成器（尺寸预设 · 无 alpha 通道 · 裁剪/背景 · ZIP 下载 · 零跨域请求）' },
   { id: 'batch', file: '_e2e_batch.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '批处理队列' },
   { id: 'imagepro', file: '_e2e_imagepro.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '音视频进阶（GIF/抽帧/裁剪）' },
   { id: 'offline', file: '_e2e_offline.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '离线内核预缓存' },

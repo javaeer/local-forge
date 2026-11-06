@@ -23,6 +23,16 @@ export const FLOWS = {
     { to: '/pdf-pro?tab=img2pdf', labelKey: 'wf.toImgPdf' },
     { to: '/qr-code', labelKey: 'wf.toQr' },
     { to: '/exif', labelKey: 'wf.toExif' },
+    { to: '/app-icon', labelKey: 'wf.toAppIcon' },
+  ],
+  '/svg-tool': [
+    { to: '/app-icon', labelKey: 'wf.toAppIcon' },
+    { to: '/zip-compress', labelKey: 'wf.toZip' },
+  ],
+  // App 图标包是扁平 PNG 集合，可送去打包归档或图片工具继续处理
+  '/app-icon': [
+    { to: '/zip-compress', labelKey: 'wf.toZip' },
+    { to: '/image-convert', labelKey: 'wf.toImage' },
   ],
   '/exif': [
     { to: '/image-convert', labelKey: 'wf.toImage' },
@@ -126,6 +136,7 @@ export const WF_LABELS = {
   'wf.toGif': { 'zh-CN': '转为 GIF', en: 'Convert to GIF', 'ja-JP': 'GIFに変換', 'ko-KR': 'GIF로 변환', 'es-ES': 'Convertir a GIF' },
   'wf.toText': { 'zh-CN': '送去文本工具', en: 'Send to Text Tools', 'ja-JP': 'テキストツールへ送る', 'ko-KR': '텍스트 도구로 보내기', 'es-ES': 'Enviar a Herramientas de texto' },
   'wf.toWechat': { 'zh-CN': '送去公众号排版', en: 'Send to WeChat Article', 'ja-JP': '公衆号レイアウトへ送る', 'ko-KR': '공중호 레이아웃으로 보내기', 'es-ES': 'Enviar a Artículo WeChat' },
+  'wf.toAppIcon': { 'zh-CN': '送去生成 App 图标', en: 'Send to App Icon Generator', 'ja-JP': 'App アイコン生成へ送る', 'ko-KR': '앱 아이콘 생성으로 보내기', 'es-ES': 'Enviar a Generador de iconos' },
 }
 
 export function wfLabel(labelKey, locale) {

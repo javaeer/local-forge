@@ -66,6 +66,7 @@ const VIEW_ROUTES = [
   { path: '/media-convert', file: 'MediaConvert.vue' },
   { path: '/media-pro', file: 'MediaPro.vue' },
   { path: '/image-convert', file: 'ImageConvert.vue' },
+  { path: '/app-icon', file: 'AppIcon.vue' },
   { path: '/batch', file: 'BatchQueue.vue' },
   { path: '/pdf-tools', file: 'PdfTools.vue' },
   { path: '/pdf-pro', file: 'PdfPro.vue' },

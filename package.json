@@ -42,6 +42,7 @@
     "test:e2e:heavy": "node tests/run.mjs e2e --group heavy",
     "test:e2e:i18n": "node tests/run.mjs e2e --only i18n",
     "test:e2e:wechat": "node tests/run.mjs e2e --only wechat",
+    "test:e2e:appicon": "node tests/run.mjs e2e --only appicon",
     "report:kernels": "node scripts/kernel-report.mjs",
     "prune:infinityfree": "node scripts/prune-for-infinityfree.mjs"
   },

@@ -10,7 +10,8 @@ LocalForge 的测试分两层，统一由 [`run.mjs`](./run.mjs) 入口驱动，
 | --- | --- | --- |
 | `text.test.mjs` | `src/lib/text.js` | base64/hex/json/uuid/sha/jwt/正则/密码强度 |
 | `filetype.test.mjs` | `src/lib/filetype.js` | 扩展名归类、FILTER 元数据一致 |
-| `formats.test.mjs` | `src/lib/formats.js` | 46 张卡片结构 + 首页 key 5 语言运行时存在 |
+| `formats.test.mjs` | `src/lib/formats.js` | 47 张卡片结构 + 首页 key 5 语言运行时存在 |
+| `app-icon.test.mjs` | `src/lib/app-icon.js` | App 图标尺寸预设 / 无 alpha 通道 / 背景合成 / 纯 JS ZIP（19 项） |
 | `nav.test.mjs` | `src/lib/nav.js` | NAV 结构、path 唯一、分组声明、命令面板搜索 |
 | `i18n.test.mjs` | `src/lib/i18n.js` + `i18n.dev.js` | 5 语言词条齐全、插值、缺失 key 安全回退 |
 | `workflow.test.mjs` | `src/lib/workflow.js` | 工作流目标可达、WF_LABELS 5 语言齐全 |

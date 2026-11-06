@@ -62,6 +62,7 @@ const messages = {
       docConvertShort: '文档',
       wechatArticle: '公众号排版',
       wechatArticleShort: '公众号',
+      appIcon: 'App 图标生成器', appIconShort: 'App 图标',
       shareFiles: 'P2P 分享文件',
       about: '关于',
       privacy: '隐私协议',
@@ -184,6 +185,7 @@ const messages = {
       docConvertShort: 'Doc',
       wechatArticle: 'WeChat Article',
       wechatArticleShort: 'WeChat',
+      appIcon: 'App Icon Generator', appIconShort: 'App Icon',
       shareFiles: 'P2P File Share',
       about: 'About',
       privacy: 'Privacy',
@@ -271,6 +273,7 @@ const messages = {
       batch: 'バッチ処理', batchShort: 'バッチ', pdfTools: 'PDF ツール', pdfToolsShort: 'PDF', pdfPro: 'PDF 応用',
       qrCode: 'QR コードツール', qrCodeShort: 'QR', ocr: 'OCR 文字認識', ocrShort: 'OCR', hash: 'ハッシュ検証', hashShort: 'ハッシュ',
       exif: '写真プライバシー', text: 'テキスト / エンコード', docConvert: 'ドキュメント変換', docConvertShort: '文書', wechatArticle: 'WeChat 記事レイアウト', wechatArticleShort: 'WeChat',
+      appIcon: 'App アイコン生成', appIconShort: 'App アイコン',
       shareFiles: 'P2P ファイル共有', about: '概要', privacy: 'プライバシー',
     },
     group: {
@@ -316,6 +319,7 @@ const messages = {
       batch: '일괄 처리', batchShort: '일괄', pdfTools: 'PDF 도구', pdfToolsShort: 'PDF', pdfPro: 'PDF 고급',
       qrCode: 'QR 코드 도구', qrCodeShort: 'QR', ocr: 'OCR 문자 인식', ocrShort: 'OCR', hash: '해시 검증', hashShort: '해시',
       exif: '사진 개인정보 정리', text: '텍스트 / 인코딩', docConvert: '문서 변환', docConvertShort: '문서', wechatArticle: 'WeChat 기사 레이아웃', wechatArticleShort: 'WeChat',
+      appIcon: '앱 아이콘 생성기', appIconShort: '앱 아이콘',
       shareFiles: 'P2P 파일 공유', about: '정보', privacy: '개인정보',
     },
     group: {
@@ -361,6 +365,7 @@ const messages = {
       batch: 'Cola por lotes', batchShort: 'Lotes', pdfTools: 'Herramientas PDF', pdfToolsShort: 'PDF', pdfPro: 'PDF avanzado',
       qrCode: 'Herramientas QR', qrCodeShort: 'QR', ocr: 'OCR de texto', ocrShort: 'OCR', hash: 'Verificación hash', hashShort: 'Hash',
       exif: 'Privacidad de fotos', text: 'Texto / Codificación', docConvert: 'Convertir documento', docConvertShort: 'Doc', wechatArticle: 'Maquetación WeChat', wechatArticleShort: 'WeChat',
+      appIcon: 'Generador de iconos', appIconShort: 'Iconos',
       shareFiles: 'Compartir P2P', about: 'Acerca de', privacy: 'Privacidad',
     },
     group: {

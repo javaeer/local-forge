@@ -64,6 +64,7 @@ export const TOOLS = [
       { to: '/image-convert', icon: 'bi-image', titleKey: 'home.t.imgConvert', descKey: 'home.d.imgConvert', title: '图片格式转换', desc: 'PNG/JPG/WEBP/AVIF 互转（浏览器原生解码）' },
       { to: '/image-convert?mode=compress', icon: 'bi-badge-ad', titleKey: 'home.t.imgCompress', descKey: 'home.d.imgCompress', title: '压缩图片', desc: 'PNG 走 upng 有损量化保透明（类 TinyPNG），JPG/WEBP/AVIF 走原生编码' },
       { to: '/image-convert?mode=view', icon: 'bi-eye', titleKey: 'home.t.imgView', descKey: 'home.d.imgView', title: '查看图片', desc: '本地预览，不出户' },
+      { to: '/app-icon', icon: 'bi-app-indicator', titleKey: 'home.t.appIcon', descKey: 'home.d.appIcon', title: 'App 图标生成器', desc: '已有 Logo 一次裁剪/留白，批量导出 App Store / Google Play / iOS / Android 预设 PNG' },
     ],
   },
   {
