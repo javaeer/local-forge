@@ -17,23 +17,23 @@ import { VIEW_MESSAGES } from './i18n.views.js'
 // 通用词条：导航项与分组名
 export const DEV_MESSAGES = {
   'zh-CN': {
-    nav: { svgTool: 'SVG 工具箱', svgToolShort: 'SVG', cssReference: 'CSS 速查表', cssReferenceShort: 'CSS' },
+    nav: { svgTool: 'SVG 工具箱', svgToolShort: 'SVG', wechatSearch: '公众号文章检索', wechatSearchShort: '检索', cssReference: 'CSS 速查表', cssReferenceShort: 'CSS' },
     group: { dev: '开发者工具' },
   },
   en: {
-    nav: { svgTool: 'SVG Toolkit', svgToolShort: 'SVG', cssReference: 'CSS Reference', cssReferenceShort: 'CSS' },
+    nav: { svgTool: 'SVG Toolkit', svgToolShort: 'SVG', wechatSearch: 'WeChat Article Search', wechatSearchShort: 'Search', cssReference: 'CSS Reference', cssReferenceShort: 'CSS' },
     group: { dev: 'Developer Tools' },
   },
   'ja-JP': {
-    nav: { svgTool: 'SVG ツール', svgToolShort: 'SVG', cssReference: 'CSS リファレンス', cssReferenceShort: 'CSS' },
+    nav: { svgTool: 'SVG ツール', svgToolShort: 'SVG', wechatSearch: '微信公衆号の記事検索', wechatSearchShort: '検索', cssReference: 'CSS リファレンス', cssReferenceShort: 'CSS' },
     group: { dev: '開発者ツール' },
   },
   'ko-KR': {
-    nav: { svgTool: 'SVG 도구', svgToolShort: 'SVG', cssReference: 'CSS 참조', cssReferenceShort: 'CSS' },
+    nav: { svgTool: 'SVG 도구', svgToolShort: 'SVG', wechatSearch: '위챗 공중호 글 검색', wechatSearchShort: '검색', cssReference: 'CSS 참조', cssReferenceShort: 'CSS' },
     group: { dev: '개발자 도구' },
   },
   'es-ES': {
-    nav: { svgTool: 'Herramientas SVG', svgToolShort: 'SVG', cssReference: 'Referencia CSS', cssReferenceShort: 'CSS' },
+    nav: { svgTool: 'Herramientas SVG', svgToolShort: 'SVG', wechatSearch: 'Búsqueda de artículos de WeChat', wechatSearchShort: 'Buscar', cssReference: 'Referencia CSS', cssReferenceShort: 'CSS' },
     group: { dev: 'Herramientas de desarrollo' },
   },
 }

@@ -30,6 +30,7 @@ export const NAV = [
   // 文档转换属开发者向能力，曾误归入「校验 / 隐私」，这里纠正为「开发者工具」
   { path: '/doc-convert', title: '文档转换', short: '文档', titleKey: 'nav.docConvert', shortKey: 'nav.docConvertShort', icon: 'bi-file-earmark-arrow-down', group: '开发者工具', groupKey: 'group.dev', keywords: 'markdown pdf html 文档 转换 导出 md' },
   { path: '/wechat-article', title: '公众号排版', short: '公众号', titleKey: 'nav.wechatArticle', shortKey: 'nav.wechatArticleShort', icon: 'bi-wechat', group: '开发者工具', groupKey: 'group.dev', keywords: 'markdown 微信 公众号 排版 内联样式 剪贴板 刊头 wechat mp 图文' },
+  { path: '/wechat-search', title: '公众号检索', short: '检索', titleKey: 'nav.wechatSearch', shortKey: 'nav.wechatSearchShort', icon: 'bi-search', group: '开发者工具', groupKey: 'group.dev', keywords: '公众号 检索 搜索 合集 album 文章列表 导出 冀教版 版本 wechat search' },
   { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', titleKey: 'nav.svgTool', shortKey: 'nav.svgToolShort', icon: 'bi-bounding-box', group: '开发者工具', groupKey: 'group.dev', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
   { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', titleKey: 'nav.cssReference', shortKey: 'nav.cssReferenceShort', icon: 'bi-palette', group: '开发者工具', groupKey: 'group.dev', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },

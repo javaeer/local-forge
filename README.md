@@ -41,6 +41,7 @@
 | **批处理队列** | 一次拖入多份文件，套用同一操作 + 预设（网页优化 / 极限压缩 / 去 EXIF / 改尺寸 / 水印 / PDF 瘦身 / 打包），串行执行、逐项进度、可取消、结果可打包 ZIP | 复用各引擎，`src/lib/batch.js` |
 | **文档转换** | Markdown → PDF / HTML（自带零依赖解析器）；含中日韩时 PDF 自动切换 canvas 渲染通道，无需内嵌字体 | 自研 `docconvert.js` + pdf-lib |
 | **公众号排版** | Markdown → 微信兼容的**纯内联样式 HTML**：三层解耦内核 + 5 端输出（微信/知乎/掘金/飞书/邮件）、4 套文章模板、14 个结构化模块、自定义主题 JSON 导入导出、图片压缩/粘贴截图/SVG→PNG、元数据校对、code 化诊断（5 语言）、校验报告、离线发布包、批量排版、草稿历史，一键复制富文本到剪贴板 | 自研零依赖内核 [`src/lib/wechat.js`](src/lib/wechat.js) + [`src/lib/wechat-extra.js`](src/lib/wechat-extra.js)（无新增依赖、不调用任何微信接口、不联网） |
+| **公众号检索** | 公众号没有公开搜索接口，本工具以**合集（album）**为入口：从任意一篇文章反查出 `__biz + album_id`，翻页拉全整本合集的标题/时间/链接，本地关键词过滤（空格=AND、`-词`=排除）、版本/年级/学科自动归类、正文图片改写为 `/0` 原图直链；结果导出 CSV / Markdown / JSON。浏览器端走「代理 / 粘贴」两条路（明示 CORS 约束），Node CLI 无此限制 | 自研零依赖纯内核 [`src/lib/wechat-search.js`](src/lib/wechat-search.js) + CLI [`scripts/wechat-search.mjs`](scripts/wechat-search.mjs)（解析不联网） |
 | **App 图标生成** | 已有 Logo 一次裁剪/留白，批量导出 **19 个尺寸**：App Store 1024 / Google Play 512 / iOS 传统 12 档 / Android 5 档；裁剪填满或纯色背景、拖放与粘贴、实时预览、单文件与扁平 ZIP 下载、尺寸/体积/alpha 通道自检 | 自研零依赖纯内核 [`src/lib/app-icon.js`](src/lib/app-icon.js)（Node 可单测）+ `upng-js`（**App Store 产物输出 colorType=2，无 alpha 通道**，规避 ITMS-90717）；复用 `image.js` 解码与 `wechat-extra.js` 的纯 JS ZIP |
 | **PDF** | 重压缩（内嵌图像重压 + 对象流去重）／**逐页预览（pdf.js 本地渲染）／合并多个 PDF／拆分为单页** | [pdf-lib](https://github.com/Hopding/pdf-lib) + [pdfjs-dist](https://github.com/mozilla/pdf.js) |
 | **分享 / 安全** | WebRTC P2P 直传（手动 SDP 信令，无后端）；ZIP 密码字典恢复；归档修复 | WebRTC / 本地引擎 |
@@ -189,18 +190,22 @@ src/lib/pdf.js       PDF 重压缩
 src/lib/formats.js   格式与压缩选项 + 完整工具目录
 src/lib/wechat.js    公众号排版内核：AST / 样式映射 / 微信渲染 / code 化诊断（零依赖纯函数）
 src/lib/wechat-extra.js  排版扩展层：多端输出 / 模板 / 主题 IO / 元数据 / 纯 JS ZIP 发布包
+src/lib/wechat-search.js  公众号检索内核：文章/合集解析 / 翻页 / 过滤 / 原图改写 / 取数器（零依赖纯函数）
 src/lib/app-icon.js  App 图标内核：19 尺寸预设 / 面积平均缩放 / 去 alpha 合成 / 纯 JS ZIP（零依赖纯函数）
 src/views/           Home / ZipCompress / ZipExtract / ArchiveTool /
                      MediaConvert / ImageConvert / AppIcon / PdfTools / DocConvert /
-                     WechatArticle / ShareFiles / PasswordRecovery / Repair /
+                     WechatArticle / WechatSearch / ShareFiles / PasswordRecovery / Repair /
                      About / Privacy
 src/components/      DropZone.vue 拖拽上传 / AdSlot.vue 广告位预留（接 AdSense 用）
 tests/unit/wechat.test.mjs          公众号排版内核单测 16 项（Node 原生 test，无需浏览器）
 tests/unit/wechat-extra.test.mjs    排版扩展层单测 25 项
 tests/unit/app-icon.test.mjs        App 图标内核单测 19 项（含无 alpha 通道 / ZIP 结构）
 _e2e_wechat.mjs                    公众号排版浏览器端 e2e（16 项断言）
+_e2e_wechat_search.mjs             公众号检索浏览器端 e2e（17 项断言，零跨域请求）
+scripts/wechat-search.mjs          公众号检索 CLI：合集翻页 / 关键词检索 / 导出（Node 无 CORS 限制）
 _e2e_app_icon.mjs                  App 图标浏览器端 e2e（21 项断言，含下载 ZIP 字节解析）
 docs/wechat-article-local-plan.md   纯本地化落地与完整实现记录
+docs/wechat-search-local-plan.md   公众号检索落地记录（合集协议 / CORS 三条路 / 限速策略）
 docs/app-icon-local-plan.md         App 图标生成器落地记录与平台规范对照
 public/libarchive/   libarchive.js 的 worker 与 wasm（不被打包，置于 public）
 public/ffmpeg/       ffmpeg 多线程内核（本地打包，离线可用）

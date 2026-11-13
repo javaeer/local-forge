@@ -16,6 +16,7 @@ export const SUITES = [
   { id: 'progress', file: '_e2e_progress.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '阶段化进度条' },
   { id: 'doc', file: '_e2e_doc.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '文档转换（Markdown → PDF/HTML）' },
   { id: 'wechat', file: '_e2e_wechat.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '公众号排版（产物结构 · 规范自检 · 多端输出 · 模板/草稿 · 零跨域请求）' },
+  { id: 'wechatsearch', file: '_e2e_wechat_search.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '公众号文章检索（合集解析 · 关键词过滤 · 原图改写 · 零跨域请求）' },
   { id: 'appicon', file: '_e2e_app_icon.mjs', server: 'preview', group: 'core', timeout: 180000, desc: 'App 图标生成器（尺寸预设 · 无 alpha 通道 · 裁剪/背景 · ZIP 下载 · 零跨域请求）' },
   { id: 'batch', file: '_e2e_batch.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '批处理队列' },
   { id: 'imagepro', file: '_e2e_imagepro.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '音视频进阶（GIF/抽帧/裁剪）' },
