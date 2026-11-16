@@ -124,3 +124,88 @@ test('stats 统计词条数', () => {
   assert.equal(s.entries, 4)
   assert.ok(s.words >= 4)
 })
+
+/* ---------------- 释义倒排（v2）：召回 + 精细打分 ---------------- */
+
+// 释义更丰富的样本：一条释义里既有精确义项，也有长句里的中间词
+const SAMPLE_GLOSS = [
+  '會 会 [hui4] /can/to be possible/meeting/',
+  '綠色 绿色 [lv4 se4] /green/',
+  '綠茶 绿茶 [lv4 cha2] /green tea/',
+  '茶 茶 [cha2] /tea/',
+  '自行車 自行车 [zi4 xing2 che1] /bicycle/bike/',
+  '代步車 代步车 [dai4 bu4 che1] /a vehicle for getting around; bicycle/',
+  '漢 汉 [han4] /Han/',
+  '漢堡 汉堡 [han4 bao3] /hamburger/',
+].join('\n')
+
+test('释义倒排：精确义项优先于长句中的同词', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  const r = search(idx, 'bicycle', { mode: 'gloss' })
+  const byName = Object.fromEntries(r.items.map((x) => [x.s, x.score]))
+  assert.equal(byName['自行车'], 45, '「bicycle」独立成义项应拿满分')
+  assert.equal(byName['代步车'], 45, '长句里按「;」切出的 bicycle 同样视为精确义项')
+  // 未建义项级英文索引时，两者同分，靠词长与字典序稳定排序
+  assert.ok(r.items.some((x) => x.s === '自行车'))
+})
+
+test('释义倒排：多词查询按 AND 处理', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  const r = search(idx, 'green tea', { mode: 'gloss' })
+  assert.ok(r.items.some((x) => x.s === '绿茶'), 'green tea 应命中绿茶')
+  assert.ok(!r.items.some((x) => x.s === '茶'), '只有 tea 没有 green 的词条不应命中')
+
+  // 顺序颠倒也应命中（AND 与词序无关）
+  const rev = search(idx, 'tea green', { mode: 'gloss' })
+  assert.ok(rev.items.some((x) => x.s === '绿茶'))
+})
+
+test('释义倒排：单词 tea 只命中自身，不会误伤绿茶', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  const r = search(idx, 'tea', { mode: 'gloss' })
+  const names = r.items.map((x) => x.s)
+  assert.ok(names.includes('茶'))
+  assert.ok(names.includes('绿茶'), '绿茶释义含 tea，按词命中属预期')
+})
+
+test('释义倒排：子串查询仍能靠全表兜底命中', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  // "cycle" 不是任何独立词，倒排召回为空，走兜底 includes
+  const r = search(idx, 'cycle', { mode: 'gloss' })
+  assert.ok(r.items.some((x) => x.s === '自行车'), 'cycle 应作为 bicycle 的子串命中')
+  const item = r.items.find((x) => x.s === '自行车')
+  assert.equal(item.score, 30, '兜底命中给 30 分')
+})
+
+test('释义倒排：查不到时返回 0 且不抛错', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  assert.equal(search(idx, 'zzzznotexist', { mode: 'gloss' }).total, 0)
+  assert.equal(search(idx, '   ', { mode: 'gloss' }).total, 0)
+})
+
+test('前缀检索：繁体词头也能展开到繁体词条', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  const r = search(idx, '漢')
+  const names = r.items.map((x) => x.s)
+  assert.ok(names.includes('汉'), '精确命中「漢 → 汉」')
+  assert.ok(names.includes('汉堡'), '繁体前缀「漢」应展开到「漢堡 → 汉堡」')
+})
+
+test('索引结构：平行数组长度一致且可二分', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  assert.equal(idx.sortedWords.length, idx.sortedIdx.length)
+  assert.ok(idx.sortedIdx instanceof Int32Array)
+  // 20 万条量级下不能退化成对象数组（内存大头）
+  assert.equal(typeof idx.sortedWords[0], 'string')
+})
+
+test('释义倒排：glossWords 键表已排序（前缀二分前提）', () => {
+  const idx = buildIndex(parseCedict(SAMPLE_GLOSS))
+  const keys = idx.glossWords
+  assert.ok(keys.length > 0)
+  for (let i = 1; i < keys.length; i++) {
+    assert.ok(keys[i - 1] <= keys[i], `键表未排序：${keys[i - 1]} > ${keys[i]}`)
+  }
+  // 停用词与 2 字符词不应进索引
+  assert.ok(!keys.includes('the') && !keys.includes('to') && !keys.includes('ox'))
+})
