@@ -126,6 +126,11 @@ CC-CEDICT 是汉英词典，**天生没有音标**。给英文单词标音标没
 美式 125,927 词 + 英式 65,119 词，gzip 后共 ~1.3 MB，随 `scripts/fetch-dict.mjs` 与
 主词库一起拉取、校验（`--only ipa-us` / `--only ipa-uk`）。
 
+> 拉取注意：ipa-dict 的源文件是**纯文本**（.txt），CC-CEDICT 的源是 .gz。
+> fetch 脚本按魔数（`1f 8b`）自动识别，纯文本源下载后**本地压缩成 gzip 再落盘**，
+> 保证快照格式与 `*.txt.gz` 文件名一致——不然任何新克隆第一次 `pnpm dict:fetch` 就会撞上
+> 「incorrect header check」。
+
 - 只在查询**单个纯英文词**（`isSingleEnglishWord`，允许撇号/连字符、不含空格）时，
   Worker 顺带把读音附在检索结果上，主线程渲染音标卡（美 / 英两个标签 + 朗读按钮）；
 - 朗读用 Web Speech API（系统本地语音，零外发请求、零依赖）；

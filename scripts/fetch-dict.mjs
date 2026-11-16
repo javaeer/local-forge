@@ -18,7 +18,7 @@
 //   2. 条数下限
 //   3. 抽样字段完整
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs'
-import { gunzipSync } from 'node:zlib'
+import { gunzipSync, gzipSync } from 'node:zlib'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseCedict } from '../src/lib/dict.js'
@@ -84,13 +84,23 @@ const flag = (n, d = '') => {
 }
 const has = (n) => args.includes('--' + n)
 
-function verifyBuf(buf, src, label) {
-  let text
+// 按魔数（1f 8b）自动识别 gzip / 纯文本：CC-CEDICT 源是 .gz，ipa-dict 源是 .txt。
+// 统一落盘为 gzip（与 public/dict/*.gz 文件名、浏览器端 maybeGunzip 保持一致）。
+function isGz(buf) {
+  return buf.length > 2 && buf[0] === 0x1f && buf[1] === 0x8b
+}
+
+function decodeBuf(buf, label) {
+  if (!isGz(buf)) return buf.toString('utf8')
   try {
-    text = gunzipSync(buf).toString('utf8')
+    return gunzipSync(buf).toString('utf8')
   } catch (e) {
     throw new Error(`${label} 不是完整的 gzip：${e.message}（下载多半被截断，重试即可）`)
   }
+}
+
+function verifyBuf(buf, src, label) {
+  const text = decodeBuf(buf, label)
   const r = src.verify(text)
   if (r.count < src.min) throw new Error(`${label} 条数异常：${r.count} < ${src.min}`)
   return r
@@ -131,11 +141,13 @@ async function handle(src) {
   if (has('check')) return true
 
   const buf = await download(src)
-  console.log(`  收到 ${(buf.length / 1048576).toFixed(2)} MB`)
+  console.log(`  收到 ${(buf.length / 1048576).toFixed(2)} MB${isGz(buf) ? '（gzip）' : '（纯文本）'}`)
   const r = verifyBuf(buf, src, '下载结果')
   mkdirSync(dirname(outPath), { recursive: true })
-  writeFileSync(outPath, buf)
-  console.log(`✓ 已写入 ${src.out} · ${r.count.toLocaleString()} 条 · 抽样 ${src.sampleText(r.sample)}`)
+  // 源是纯文本时本地压缩成 gzip 再落盘；源本身是 gz 则原样写入
+  const out = isGz(buf) ? buf : gzipSync(Buffer.from(decodeBuf(buf, '下载结果'), 'utf8'), { level: 9 })
+  writeFileSync(outPath, out)
+  console.log(`✓ 已写入 ${src.out}（${(out.length / 1048576).toFixed(2)} MB）· ${r.count.toLocaleString()} 条 · 抽样 ${src.sampleText(r.sample)}`)
   return true
 }
 
