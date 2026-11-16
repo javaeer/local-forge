@@ -71,6 +71,10 @@ async function lookup(q, mode) {
 {
   const r = await lookup('bicycle', 'gloss')
   ok(r.words.includes('自行车'), '英文释义 bicycle → 自行车', `total=${r.total}`)
+  const ipa = await page.$eval('.ipa-card .ipa-val', (el) => el.textContent).catch(() => '')
+  ok(/^\/.+\/$/.test(ipa), '英文单词附带 IPA 音标卡（美式）', ipa)
+  const hasPlay = await page.$('.ipa-card .ipa-play') !== null
+  ok(hasPlay, '音标卡带朗读按钮')
 }
 {
   const r = await lookup('绿仓', 'fuzzy')

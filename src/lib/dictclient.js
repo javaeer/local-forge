@@ -53,20 +53,25 @@ function call(op, args = {}) {
 
 /* ---------------- 主线程降级路径（内核懒加载） ---------------- */
 
-let main = null // { index }
+let main = null // { index, ipa }
 const mainLib = () => import('./dict.js')
 
-export async function loadDict(text, name) {
-  const r = await call('load', { text, name }).catch(() => null)
+export async function loadDict(text, name, ipaTexts) {
+  const r = await call('load', { text, name, ipaTexts }).catch((e) => { console.warn('[dict] worker load 失败，降级主线程:', e && e.message); return null })
   if (r) return { ...r, thread: 'worker' }
   const lib = await mainLib()
   const t0 = performance.now()
   const entries = lib.parseDict(text, name || '')
   if (!entries.length) throw new Error('解析结果为空，请检查词库格式')
-  main = { index: lib.buildIndex(entries) }
+  const ipa = {}
+  if (ipaTexts) {
+    for (const v of ['us', 'uk']) if (ipaTexts[v]) ipa[v] = lib.buildIpaIndex(ipaTexts[v])
+  }
+  main = { index: lib.buildIndex(entries), ipa }
   return {
     entries: main.index.entries.length,
     words: lib.stats(main.index).words,
+    ipaWords: ipa.us ? ipa.us.size : 0,
     ms: Math.round(performance.now() - t0),
     thread: 'main',
   }
@@ -77,5 +82,12 @@ export async function dictSearch(q, mode = 'auto', limit = 60) {
   if (r) return { ...r, thread: 'worker' }
   if (!main) return null
   const lib = await mainLib()
-  return { ...lib.search(main.index, q, { mode, limit }), thread: 'main' }
+  const out = { ...lib.search(main.index, q, { mode, limit }), thread: 'main' }
+  if (main.ipa && lib.isSingleEnglishWord(q)) {
+    const lq = q.trim().toLowerCase()
+    const hit = {}
+    for (const v of ['us', 'uk']) if (main.ipa[v] && main.ipa[v].has(lq)) hit[v] = main.ipa[v].get(lq)
+    if (Object.keys(hit).length) out.ipa = hit
+  }
+  return out
 }

@@ -5,15 +5,17 @@ import HelpTip from '../components/HelpTip.vue'
 // 内核不进主线程：装载 / 建索引 / 检索都在后台线程，见 dictclient.js
 import { loadDict, dictSearch, MODES } from '../lib/dictclient.js'
 import { saveLexicon, listLexicons, deleteLexicon } from '../lib/dictstore.js'
+import { precacheCores, coreStatus, swSupported } from '../lib/offline.js'
 import { pushToast } from '../lib/toast.js'
 
 /* ---------------- 状态 ---------------- */
 const loading = ref(false)
 const error = ref('')
-const info = ref({ entries: 0, words: 0 })
+const info = ref({ entries: 0, words: 0, ipaWords: 0 })
 const thread = ref('') // worker=后台线程 / main=降级主线程
 const sourceName = ref('')
 const buildMs = ref(0)
+const ipaTexts = ref(null) // { us, uk } 原始音标文本（装载后保留，换词库时复用）
 const query = ref('')
 const mode = ref('auto')
 const res = ref(null)
@@ -52,8 +54,12 @@ async function maybeGunzip(buf) {
 async function applyEntries(text, name) {
   // 让浏览器先把 loading 画出来，再做重活
   await new Promise((r) => setTimeout(r, 16))
-  const r = await loadDict(text, name)
-  info.value = { entries: r.entries, words: r.words }
+  // ref 会把对象深层包成 reactive Proxy，而 Proxy 无法 structured-clone，
+  // postMessage 会抛 DataCloneError —— 传给 Worker 前必须展开成纯对象
+  const v = ipaTexts.value
+  const ipa = v ? { us: v.us || '', uk: v.uk || '' } : null
+  const r = await loadDict(text, name, ipa)
+  info.value = { entries: r.entries, words: r.words, ipaWords: r.ipaWords || 0 }
   buildMs.value = r.ms
   thread.value = r.thread
   sourceName.value = name
@@ -64,16 +70,36 @@ async function loadBuiltin() {
   loading.value = true
   error.value = ''
   try {
-    const url = `${import.meta.env.BASE_URL}dict/cc-cedict.txt.gz`
-    const r = await fetch(url)
-    if (!r.ok) throw new Error(`内置词库加载失败（HTTP ${r.status}）：${url}`)
-    const text = await maybeGunzip(await r.arrayBuffer())
+    const base = import.meta.env.BASE_URL
+    // 主词库 + 两份 IPA 音标库并行拉取；音标库失败不阻塞主流程（音标是增强，不是依赖）
+    const [main, us, uk] = await Promise.all([
+      fetch(`${base}dict/cc-cedict.txt.gz`),
+      fetch(`${base}dict/en-ipa-us.txt.gz`).catch(() => null),
+      fetch(`${base}dict/en-ipa-uk.txt.gz`).catch(() => null),
+    ])
+    if (!main.ok) throw new Error(`内置词库加载失败（HTTP ${main.status}）：${base}dict/cc-cedict.txt.gz`)
+    const text = await maybeGunzip(await main.arrayBuffer())
+    ipaTexts.value = {
+      us: us && us.ok ? await maybeGunzip(await us.arrayBuffer()) : '',
+      uk: uk && uk.ok ? await maybeGunzip(await uk.arrayBuffer()) : '',
+    }
     await applyEntries(text, 'CC-CEDICT（内置）')
+    precacheDict() // 后台静默预缓存词库（SW 管辖，访一次词典即可永久离线）
   } catch (e) {
     error.value = `${e.message}。可先在下方导入一份 CC-CEDICT / JSONL / TSV 词库继续使用。`
   } finally {
     loading.value = false
   }
+}
+
+/* ---------------- 词库预缓存（与 ffmpeg / tesseract 内核同一机制） ---------------- */
+async function precacheDict() {
+  try {
+    if (!swSupported()) return
+    const st = await coreStatus()
+    if (st && st.groups && st.groups.dict && st.groups.dict.ready) return
+    await precacheCores(['dict'])
+  } catch { /* SW 不可用就当没这回事，HTTP 缓存仍会兜底 */ }
 }
 
 /* ---------------- 检索（防抖 + 过期响应丢弃） ---------------- */
@@ -151,6 +177,19 @@ async function removeSaved(id) {
 
 /* ---------------- 交互 ---------------- */
 function toggle(i) { openIdx.value = openIdx.value === i ? -1 : i }
+
+// 系统本地语音朗读（Web Speech API，零依赖、零外发请求；无语音包时静默失败）
+function speak(variant) {
+  if (!('speechSynthesis' in window)) { pushToast('err', '此浏览器不支持语音朗读'); return }
+  try {
+    speechSynthesis.cancel()
+    const u = new SpeechSynthesisUtterance(res.value.query)
+    u.lang = variant === 'us' ? 'en-US' : 'en-GB'
+    u.rate = 0.9
+    speechSynthesis.speak(u)
+  } catch { pushToast('err', '朗读失败') }
+}
+
 async function copyEntry(it) {
   const lines = [`${it.s}${it.t && it.t !== it.s ? `（${it.t}）` : ''}  [${it.pm || it.p}]`, ...it.d.map((x, i) => `${i + 1}. ${x}`)]
   try {
@@ -224,7 +263,8 @@ onBeforeUnmount(() => clearTimeout(timer))
       <template v-if="info.entries">
         <i class="bi bi-database-check"></i>
         词库：<b>{{ sourceName }}</b> · <b>{{ info.entries.toLocaleString() }}</b> 条 ·
-        索引构建 <b>{{ buildMs }} ms</b>（<span class="thread-badge">{{ thread === 'worker' ? '后台线程' : '主线程' }}</span>）· 全部本地
+        索引构建 <b>{{ buildMs }} ms</b>（<span class="thread-badge">{{ thread === 'worker' ? '后台线程' : '主线程' }}</span>）
+        <template v-if="info.ipaWords"> · 音标库 <b>{{ info.ipaWords.toLocaleString() }}</b> 词</template> · 全部本地
       </template>
       <template v-else-if="loading">正在装载词库并建索引…</template>
       <template v-else>词库尚未就绪</template>
@@ -235,9 +275,24 @@ onBeforeUnmount(() => clearTimeout(timer))
   </div>
 
   <!-- 结果 -->
-  <div v-if="res" class="result-bar">
+  <div v-if="res && res.total" class="result-bar">
     <span><b>{{ res.total.toLocaleString() }}</b> 条结果 · {{ res.took }} ms</span>
     <span class="mono-note">查询「{{ res.query }}」</span>
+  </div>
+
+  <!-- 英语音标卡：查询单个英文词时由音标库给出（美式 / 英式） -->
+  <div v-if="res && res.ipa" class="ipa-card">
+    <div v-for="(ipas, v) in res.ipa" :key="v" class="ipa-row">
+      <span class="ipa-tag">{{ v === 'us' ? '美' : '英' }}</span>
+      <span class="ipa-val">/{{ ipas[0] }}/</span>
+      <span v-if="ipas.length > 1" class="ipa-alt" :title="ipas.map((x) => '/' + x + '/').join('  ')">
+        另有 {{ ipas.length - 1 }} 种读音
+      </span>
+      <button class="ipa-play" title="朗读单词" @click="speak(v)">
+        <i class="bi bi-volume-up-fill"></i>
+      </button>
+    </div>
+    <span class="ipa-src">音标数据：open-dict-data/ipa-dict（MIT）· 朗读使用系统本地语音</span>
   </div>
 
   <div v-if="res && res.items.length" class="dict-list">
@@ -351,6 +406,26 @@ onBeforeUnmount(() => clearTimeout(timer))
   font-size: 11px; padding: 1px 7px; border-radius: 999px;
   border: 1px solid var(--line-strong); color: var(--muted);
 }
+
+.ipa-card {
+  display: flex; flex-direction: column; gap: 6px;
+  margin: 0 0 12px; padding: 12px 16px;
+  border: 1px solid rgba(52, 211, 153, .35); border-radius: var(--radius-sm);
+  background: rgba(52, 211, 153, .06);
+}
+.ipa-row { display: flex; align-items: center; gap: 10px; }
+.ipa-tag {
+  font-size: 11px; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid rgba(52, 211, 153, .5); color: var(--accent-2, #34d399);
+}
+.ipa-val { font-family: var(--mono); font-size: 15px; color: var(--txt); letter-spacing: .3px; }
+.ipa-alt { font-size: 11.5px; color: var(--faint); cursor: help; }
+.ipa-play {
+  margin-left: auto; border: none; background: none; cursor: pointer;
+  color: var(--accent); font-size: 15px; padding: 2px 6px;
+}
+.ipa-play:hover { transform: scale(1.15); }
+.ipa-src { font-size: 11px; color: var(--faint); }
 
 .saved-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
 .saved-chips { display: flex; flex-wrap: wrap; gap: 6px; }

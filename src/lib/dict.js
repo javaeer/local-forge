@@ -539,6 +539,37 @@ export function stats(index) {
   return { entries: index.entries.length, words: index.byWord.size, builtAt: index.builtAt }
 }
 
+/* ---------------- 英语 IPA 音标（open-dict-data/ipa-dict，MIT） ----------------
+ * 行格式：word⇥/ipa1/, /ipa2/（一条词可有多个读音；# 开头为注释行）。
+ * 与主词库完全独立：CC-CEDICT 是汉英词典、天生没有音标，音标查英文词本身。
+ * 只在查询单个纯英文词（无空格）时使用，索引体积约 3–4 MB 内存。
+ */
+export function buildIpaIndex(text, map = new Map()) {
+  const lines = String(text ?? '').split(/\r?\n/)
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (!line || line.charCodeAt(0) === 35 /* # */) continue
+    const tab = line.indexOf('\t')
+    if (tab <= 0) continue
+    const w = line.slice(0, tab).toLowerCase()
+    const ipas = line
+      .slice(tab + 1)
+      .split(',')
+      .map((x) => x.trim().replace(/^\/+|\/+$/g, ''))
+      .filter(Boolean)
+    if (!w || !ipas.length) continue
+    const arr = map.get(w)
+    if (arr) arr.push(...ipas)
+    else map.set(w, ipas)
+  }
+  return map
+}
+
+// 查询单词是否走音标路径：单个纯英文词（允许撇号 / 连字符），不含空格
+export function isSingleEnglishWord(q) {
+  return /^[a-zA-Z][a-zA-Z'’-]*$/.test(String(q ?? '').trim())
+}
+
 export async function selfTest() {
   const items = []
   const T = async (id, title, fn) => {
@@ -638,6 +669,17 @@ export async function selfTest() {
     const list = parseJsonl(line + '\n')
     if (list.length !== 1 || list[0].s !== '龙' || list[0].d[0] !== 'dragon') throw new Error('JSONL 解析错误')
     return 'word/senses 字段兼容'
+  })
+
+  await T('ipa', '英语 IPA 音标索引', async () => {
+    const ipa = buildIpaIndex("Bicycle\t/ˈbaɪsɪkəɫ/, /ˈbaɪsɪkl/\n# 注释行\nbadline-no-tab")
+    if (!ipa.get('bicycle') || ipa.get('bicycle').length !== 2) throw new Error('IPA 解析错误：' + ipa.get('bicycle'))
+    buildIpaIndex('bicycle\t/ˈbaɪ.sɪ.kəl/', ipa) // 二次构建应累积读音
+    if (ipa.get('bicycle').length !== 3) throw new Error('IPA 累积错误')
+    if (!isSingleEnglishWord('bicycle') || isSingleEnglishWord('green tea') || isSingleEnglishWord('绿色')) {
+      throw new Error('单词判定错误')
+    }
+    return 'bicycle → 3 个读音 · green tea 不走音标'
   })
 
   return { module: '离线词典', items }

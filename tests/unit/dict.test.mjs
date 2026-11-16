@@ -5,6 +5,7 @@ import {
   toneMark, stripTones, pinyinInitials,
   parseCedict, parseJsonl, parseTsv, parseDict,
   buildIndex, search, editDistance, stats,
+  buildIpaIndex, isSingleEnglishWord,
 } from '../../src/lib/dict.js'
 
 const SAMPLE = [
@@ -208,4 +209,31 @@ test('释义倒排：glossWords 键表已排序（前缀二分前提）', () => 
   }
   // 停用词与 2 字符词不应进索引
   assert.ok(!keys.includes('the') && !keys.includes('to') && !keys.includes('ox'))
+})
+
+/* ---------------- 英语 IPA 音标索引 ---------------- */
+
+test('buildIpaIndex：基础解析（word⇥/ipa/）', () => {
+  const m = buildIpaIndex("bicycle\t/ˈbaɪsɪkəɫ/\nabout\t/əˈbaʊt/, /əˈbæʊt/")
+  assert.deepEqual(m.get('bicycle'), ['ˈbaɪsɪkəɫ'])
+  assert.deepEqual(m.get('about'), ['əˈbaʊt', 'əˈbæʊt'], '逗号分隔的多读音应拆开')
+})
+
+test('buildIpaIndex：小写归一与噪声容忍', () => {
+  const m = buildIpaIndex("Bicycle\t/ˈbaɪsɪkəɫ/\n# 注释行\n\nbadline\t\nx")
+  assert.ok(m.has('bicycle'), '大写词头应归一为小写')
+  assert.equal(m.size, 1, '注释行 / 空行 / 无 IPA 的行应被跳过')
+})
+
+test('buildIpaIndex：传入已有 Map 时累积读音', () => {
+  const m = buildIpaIndex("bicycle\t/ˈbaɪsɪkəɫ/")
+  buildIpaIndex("bicycle\t/ˈbaɪ.sɪ.kəl/", m)
+  assert.equal(m.get('bicycle').length, 2, '美式 + 英式两次构建应累积到同一词')
+})
+
+test('isSingleEnglishWord：只放行单个纯英文词', () => {
+  for (const ok of ['bicycle', "isn't", 'e-mail', 'A']) assert.ok(isSingleEnglishWord(ok), ok)
+  for (const no of ['green tea', '绿色', 'bicycle!', '', ' ', '3d']) {
+    assert.ok(!isSingleEnglishWord(no), `应拒绝：${JSON.stringify(no)}`)
+  }
 })

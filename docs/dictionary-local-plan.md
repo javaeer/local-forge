@@ -114,6 +114,31 @@ v1 的结论「索引不落库」过于一刀切，v2 又一度想给索引上�
   动态 `import('./dict.js')` 在主线程跑同一套逻辑。`dictclient.js` 刻意不做静态
   import 内核——否则内核会被打进主包，Worker 化就白做了；
 - 视图层用请求序号丢弃过期响应（防抖间隔内的旧查询不回写 UI）。
+- **踩过的坑（v3）**：Vue 的 `ref()` 会把对象深层包成 reactive Proxy，而 Proxy 无法
+  structured-clone，`worker.postMessage({ ipaTexts })` 直接抛 `DataCloneError`。
+  传给 Worker 的一切必须先展开成纯对象。这个错误被客户端的降级逻辑**静默吞掉**，
+  症状只是「悄悄变回主线程」——为此在降级路径上加了一条 `console.warn`，别删。
+
+### 3.8 英语 IPA 音标：独立数据源，与主词库解耦
+
+CC-CEDICT 是汉英词典，**天生没有音标**。给英文单词标音标没有用「更大的词典」解决，
+而是接一份独立的开源音标库：[open-dict-data/ipa-dict](https://github.com/open-dict-data/ipa-dict)（MIT），
+美式 125,927 词 + 英式 65,119 词，gzip 后共 ~1.3 MB，随 `scripts/fetch-dict.mjs` 与
+主词库一起拉取、校验（`--only ipa-us` / `--only ipa-uk`）。
+
+- 只在查询**单个纯英文词**（`isSingleEnglishWord`，允许撇号/连字符、不含空格）时，
+  Worker 顺带把读音附在检索结果上，主线程渲染音标卡（美 / 英两个标签 + 朗读按钮）；
+- 朗读用 Web Speech API（系统本地语音，零外发请求、零依赖）；
+- 两条音标流独立累积：美式与英式各自建 `Map`，同一词读音合并在一张卡里展示。
+
+### 3.9 词库进 SW 预缓存清单（与其他内核同一待遇）
+
+`public/sw.js` 的 `CORE_GROUPS` 新增 `dict` 组（三份 gz，约 5.5 MB）；
+`src/lib/offline.js` 的 `CORE_GROUPS_META` 同步注册（首页离线面板出现卡片）；
+`OFFLINE_NATIVE_TOOLS` 加入 `/dictionary`（零 WASM、纯本地即可用）。
+
+词典页装载成功后自动发 `PRECACHE_CORES` 预缓存 `dict` 组——**访一次词典，
+之后彻底断网也能查**，与 ffmpeg / tesseract 内核同一套机制，不另造轮子。
 
 
 ### 3.6 释义检索：倒排只负责召回，打分仍看原文
@@ -156,17 +181,18 @@ v2 改为两段式：
 
 ## 4. 体积与性能（实测，Node 22 / 桌面 Chrome）
 
-| 阶段 | 数据（v1 → v2） |
+| 阶段 | 数据（v1 → v2 → v3） |
 | --- | --- |
 | CC-CEDICT 原始文本 | ~6.9 MB |
 | gzip 快照 | ~3.8 MB |
 | 解析 | 70–95 ms |
-| 建索引 | 382 ms → **750 ms**（+释义倒排） |
+| 建索引 | 382 ms → 750 ms → **Worker 内 680–900 ms**（不挡主线程） |
+| IPA 音标库（美 / 英，MIT） | 3.2 + 1.7 MB 文本 → **0.85 + 0.42 MB gzip**，索引 ~4 MB 内存 |
 | 精确 / 前缀查询 | < 5 ms |
 | 英文释义查询 | 45 ms → **0.1–0.3 ms** |
 | 子串兜底查询（`cycle`） | 45 ms（未变，仅召回为空时走） |
 | 多词 AND 查询（`green tea`） | 45 ms → **< 1 ms** |
-| 索引常驻内存 | 42.6 MB → **52.4 MB** |
+| 索引常驻内存 | 42.6 MB → **52.4 MB**（+IPA 词索引 ~4 MB） |
 
 > 测量方式：`node --expose-gc`，同一份 125,423 条词库，建索引取 3 次重建后的稳定堆占用，
 > 查询取 5 次最小值。浏览器端（Chrome / 桌面）建索引会再慢 10–20%，其余同级。

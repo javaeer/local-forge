@@ -28,7 +28,7 @@ const CORE_CACHE = VERSION + '-cores'
 const CORE_URL_RE = /\/(ffmpeg|ffmpeg-st|tesseract|libarchive)\//
 
 // 零 WASM 内核依赖、首次访问后即可离线使用的工具（声明式，供 CORE_STATUS 上报）
-const OFFLINE_NATIVE_TOOLS = ['/wechat-article']
+const OFFLINE_NATIVE_TOOLS = ['/wechat-article', '/dictionary']
 
 // 预缓存：应用外壳（构建产物由运行时 stale-while-revalidate 覆盖）
 const SHELL_ASSETS = [
@@ -45,6 +45,11 @@ const SHELL_ASSETS = [
 // 注：ffmpeg-st 属于兜底内核，默认不在"媒体"组里，单独按需（详见 lib/media.js 分级兜底）。
 const CORE_GROUPS = {
   archive: ['/libarchive/libarchive.wasm', '/libarchive/worker-bundle.js'],
+  dict: [
+    '/dict/cc-cedict.txt.gz',
+    '/dict/en-ipa-us.txt.gz',
+    '/dict/en-ipa-uk.txt.gz',
+  ],
   ocr: [
     '/tesseract/worker.min.js',
     '/tesseract/tesseract-core-simd-lstm.wasm.js',
