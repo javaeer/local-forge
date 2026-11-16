@@ -11,14 +11,15 @@
 //   - 直链模式：用户直接粘贴已解析好的媒体 URL（单个或多个，每行一个，支持 .m3u8 分片清单）。
 //   - 桥接模式：在直链 URL 前加一层用户自托管的反代 / CORS 代理，绕过浏览器的跨域限制。
 //   - 桥接地址持久化在 localStorage，绝不外泄到任何第三方。
-import {
-  writeMediaFile,
-  execMedia,
-  unlinkMediaFiles,
-  onProgress as mediaOnProgress,
-  setCoreLoadHook as mediaSetCoreLoadHook,
-  ensureMediaCore,
-} from './media.js'
+// media.js 顶部 `import { FFmpeg } from '@ffmpeg/ffmpeg'` 在 Node 下会直接抛
+// "ffmpeg.wasm does not support nodejs"，若在此静态导入，本模块的纯函数
+// （parseUrls / applyBridge / 桥接配置）就无法在 Node 单测里导入。
+// 故延迟到真正需要内核时才加载——纯函数路径保持零依赖、可单测。
+let mediaMod = null
+async function loadMedia() {
+  if (!mediaMod) mediaMod = await import('./media.js')
+  return mediaMod
+}
 
 const BRIDGE_KEY = 'lf-md-bridge'
 
@@ -110,31 +111,33 @@ function deriveName(url, res) {
 // 返回合并后的 Blob；失败时抛出（message + stack 由调用方记录）。
 export async function mergeParts(parts, outName = 'merged.mp4', outMime = 'video/mp4', { onProgress, onCore } = {}) {
   if (!parts || parts.length < 2) throw new Error('合并至少需要 2 个分片')
-  if (onProgress) mediaOnProgress((p) => onProgress(p))
-  if (onCore) mediaSetCoreLoadHook((s) => onCore(s))
+  const media = await loadMedia()
+  if (onProgress) media.onProgress((p) => onProgress(p))
+  if (onCore) media.setCoreLoadHook((s) => onCore(s))
   const names = []
   for (let i = 0; i < parts.length; i++) {
     const name = `mf_part${i}`
     const buf = new Uint8Array(await parts[i].arrayBuffer())
-    await writeMediaFile(name, buf)
+    await media.writeMediaFile(name, buf)
     names.push(name)
   }
   const listText = names.map((n) => `file '${n}'`).join('\n')
-  await writeMediaFile('mf_list.txt', new TextEncoder().encode(listText))
+  await media.writeMediaFile('mf_list.txt', new TextEncoder().encode(listText))
   try {
-    const [out] = await execMedia(
+    const [out] = await media.execMedia(
       ['-f', 'concat', '-safe', '0', '-i', 'mf_list.txt', '-c', 'copy', outName],
       [{ name: outName, mime: outMime }],
     )
     return out.blob
   } finally {
-    await unlinkMediaFiles([...names, 'mf_list.txt'])
+    await media.unlinkMediaFiles([...names, 'mf_list.txt'])
   }
 }
 
 // 预览内核是否已就绪（不触发下载，供视图判断能否合并）。
 export async function ensureCore() {
-  return ensureMediaCore()
+  const media = await loadMedia()
+  return media.ensureMediaCore()
 }
 
 // ---------- 自检（离线安全，不拉取 WASM / 不联网）----------
@@ -163,11 +166,19 @@ export async function selfTest() {
     if (!b.startsWith('https://p.test?url=')) throw new Error('查询参数拼接失败')
     return '占位符 / 查询参数均正常'
   })
-  await add('media-wiring', 'ffmpeg 管线已接入', async () => {
-    if (typeof writeMediaFile !== 'function' || typeof execMedia !== 'function') {
-      throw new Error('media.js 导出缺失')
+  await add('url-parse', '直链解析（多行 / 空行 / 空白）', async () => {
+    const got = parseUrls('  https://a.test/1.ts \n\n\thttps://a.test/2.ts\r\nhttps://a.test/3.ts  ')
+    if (got.length !== 3) throw new Error(`期望 3 条，实际 ${got.length}`)
+    if (got[0] !== 'https://a.test/1.ts') throw new Error(`未去除首尾空白：${got[0]}`)
+    if (parseUrls('').length !== 0) throw new Error('空输入应返回空数组')
+    return '3 条直链解析正确'
+  })
+  await add('media-wiring', '合并管线已接线（懒加载，不预载内核）', async () => {
+    if (typeof ensureCore !== 'function' || typeof mergeParts !== 'function') {
+      throw new Error('mediadl 导出的合并接口缺失')
     }
-    return 'writeMediaFile / execMedia 可用'
+    if (mediaMod) return '内核模块已加载'
+    return '内核按需加载，当前未触发'
   })
   return { module: '媒体获取', items }
 }

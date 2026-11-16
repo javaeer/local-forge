@@ -56,6 +56,7 @@ export const TOOLS = [
       { to: '/media-pro?tab=audio', icon: 'bi-music-note-beamed', titleKey: 'home.t.audioExtract', descKey: 'home.d.audioExtract', title: '提取音频', desc: '从视频扒出音轨，默认流拷贝无损' },
       { to: '/media-pro?tab=frames', icon: 'bi-images', titleKey: 'home.t.videoFrames', descKey: 'home.d.videoFrames', title: '视频抽帧', desc: '按间隔导出图片并打包 ZIP' },
       { to: '/media-pro?tab=clip', icon: 'bi-scissors', titleKey: 'home.t.videoClip', descKey: 'home.d.videoClip', title: '裁剪片段', desc: '只保留指定时间段，默认不重编码' },
+      { to: '/media-fetch', icon: 'bi-cloud-download', titleKey: 'home.t.mediaFetch', descKey: 'home.d.mediaFetch', title: '媒体获取', desc: '粘贴媒体直链（含 m3u8 分片）本地拉取并合并，跨域可选自托管桥接，零上传' },
     ],
   },
   {

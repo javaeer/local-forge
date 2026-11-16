@@ -121,7 +121,6 @@ async function merge() {
       status: 'done',
       error: null,
     })
-    progress.value = 100
     phase.finish()
     message.value = { type: 'ok', text: `合并完成：${formatSize(blob.size)}` }
   } catch (e) {

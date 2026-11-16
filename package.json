@@ -44,6 +44,7 @@
     "test:e2e:wechat": "node tests/run.mjs e2e --only wechat",
     "test:e2e:appicon": "node tests/run.mjs e2e --only appicon",
     "test:e2e:dictionary": "node tests/run.mjs e2e --only dictionary",
+    "test:e2e:mediafetch": "node tests/run.mjs e2e --only mediafetch",
     "report:kernels": "node scripts/kernel-report.mjs",
     "dict:fetch": "node scripts/fetch-dict.mjs",
     "dict:check": "node scripts/fetch-dict.mjs --check",

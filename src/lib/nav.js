@@ -16,6 +16,7 @@ export const NAV = [
   { path: '/repair', title: '修复归档', titleKey: 'nav.repair', icon: 'bi-wrench', group: '压缩 / 归档', groupKey: 'group.archive', keywords: '修复 损坏 zip 7z rar' },
   { path: '/media-convert', title: '媒体转换', short: '媒体', titleKey: 'nav.mediaConvert', shortKey: 'nav.mediaConvertShort', icon: 'bi-arrow-left-right', group: '媒体', groupKey: 'group.media', keywords: '视频 音频 转换 mp4 webm mp3 wav ffmpeg' },
   { path: '/media-pro', title: '音视频进阶', titleKey: 'nav.mediaPro', icon: 'bi-film', group: '媒体', groupKey: 'group.media', keywords: 'gif 抽帧 裁剪 提取音频 音视频' },
+  { path: '/media-fetch', title: '媒体获取', short: '获取', titleKey: 'nav.mediaFetch', shortKey: 'nav.mediaFetchShort', icon: 'bi-cloud-download', group: '媒体', groupKey: 'group.media', keywords: '媒体 获取 拉取 直链 m3u8 分片 合并 桥接 跨域 音视频 下载' },
   { path: '/image-convert', title: '图片工具', short: '图片', titleKey: 'nav.imageConvert', shortKey: 'nav.imageConvertShort', icon: 'bi-image', group: '图片', groupKey: 'group.image', keywords: '图片 格式 转换 png jpg webp avif 压缩 量化' },
   { path: '/app-icon', title: 'App 图标生成器', short: 'App 图标', titleKey: 'nav.appIcon', shortKey: 'nav.appIconShort', icon: 'bi-app-indicator', group: '图片', groupKey: 'group.image', keywords: 'app 图标 icon logo 尺寸 appstore googleplay ios android 1024 512 上架 素材' },
   { path: '/batch', title: '批处理队列', short: '批量', titleKey: 'nav.batch', shortKey: 'nav.batchShort', icon: 'bi-list-task', group: '图片', groupKey: 'group.image', keywords: '批量 队列 多文件 批处理 压缩 转换 预设' },
