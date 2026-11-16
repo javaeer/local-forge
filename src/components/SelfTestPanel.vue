@@ -83,6 +83,7 @@ const VIEW_ROUTES = [
   { path: '/ocr', file: 'OcrTool.vue' },
   { path: '/svg-tool', file: 'SvgTool.vue' },
   { path: '/css-reference', file: 'CssReference.vue' },
+  { path: '/dictionary', file: 'Dictionary.vue' },
   { path: '/about', file: 'About.vue' },
   { path: '/privacy', file: 'Privacy.vue' },
 ]

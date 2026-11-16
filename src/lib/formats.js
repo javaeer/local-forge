@@ -107,6 +107,12 @@ export const TOOLS = [
     ],
   },
   {
+    group: '文字 / 查阅', groupKey: 'home.g.lookup',
+    items: [
+      { to: '/dictionary', icon: 'bi-book', titleKey: 'home.t.dict', descKey: 'home.d.dict', title: '离线词典', desc: 'CC-CEDICT 汉英词库在浏览器内建索引，汉字/拼音/首字母/释义检索，纯本地' },
+    ],
+  },
+  {
     group: '开发者工具', groupKey: 'home.g.dev',
     items: [
       { to: '/text', icon: 'bi-code-slash', titleKey: 'home.t.textTool', descKey: 'home.d.textTool', title: '文本 / 编码工具箱', desc: 'JSON · Base64 · JWT · 正则 · 时间戳 · UUID · 密码 · 摘要' },

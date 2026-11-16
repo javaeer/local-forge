@@ -1,0 +1,29 @@
+CC-CEDICT 数据文件许可与来源
+================================
+
+文件：public/dict/cc-cedict.txt.gz
+内容：CC-CEDICT 汉英词典快照（约 12 万条），UTF-8 文本，gzip 压缩。
+
+来源
+----
+CC-CEDICT — https://cc-cedict.org
+社区维护的汉英词典，由 MDBG 等站点分发。
+
+许可
+----
+CC BY-SA 4.0（Creative Commons Attribution-ShareAlike 4.0 International）
+https://creativecommons.org/licenses/by-sa/4.0/
+
+· 署名：保留本文件及页面内「数据来源与许可」的署名即可。
+· 相同方式共享：基于本数据制作的衍生词库，须同样以 CC BY-SA 4.0 分发。
+
+与代码的关系
+------------
+LocalForge 的**代码**沿用仓库根目录的 MIT 许可；
+本目录下的**数据文件**独立适用 CC BY-SA 4.0。
+两者互不影响：分发本数据不改变 LocalForge 代码的许可，反之亦然。
+
+更新方式
+--------
+pnpm dict:fetch    # 重新下载并校验，写入本目录
+pnpm dict:check    # 仅校验快照完整性（CI 可当门禁）

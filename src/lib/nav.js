@@ -33,13 +33,14 @@ export const NAV = [
   { path: '/wechat-search', title: '公众号检索', short: '检索', titleKey: 'nav.wechatSearch', shortKey: 'nav.wechatSearchShort', icon: 'bi-search', group: '开发者工具', groupKey: 'group.dev', keywords: '公众号 检索 搜索 合集 album 文章列表 导出 冀教版 版本 wechat search' },
   { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', titleKey: 'nav.svgTool', shortKey: 'nav.svgToolShort', icon: 'bi-bounding-box', group: '开发者工具', groupKey: 'group.dev', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
   { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', titleKey: 'nav.cssReference', shortKey: 'nav.cssReferenceShort', icon: 'bi-palette', group: '开发者工具', groupKey: 'group.dev', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
+  { path: '/dictionary', title: '离线词典', short: '词典', titleKey: 'nav.dict', shortKey: 'nav.dictShort', icon: 'bi-book', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '词典 字典 查词 汉字 拼音 部首 释义 dictionary cedict 离线 cc-cedict 新华 英汉' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },
   { path: '/about', title: '关于', titleKey: 'nav.about', icon: 'bi-info-circle', group: '关于', groupKey: 'group.about', keywords: 'about 关于 开源 技术栈' },
   { path: '/privacy', title: '隐私协议', titleKey: 'nav.privacy', icon: 'bi-shield-lock', group: '关于', groupKey: 'group.about', keywords: '隐私 privacy 协议 零上传' },
 ]
 
 export const NAV_GROUPS = [
-  '常用', '压缩 / 归档', '媒体', '图片', 'PDF', '二维码 / 识别', '校验 / 隐私', '分享 / 安全', '开发者工具', '关于',
+  '常用', '压缩 / 归档', '媒体', '图片', 'PDF', '二维码 / 识别', '校验 / 隐私', '分享 / 安全', '文字 / 查阅', '开发者工具', '关于',
 ]
 
 export function navByPath(path) {

@@ -17,24 +17,24 @@ import { VIEW_MESSAGES } from './i18n.views.js'
 // 通用词条：导航项与分组名
 export const DEV_MESSAGES = {
   'zh-CN': {
-    nav: { svgTool: 'SVG 工具箱', svgToolShort: 'SVG', wechatSearch: '公众号文章检索', wechatSearchShort: '检索', cssReference: 'CSS 速查表', cssReferenceShort: 'CSS' },
-    group: { dev: '开发者工具' },
+    nav: { svgTool: 'SVG 工具箱', svgToolShort: 'SVG', wechatSearch: '公众号文章检索', wechatSearchShort: '检索', cssReference: 'CSS 速查表', cssReferenceShort: 'CSS', dict: '离线词典', dictShort: '词典' },
+    group: { dev: '开发者工具', lookup: '文字 / 查阅' },
   },
   en: {
-    nav: { svgTool: 'SVG Toolkit', svgToolShort: 'SVG', wechatSearch: 'WeChat Article Search', wechatSearchShort: 'Search', cssReference: 'CSS Reference', cssReferenceShort: 'CSS' },
-    group: { dev: 'Developer Tools' },
+    nav: { svgTool: 'SVG Toolkit', svgToolShort: 'SVG', wechatSearch: 'WeChat Article Search', wechatSearchShort: 'Search', cssReference: 'CSS Reference', cssReferenceShort: 'CSS', dict: 'Offline Dictionary', dictShort: 'Dictionary' },
+    group: { dev: 'Developer Tools', lookup: 'Text / Reference' },
   },
   'ja-JP': {
-    nav: { svgTool: 'SVG ツール', svgToolShort: 'SVG', wechatSearch: '微信公衆号の記事検索', wechatSearchShort: '検索', cssReference: 'CSS リファレンス', cssReferenceShort: 'CSS' },
-    group: { dev: '開発者ツール' },
+    nav: { svgTool: 'SVG ツール', svgToolShort: 'SVG', wechatSearch: '微信公衆号の記事検索', wechatSearchShort: '検索', cssReference: 'CSS リファレンス', cssReferenceShort: 'CSS', dict: 'オフライン辞書', dictShort: '辞書' },
+    group: { dev: '開発者ツール', lookup: '文字 / 参照' },
   },
   'ko-KR': {
-    nav: { svgTool: 'SVG 도구', svgToolShort: 'SVG', wechatSearch: '위챗 공중호 글 검색', wechatSearchShort: '검색', cssReference: 'CSS 참조', cssReferenceShort: 'CSS' },
-    group: { dev: '개발자 도구' },
+    nav: { svgTool: 'SVG 도구', svgToolShort: 'SVG', wechatSearch: '위챗 공중호 글 검색', wechatSearchShort: '검색', cssReference: 'CSS 참조', cssReferenceShort: 'CSS', dict: '오프라인 사전', dictShort: '사전' },
+    group: { dev: '개발자 도구', lookup: '텍스트 / 참조' },
   },
   'es-ES': {
-    nav: { svgTool: 'Herramientas SVG', svgToolShort: 'SVG', wechatSearch: 'Búsqueda de artículos de WeChat', wechatSearchShort: 'Buscar', cssReference: 'Referencia CSS', cssReferenceShort: 'CSS' },
-    group: { dev: 'Herramientas de desarrollo' },
+    nav: { svgTool: 'Herramientas SVG', svgToolShort: 'SVG', wechatSearch: 'Búsqueda de artículos de WeChat', wechatSearchShort: 'Buscar', cssReference: 'Referencia CSS', cssReferenceShort: 'CSS', dict: 'Diccionario sin conexión', dictShort: 'Diccionario' },
+    group: { dev: 'Herramientas de desarrollo', lookup: 'Texto / Consulta' },
   },
 }
 

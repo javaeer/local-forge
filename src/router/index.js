@@ -31,6 +31,7 @@ const views = {
   OcrTool: () => import('../views/OcrTool.vue'),
   SvgTool: () => import('../views/SvgTool.vue'),
   CssReference: () => import('../views/CssReference.vue'),
+  Dictionary: () => import('../views/Dictionary.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -61,6 +62,7 @@ const fileToPath = {
   'OcrTool.vue': '/ocr',
   'SvgTool.vue': '/svg-tool',
   'CssReference.vue': '/css-reference',
+  'Dictionary.vue': '/dictionary',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }

@@ -46,6 +46,7 @@
 | **PDF** | 重压缩（内嵌图像重压 + 对象流去重）／**逐页预览（pdf.js 本地渲染）／合并多个 PDF／拆分为单页** | [pdf-lib](https://github.com/Hopding/pdf-lib) + [pdfjs-dist](https://github.com/mozilla/pdf.js) |
 | **分享 / 安全** | WebRTC P2P 直传（手动 SDP 信令，无后端）；ZIP 密码字典恢复；归档修复 | WebRTC / 本地引擎 |
 | **PWA / 离线** | 可安装（manifest + Service Worker）；**按需预缓存 WASM 内核**，断网也能用；缓存策略：外壳 network-first、内核 cache-first、静态资源 stale-while-revalidate | 自研 `public/sw.js` |
+| **离线词典** | CC-CEDICT 汉英词库（约 12 万条）在浏览器内建索引；支持汉字、带调拼音、无调拼音、首字母、英文释义五种查法，模糊纠错可选；可导入 CC-CEDICT / Kaikki JSONL / TSV 换源 | 自研零依赖内核 [`src/lib/dict.js`](src/lib/dict.js)（Node 可单测）+ 原生 `DecompressionStream`；词库由 `pnpm dict:fetch` 拉取（dev/build 自动，CC BY-SA 4.0） |
 | **多语言** | 中文 / English / 日本語 / 한국어 / Español 五语界面，自动检测系统语言 + 持久化 | 零依赖 i18n 内核 `src/lib/i18n.js` |
 
 > **关于 7Z / ISO / XZ / ZST / BZ2 的「创建」**：这些格式需要原版专有的 WASM 编码模块（网页端不可得），
@@ -82,6 +83,7 @@ pnpm test:e2e:imagepro       # 图片改尺寸 / 水印
 pnpm test:e2e:doc            # Markdown → PDF / HTML
 pnpm test:e2e:wechat         # 公众号排版 16 项（产物结构 / 规范自检 / 多端输出 / 模板与草稿 / 零跨域请求）
 pnpm test:e2e:appicon        # App 图标生成器 21 项（尺寸预设 / 无 alpha 通道 / ZIP 字节解析 / 零跨域请求）
+pnpm test:e2e:dictionary     # 离线词典 10 项（词库装载 / 五种检索 / 展开复制 / 首页卡片 / 零跨域请求）
 pnpm test:e2e:i18n           # 中日英韩西五语切换
 pnpm report:kernels          # 内核体积报告（构建产物 vs 实际下载）
 pnpm prune:infinityfree      # 生成 InfinityFree 兼容产物（剔除超限文件 + 专用 .htaccess）

@@ -31,4 +31,9 @@ public/ffmpeg/
 public/ffmpeg-st/
 public/tesseract/
 public/libarchive/
+
+# 词典数据快照不进 Git（与 WASM 内核同理，避免每次 clone 多背 3.8MB）：
+# 由 scripts/fetch-dict.mjs 在 dev / build 前按需拉取，--if-missing 时校验通过即跳过。
+# 许可与来源见 public/dict/LICENSE.txt（该文件入库）。
+public/dict/*.gz
 /dist-infinityfree/
