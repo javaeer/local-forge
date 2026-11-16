@@ -46,7 +46,7 @@
 | **PDF** | 重压缩（内嵌图像重压 + 对象流去重）／**逐页预览（pdf.js 本地渲染）／合并多个 PDF／拆分为单页** | [pdf-lib](https://github.com/Hopding/pdf-lib) + [pdfjs-dist](https://github.com/mozilla/pdf.js) |
 | **分享 / 安全** | WebRTC P2P 直传（手动 SDP 信令，无后端）；ZIP 密码字典恢复；归档修复 | WebRTC / 本地引擎 |
 | **PWA / 离线** | 可安装（manifest + Service Worker）；**按需预缓存 WASM 内核**，断网也能用；缓存策略：外壳 network-first、内核 cache-first、静态资源 stale-while-revalidate | 自研 `public/sw.js` |
-| **离线词典** | CC-CEDICT 汉英词库（约 12 万条）在浏览器内建索引；支持汉字、带调拼音、无调拼音、首字母、英文释义五种查法，英文查义走倒排索引（`bicycle` 0.2 ms 出结果）、支持多词 AND（`green tea`）、繁体前缀展开，模糊纠错可选；可导入 CC-CEDICT / Kaikki JSONL / TSV 换源 | 自研零依赖内核 [`src/lib/dict.js`](src/lib/dict.js)（Node 可单测）+ 原生 `DecompressionStream`；词库由 `pnpm dict:fetch` 拉取（dev/build 自动，CC BY-SA 4.0） |
+| **离线词典** | CC-CEDICT 汉英词库（约 12 万条）在后台线程建索引与检索；支持汉字、带调拼音、无调拼音、首字母、英文释义五种查法，英文查义走倒排索引（`bicycle` 0.2 ms 出结果）、支持多词 AND（`green tea`）、繁体前缀展开，模糊纠错可选；可导入 CC-CEDICT / Kaikki JSONL / TSV 换源，导入的词库经 IndexedDB 持久化、随时重载 | 自研零依赖内核 [`src/lib/dict.js`](src/lib/dict.js)（Node 可单测）+ Web Worker（[`dict.worker.js`](src/lib/dict.worker.js) / [`dictclient.js`](src/lib/dictclient.js)，主线程零重活、Worker 不可用自动降级）+ 原生 `DecompressionStream`；词库由 `pnpm dict:fetch` 拉取（dev/build 自动，CC BY-SA 4.0） |
 | **媒体获取** | 粘贴媒体直链（含 m3u8 分片）在本地逐条拉取并显示进度，多分片可本地合并；跨域可选「自托管桥接」模式，地址只存本机 localStorage | 内核 [`src/lib/mediadl.js`](src/lib/mediadl.js)（纯函数 Node 可单测，ffmpeg 管线懒加载）+ 复用 `media.js` 的 concat 合并；不内置任何第三方解析后端 |
 | **多语言** | 中文 / English / 日本語 / 한국어 / Español 五语界面，自动检测系统语言 + 持久化 | 零依赖 i18n 内核 `src/lib/i18n.js` |
 

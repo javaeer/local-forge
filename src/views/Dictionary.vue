@@ -1,22 +1,25 @@
 <script setup>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
-import { parseDict, buildIndex, search, stats, MODES } from '../lib/dict.js'
+// 内核不进主线程：装载 / 建索引 / 检索都在后台线程，见 dictclient.js
+import { loadDict, dictSearch, MODES } from '../lib/dictclient.js'
+import { saveLexicon, listLexicons, deleteLexicon } from '../lib/dictstore.js'
 import { pushToast } from '../lib/toast.js'
 
 /* ---------------- 状态 ---------------- */
 const loading = ref(false)
 const error = ref('')
-const index = ref(null)
+const info = ref({ entries: 0, words: 0 })
+const thread = ref('') // worker=后台线程 / main=降级主线程
 const sourceName = ref('')
 const buildMs = ref(0)
 const query = ref('')
 const mode = ref('auto')
 const res = ref(null)
 const openIdx = ref(-1)
-
-const info = computed(() => (index.value ? stats(index.value) : { entries: 0, words: 0 }))
+const saved = ref([]) // 本机持久化的自定义词库
+const savedPersisted = ref(true)
 
 const MODE_LABEL = {
   auto: '自动（汉字 / 拼音 / 首字母）',
@@ -46,12 +49,13 @@ async function maybeGunzip(buf) {
 }
 
 /* ---------------- 装载词库 ---------------- */
-async function applyEntries(entries, name) {
+async function applyEntries(text, name) {
   // 让浏览器先把 loading 画出来，再做重活
   await new Promise((r) => setTimeout(r, 16))
-  const t0 = performance.now()
-  index.value = buildIndex(entries)
-  buildMs.value = Math.round(performance.now() - t0)
+  const r = await loadDict(text, name)
+  info.value = { entries: r.entries, words: r.words }
+  buildMs.value = r.ms
+  thread.value = r.thread
   sourceName.value = name
   run()
 }
@@ -64,9 +68,7 @@ async function loadBuiltin() {
     const r = await fetch(url)
     if (!r.ok) throw new Error(`内置词库加载失败（HTTP ${r.status}）：${url}`)
     const text = await maybeGunzip(await r.arrayBuffer())
-    const entries = parseDict(text, 'cc-cedict.txt')
-    if (!entries.length) throw new Error('内置词库解析结果为空，文件可能损坏')
-    await applyEntries(entries, 'CC-CEDICT（内置）')
+    await applyEntries(text, 'CC-CEDICT（内置）')
   } catch (e) {
     error.value = `${e.message}。可先在下方导入一份 CC-CEDICT / JSONL / TSV 词库继续使用。`
   } finally {
@@ -74,13 +76,16 @@ async function loadBuiltin() {
   }
 }
 
-/* ---------------- 检索（防抖） ---------------- */
+/* ---------------- 检索（防抖 + 过期响应丢弃） ---------------- */
 let timer = 0
-function run() {
-  if (!index.value) { res.value = null; return }
+let runSeq = 0
+async function run() {
   const q = query.value.trim()
   if (!q) { res.value = null; return }
-  res.value = search(index.value, q, { mode: mode.value, limit: 60 })
+  const my = ++runSeq
+  const r = await dictSearch(q, mode.value, 60)
+  // 防抖间隔内又敲了字 / 切了模式：这份响应已过期，丢弃
+  if (my === runSeq && r) res.value = r
 }
 watch([query, mode], () => {
   clearTimeout(timer)
@@ -92,29 +97,56 @@ function pickSample(s) {
   run()
 }
 
-/* ---------------- 导入 ---------------- */
+/* ---------------- 导入（成功后自动存入本机，可随时重载） ---------------- */
 async function onFiles(files) {
   if (!files || !files.length) return
   loading.value = true
   error.value = ''
   try {
-    const all = []
+    const texts = []
     const names = []
     for (const f of files) {
-      const text = await maybeGunzip(await f.arrayBuffer())
-      const list = parseDict(text, f.name)
-      all.push(...list)
-      names.push(`${f.name}（${list.length}）`)
+      texts.push(await maybeGunzip(await f.arrayBuffer()))
+      names.push(f.name)
     }
-    if (!all.length) throw new Error('没有解析出任何词条，请检查格式')
-    await applyEntries(all, names.join(' + '))
-    pushToast('ok', `已导入 ${all.length.toLocaleString()} 条词条`)
+    const text = texts.join('\n')
+    const name = names.join(' + ')
+    await applyEntries(text, name)
+    const rec = await saveLexicon({ name, text, count: info.value.entries })
+    await refreshSaved()
+    pushToast('ok', `已导入 ${info.value.entries.toLocaleString()} 条词条${rec.persisted ? '，已存入本机' : '（本机不支持持久化，仅本次会话可用）'}`)
   } catch (e) {
-    error.value = '导入失败：' + e.message
+    error.value = '导入失败：' + (e.message || e)
     pushToast('err', '导入失败')
   } finally {
     loading.value = false
   }
+}
+
+/* ---------------- 我的词库（IndexedDB / 会话内存） ---------------- */
+async function refreshSaved() {
+  const list = await listLexicons()
+  saved.value = list
+  savedPersisted.value = !list.length || !!list[0].persisted
+}
+
+async function loadSaved(rec) {
+  if (loading.value) return
+  loading.value = true
+  error.value = ''
+  try {
+    await applyEntries(rec.text, rec.name)
+    pushToast('ok', `已载入「${rec.name}」`)
+  } catch (e) {
+    error.value = '载入失败：' + (e.message || e)
+  } finally {
+    loading.value = false
+  }
+}
+
+async function removeSaved(id) {
+  await deleteLexicon(id)
+  await refreshSaved()
 }
 
 /* ---------------- 交互 ---------------- */
@@ -133,7 +165,10 @@ function onKey(e) {
   if (e.key === 'Escape') { query.value = ''; res.value = null }
 }
 
-onMounted(loadBuiltin)
+onMounted(() => {
+  loadBuiltin()
+  refreshSaved()
+})
 onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
@@ -186,10 +221,10 @@ onBeforeUnmount(() => clearTimeout(timer))
     </div>
 
     <div class="status">
-      <template v-if="index">
+      <template v-if="info.entries">
         <i class="bi bi-database-check"></i>
         词库：<b>{{ sourceName }}</b> · <b>{{ info.entries.toLocaleString() }}</b> 条 ·
-        索引构建 <b>{{ buildMs }} ms</b> · 全部本地
+        索引构建 <b>{{ buildMs }} ms</b>（<span class="thread-badge">{{ thread === 'worker' ? '后台线程' : '主线程' }}</span>）· 全部本地
       </template>
       <template v-else-if="loading">正在装载词库并建索引…</template>
       <template v-else>词库尚未就绪</template>
@@ -236,7 +271,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   </div>
 
   <!-- 空态 -->
-  <div v-if="!res && index" class="panel empty-hint">
+  <div v-if="!res && info.entries" class="panel empty-hint">
     <i class="bi bi-journal-text"></i>
     <p>输入一个字、一个词，或一段拼音开始。全部检索在你本机完成。</p>
   </div>
@@ -256,6 +291,17 @@ onBeforeUnmount(() => clearTimeout(timer))
       single="词库"
       @files="onFiles"
     />
+    <div v-if="saved.length" class="saved-row">
+      <span class="hint" style="margin:0">我的词库（{{ savedPersisted ? '已存本机' : '仅本次会话' }}，点击重载）：</span>
+      <span class="saved-chips">
+        <span v-for="s in saved" :key="s.id" class="saved-item">
+          <button class="chip" :title="`${s.count.toLocaleString()} 条 · ${new Date(s.addedAt).toLocaleString()}`" @click="loadSaved(s)">
+            {{ s.name }} · {{ s.count.toLocaleString() }}
+          </button>
+          <button class="saved-del" title="删除" @click="removeSaved(s.id)"><i class="bi bi-x"></i></button>
+        </span>
+      </span>
+    </div>
     <div class="row">
       <button class="btn ghost" @click="loadBuiltin"><i class="bi bi-arrow-counterclockwise"></i> 恢复内置词库</button>
     </div>
@@ -273,7 +319,8 @@ onBeforeUnmount(() => clearTimeout(timer))
         <b>Kaikki / Wiktextract</b> —— 维基词典结构化导出（CC BY-SA），可用「导入」按语言增量补充。
       </li>
       <li>
-        <b>方法论</b>：词库 ⇄ 索引 ⇄ 检索三层解耦，换源不改代码；索引为内存结构，刷新即重建，不留脏数据。
+        <b>方法论</b>：词库 ⇄ 索引 ⇄ 检索三层解耦，换源不改代码；索引常驻后台线程，刷新即重建；
+        导入的自定义词库经 <b>IndexedDB</b> 存在本机（最多 5 份），随时可重载。
       </li>
     </ul>
     <p class="hint" style="margin-bottom:0">
@@ -299,6 +346,20 @@ onBeforeUnmount(() => clearTimeout(timer))
   border: 1px solid var(--line-strong); background: var(--panel-2); transition: .15s;
 }
 .chip:hover { color: var(--accent); border-color: var(--accent); background: rgba(56,189,248,.08); }
+
+.thread-badge {
+  font-size: 11px; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--line-strong); color: var(--muted);
+}
+
+.saved-row { display: flex; align-items: flex-start; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+.saved-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.saved-item { display: inline-flex; align-items: center; gap: 2px; }
+.saved-del {
+  border: none; background: none; cursor: pointer; padding: 2px 4px;
+  color: var(--faint); font-size: 13px; line-height: 1;
+}
+.saved-del:hover { color: #f87171; }
 
 .result-bar {
   display: flex; justify-content: space-between; align-items: baseline; gap: 12px;

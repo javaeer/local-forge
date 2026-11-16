@@ -36,6 +36,7 @@ await page.waitForFunction(() => {
 const status = await page.$eval('.status', (el) => el.textContent.replace(/\s+/g, ' ').trim())
 const entries = Number((/([\d,]+) 条/.exec(status) || [])[1]?.replace(/,/g, '') || 0)
 ok(entries >= 100000, '内置词库装载完成', status)
+ok(/后台线程/.test(status), '索引构建在后台线程（Worker 生效）', status)
 
 // 2) 五种检索
 async function lookup(q, mode) {
