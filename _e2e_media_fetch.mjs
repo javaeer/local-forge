@@ -11,7 +11,7 @@
 //   BASE=http://localhost:4173 node _e2e_media_fetch.mjs
 import puppeteer from 'puppeteer-core'
 
-const BASE = process.env.BASE || process.env.BASE_URL || 'http://localhost:4173'
+const BASE = (process.env.BASE || process.env.BASE_URL || 'http://localhost:4173').replace(/\/+$/, '')
 const CHROME = process.env.CHROME_PATH || process.env.CHROMIUM_PATH || '/usr/bin/chromium'
 
 let failed = 0

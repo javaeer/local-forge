@@ -79,7 +79,9 @@ async function ensureServer(kind) {
     const r = await run(process.execPath, [vite, 'build'], { stdio: ['ignore', 'ignore', 'inherit'] })
     if (r.code) throw new Error('构建失败，preview 无法启动')
   }
-  const proc = spawn(process.execPath, [vite, kind === 'dev' ? 'dev' : 'preview', '--port', String(port), '--strictPort'], {
+  // --host 127.0.0.1：vite 默认 host=localhost 会按系统解析随机落到 [::1]（IPv6），
+  // 而下方就绪探测固定走 127.0.0.1，会偶发「启动超时」。显式固定 IPv4 环回消除该抖动。
+  const proc = spawn(process.execPath, [vite, kind === 'dev' ? 'dev' : 'preview', '--host', '127.0.0.1', '--port', String(port), '--strictPort'], {
     cwd: root, stdio: ['ignore', 'ignore', 'ignore'],
   })
   servers[kind] = { proc, url }

@@ -2,18 +2,21 @@
 //
 // 离线策略（与项目 ffmpeg 内核一致）：
 //   - worker 脚本与识别内核（wasm）随包放在 /public/tesseract，本地加载，不依赖 CDN
-//   - 语言训练数据（.traineddata）体积大，首次使用时按需下载，之后由 tesseract.js
-//     缓存到浏览器 IndexedDB，后续离线可用
+//   - 语言训练数据（.traineddata.gz，9 种语言共约 16MB）随包放在 /public/tesseract/lang，
+//     本地优先加载；可经首页「离线内核」面板的「OCR 语言包」组预缓存，实现断网识别。
+//     若本地缺失（未跑 fetch-wasm / 主机限制），自动回退官方 CDN 按需下载，
+//     下载后由 tesseract.js 缓存到浏览器 IndexedDB，后续离线可用
 //   - 本地内核加载失败时自动回退官方 CDN，保证功能不因打包问题而完全不可用
 //
 // 全部在本地完成：图片/ PDF 从不上传任何服务器。
 
 import { createWorker } from 'tesseract.js'
 
-// 本地打包的内核与 worker（public/tesseract/）
+// 本地打包的内核、worker 与语言包（public/tesseract/）
 const LOCAL_DIR = '/tesseract'
 const LOCAL_WORKER = '/tesseract/worker.min.js'
-// 回退用的官方 CDN（内核 + worker）
+const LOCAL_LANG_DIR = '/tesseract/lang'
+// 回退用的官方 CDN（内核 + worker + 语言包；tesseract.js 默认即此语言包源）
 const CDN_CORE = 'https://cdn.jsdelivr.net/npm/tesseract.js-core@7.0.0'
 const CDN_WORKER = 'https://cdn.jsdelivr.net/npm/tesseract.js@7.0.0/dist/worker.min.js'
 
@@ -36,18 +39,18 @@ function pickCorePath(baseDir) {
   return `${baseDir.replace(/\/$/, '')}/${variant}`
 }
 
-// 常用语言。size 为大致首次下载量，供界面提示。
+// 常用语言。size 为真实首次下载量（4.0.0_best_int 量化模型，实测字节数）。
 export const OCR_LANGS = [
-  { id: 'eng', label: '英语', size: '约 4MB' },
-  { id: 'chi_sim', label: '简体中文', size: '约 42MB' },
-  { id: 'chi_sim+eng', label: '简体中文 + 英语', size: '约 46MB' },
-  { id: 'chi_tra', label: '繁体中文', size: '约 43MB' },
-  { id: 'jpn', label: '日语', size: '约 30MB' },
-  { id: 'kor', label: '韩语', size: '约 27MB' },
-  { id: 'fra', label: '法语', size: '约 8MB' },
-  { id: 'deu', label: '德语', size: '约 9MB' },
-  { id: 'spa', label: '西班牙语', size: '约 8MB' },
-  { id: 'rus', label: '俄语', size: '约 12MB' },
+  { id: 'eng', label: '英语', size: '约 2.9MB' },
+  { id: 'chi_sim', label: '简体中文', size: '约 1.7MB' },
+  { id: 'chi_sim+eng', label: '简体中文 + 英语', size: '约 4.6MB' },
+  { id: 'chi_tra', label: '繁体中文', size: '约 1.6MB' },
+  { id: 'jpn', label: '日语', size: '约 2.0MB' },
+  { id: 'kor', label: '韩语', size: '约 1.5MB' },
+  { id: 'fra', label: '法语', size: '约 0.7MB' },
+  { id: 'deu', label: '德语', size: '约 1.3MB' },
+  { id: 'spa', label: '西班牙语', size: '约 2.1MB' },
+  { id: 'rus', label: '俄语', size: '约 2.6MB' },
 ]
 
 let worker = null
@@ -77,12 +80,15 @@ function makeLogger(prefix) {
 }
 
 // 获取（或按需重建）worker。切换语言时必须重建——tesseract 的语言在初始化时载入。
+// 回退链：本地内核+本地语言包 → 本地内核+CDN语言包 → 全 CDN。
+// 注：tesseract.js 会把语言包缓存进 IndexedDB，已缓存时 langPath 不会被用到。
 async function getWorker(langs) {
-  // 先尝试本地内核（显式内核文件），失败再回退 CDN
-  for (const src of [
-    { name: 'local', workerPath: LOCAL_WORKER, corePath: pickCorePath(LOCAL_DIR) },
+  const sources = [
+    { name: 'local', workerPath: LOCAL_WORKER, corePath: pickCorePath(LOCAL_DIR), langPath: LOCAL_LANG_DIR },
+    { name: 'local+cdnlang', workerPath: LOCAL_WORKER, corePath: pickCorePath(LOCAL_DIR) },
     { name: 'cdn', workerPath: CDN_WORKER, corePath: `${CDN_CORE}/${hasSimd() ? CORE_VARIANT.simd : CORE_VARIANT.plain}` },
-  ]) {
+  ]
+  for (const src of sources) {
     try {
       if (worker && workerLangs === langs && workerSource === src.name) return { worker, source: src.name }
       if (worker) {
@@ -92,6 +98,7 @@ async function getWorker(langs) {
       const w = await createWorker(langs, 1, {
         workerPath: src.workerPath,
         corePath: src.corePath,
+        langPath: src.langPath,
         logger: makeLogger(),
       })
       worker = w
@@ -99,7 +106,7 @@ async function getWorker(langs) {
       workerSource = src.name
       return { worker: w, source: src.name }
     } catch (e) {
-      console.warn(`[ocr] 使用${src.name === 'local' ? '本地' : 'CDN'}内核初始化失败：`, e)
+      console.warn(`[ocr] 内核初始化失败（${src.name}）：`, e)
       if (worker) { try { await worker.terminate() } catch { /* ignore */ } worker = null }
       if (src.name === 'cdn') throw new Error('OCR 内核初始化失败（本地与 CDN 均不可用）：' + (e.message || e))
     }
@@ -197,7 +204,7 @@ export function parsePages(expr, total) {
 }
 
 /* ---------------- 自检 ---------------- */
-// 自检会真实下载语言训练数据（英语约 4MB）。若网络不可用则标记为 skipped，不算失败。
+// 自检会加载语言训练数据（英语约 2.9MB，本地包优先；无本地包时按需下载）。若网络不可用则标记为 skipped，不算失败。
 export async function selfTest() {
   const items = []
   const T = async (id, title, fn) => {
@@ -229,7 +236,9 @@ export async function selfTest() {
 
   await T('kernel', 'OCR 内核初始化（本地优先）', async () => {
     const { source } = await getWorker('eng')
-    return source === 'local' ? '本地内核 /tesseract' : '回退 CDN 内核'
+    if (source === 'local') return '本地内核 /tesseract（含本地语言包）'
+    if (source === 'local+cdnlang') return '本地内核 /tesseract（语言包回退 CDN）'
+    return '回退 CDN 内核'
   })
 
   await T('recognize', '识别合成图片（应含 Hello）', async () => {

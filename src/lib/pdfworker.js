@@ -10,6 +10,12 @@
 import * as pdfjs from 'pdfjs-dist'
 import localWorkerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url'
 
+// 稳定路径的本地 worker：fetch-wasm.mjs 会把 node_modules 里的 worker 复制到 /pdfjs/。
+// 该路径不带构建 hash，可被 public/sw.js 的 'pdf' 内核组预缓存（真·离线）；
+// 若本地缺失（fetch-wasm 未运行 / 免费主机删除），回退到 Vite 打包的带 hash 资源，
+// 再不行则回退到与安装版本严格一致的 jsDelivr CDN worker。
+const STABLE_WORKER = '/pdfjs/pdf.worker.min.mjs'
+
 // 从 pdfjs-dist 自身版本推导 CDN 地址，避免版本漂移导致 worker 与主库不匹配。
 const PDFJS_VERSION = pdfjs.version || '4.10.38'
 const CDN_WORKER = `https://cdn.jsdelivr.net/npm/pdfjs-dist@${PDFJS_VERSION}/build/pdf.worker.min.mjs`
@@ -39,7 +45,10 @@ async function localWorkerUsable(url) {
  */
 export async function ensurePdfWorker() {
   if (applied) return applied
-  if (await localWorkerUsable(localWorkerUrl)) {
+  if (await localWorkerUsable(STABLE_WORKER)) {
+    pdfjs.GlobalWorkerOptions.workerSrc = STABLE_WORKER
+    applied = 'local'
+  } else if (await localWorkerUsable(localWorkerUrl)) {
     pdfjs.GlobalWorkerOptions.workerSrc = localWorkerUrl
     applied = 'local'
   } else {

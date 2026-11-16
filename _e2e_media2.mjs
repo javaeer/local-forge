@@ -3,7 +3,7 @@
 // 经由 tests/run.mjs 统一注入 BASE / BASE_URL / CHROMIUM_PATH / CHROME_PATH。
 import puppeteer from 'puppeteer-core'
 
-const BASE_URL = process.env.BASE_URL || process.env.BASE || 'http://localhost:5173'
+const BASE_URL = (process.env.BASE_URL || process.env.BASE || 'http://localhost:5173').replace(/\/+$/, '')
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROMIUM_PATH || process.env.CHROME_PATH || '/usr/bin/chromium',
   headless: 'new',

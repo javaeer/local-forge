@@ -25,7 +25,7 @@ const SHELL_CACHE = VERSION + '-shell'
 const ASSET_CACHE = VERSION + '-assets'
 const CORE_CACHE = VERSION + '-cores'
 
-const CORE_URL_RE = /\/(ffmpeg|ffmpeg-st|tesseract|libarchive)\//
+const CORE_URL_RE = /\/(ffmpeg|ffmpeg-st|tesseract|libarchive|pdfjs)\//
 
 // 零 WASM 内核依赖、首次访问后即可离线使用的工具（声明式，供 CORE_STATUS 上报）
 const OFFLINE_NATIVE_TOOLS = ['/wechat-article', '/dictionary']
@@ -57,6 +57,22 @@ const CORE_GROUPS = {
     '/tesseract/tesseract-core-lstm.wasm.js',
     '/tesseract/tesseract-core-lstm.wasm',
   ],
+  // OCR 语言训练数据（9 种语言，约 16MB，4.0.0_best_int 量化模型）。
+  // 与识别内核分开成组：内核小、语言包相对大，用户可只缓存用得上的部分粒度。
+  'ocr-lang': [
+    '/tesseract/lang/eng.traineddata.gz',
+    '/tesseract/lang/chi_sim.traineddata.gz',
+    '/tesseract/lang/chi_tra.traineddata.gz',
+    '/tesseract/lang/jpn.traineddata.gz',
+    '/tesseract/lang/kor.traineddata.gz',
+    '/tesseract/lang/fra.traineddata.gz',
+    '/tesseract/lang/deu.traineddata.gz',
+    '/tesseract/lang/spa.traineddata.gz',
+    '/tesseract/lang/rus.traineddata.gz',
+  ],
+  // pdf.js worker：pdfworker.js 优先使用稳定路径 /pdfjs/（fetch-wasm 从 node_modules 复制），
+  // 使 PDF 工具 / PDF 转 OCR 也能真正离线（带 hash 的打包资源名无法静态登记）。
+  pdf: ['/pdfjs/pdf.worker.min.mjs'],
   media: ['/ffmpeg/ffmpeg-core.js', '/ffmpeg/ffmpeg-core.wasm', '/ffmpeg/ffmpeg-core.worker.js'],
   'media-st': ['/ffmpeg-st/ffmpeg-core.js', '/ffmpeg-st/ffmpeg-core.wasm'],
 }

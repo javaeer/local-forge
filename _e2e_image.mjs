@@ -1,7 +1,7 @@
 // 图片引擎端到端验证（真实浏览器）：自检 + 真实压缩回环（含半透明渐变图）。
 // 启动 dev 服务后由 puppeteer 在浏览器内调用 /src/lib/image.js。
 import puppeteer from 'puppeteer-core'
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5173'
+const BASE_URL = (process.env.BASE_URL || 'http://localhost:5173').replace(/\/+$/, '')
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROMIUM_PATH || '/usr/bin/chromium',
   headless: 'new',

@@ -44,7 +44,7 @@ try {
     }
   })
   check('A3：首页「离线内核」面板可见', !!panel, panel ? panel.title : 'missing')
-  check('A3：展示 4 个内核组（解压/OCR/媒体/媒体ST）', !!panel && panel.cards === 4, panel ? `cards=${panel.cards}` : '')
+  check('A3：展示 7 个内核组（解压/词典/PDF/OCR/OCR语言包/媒体/媒体ST）', !!panel && panel.cards === 7, panel ? `cards=${panel.cards}` : '')
   check('A3：存在「全部下载」按钮', !!panel && panel.hasFetchAll)
 
   /* 3) 初始状态：尚无任何内核缓存 */

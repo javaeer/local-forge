@@ -7,7 +7,7 @@
 import puppeteer from 'puppeteer-core'
 import fs from 'node:fs'
 
-const BASE = process.env.BASE || 'http://localhost:4173'
+const BASE = (process.env.BASE || 'http://localhost:4173').replace(/\/+$/, '')
 const CHROME = process.env.CHROMIUM_PATH || '/usr/bin/chromium'
 const TMP = '/tmp/ocr-e2e.png'
 const EXPECT = 'Hello'

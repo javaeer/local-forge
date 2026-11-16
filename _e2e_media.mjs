@@ -1,7 +1,7 @@
 // 浏览器内验证 ffmpeg 媒体内核：加载 + 轻量编码（mjpeg），确认管线可用。
 // 经由 tests/run.mjs 统一注入 BASE / BASE_URL / CHROMIUM_PATH / CHROME_PATH，脚本无需关心地址与浏览器路径。
 import puppeteer from 'puppeteer-core'
-const BASE_URL = process.env.BASE_URL || process.env.BASE || 'http://localhost:5173'
+const BASE_URL = (process.env.BASE_URL || process.env.BASE || 'http://localhost:5173').replace(/\/+$/, '')
 const browser = await puppeteer.launch({
   executablePath: process.env.CHROMIUM_PATH || process.env.CHROME_PATH || '/usr/bin/chromium',
   headless: 'new',
