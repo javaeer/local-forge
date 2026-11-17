@@ -32,8 +32,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "prebuild": "node scripts/fetch-wasm.mjs && node scripts/fetch-dict.mjs --if-missing",
-    "predev": "node scripts/fetch-wasm.mjs && node scripts/fetch-dict.mjs --if-missing",
+    "prebuild": "node scripts/fetch-wasm.mjs && node scripts/fetch-dict.mjs --if-missing --skip ecdict",
+    "predev": "node scripts/fetch-wasm.mjs && node scripts/fetch-dict.mjs --if-missing --skip ecdict",
     "check:consistency": "node scripts/check-consistency.mjs",
     "check:bundle": "node scripts/check-bundle-size.mjs",
     "test": "node tests/run.mjs",
@@ -47,6 +47,7 @@
     "test:e2e:mediafetch": "node tests/run.mjs e2e --only mediafetch",
     "report:kernels": "node scripts/kernel-report.mjs",
     "dict:fetch": "node scripts/fetch-dict.mjs",
+    "dict:fetch:all": "node scripts/fetch-dict.mjs --all",
     "dict:check": "node scripts/fetch-dict.mjs --check",
     "prune:infinityfree": "node scripts/prune-for-infinityfree.mjs"
   },

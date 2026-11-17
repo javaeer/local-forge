@@ -6,7 +6,8 @@
 
 export const CORE_GROUPS_META = [
   { id: 'archive', label: '压缩 / 解压', size: '约 1 MB' },
-  { id: 'dict', label: '离线词典词库', size: '约 5.5 MB' },
+  { id: 'dict', label: '离线词典词库（汉英）', size: '约 5.5 MB' },
+  { id: 'dict-en', label: '英汉大词库 ECDICT', size: '约 19 MB' },
   { id: 'pdf', label: 'PDF 解析内核', size: '约 1.3 MB' },
   { id: 'ocr', label: 'OCR 识别内核', size: '约 13 MB' },
   { id: 'ocr-lang', label: 'OCR 语言包（9 种语言）', size: '约 16 MB' },

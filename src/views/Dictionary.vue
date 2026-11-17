@@ -35,6 +35,13 @@ const HIT_LABEL = {
   exact: '精确', prefix: '前缀', pinyin: '拼音', initials: '首字母', gloss: '释义', fuzzy: '模糊',
 }
 
+/* 内置词库源：同一套索引/检索管道，按需切换 */
+const BUILTIN_SOURCES = {
+  cedict: { id: 'cedict', file: 'dict/cc-cedict.txt.gz', name: 'CC-CEDICT（内置 · 汉英）', label: '汉英 CC-CEDICT（12 万条）' },
+  ecdict: { id: 'ecdict', file: 'dict/ecdict.csv.gz', name: 'ECDICT（内置 · 英汉双解）', label: '英汉双解 ECDICT（77 万条）' },
+}
+const builtinId = ref('cedict')
+
 /* ---------------- 解压（原生优先，fflate 兜底） ---------------- */
 async function maybeGunzip(buf) {
   const u8 = new Uint8Array(buf)
@@ -66,25 +73,30 @@ async function applyEntries(text, name) {
   run()
 }
 
-async function loadBuiltin() {
+async function loadBuiltin(id) {
+  const src = BUILTIN_SOURCES[id || builtinId.value] || BUILTIN_SOURCES.cedict
+  if (id) builtinId.value = src.id
   loading.value = true
   error.value = ''
   try {
     const base = import.meta.env.BASE_URL
     // 主词库 + 两份 IPA 音标库并行拉取；音标库失败不阻塞主流程（音标是增强，不是依赖）
     const [main, us, uk] = await Promise.all([
-      fetch(`${base}dict/cc-cedict.txt.gz`),
+      fetch(`${base}${src.file}`),
       fetch(`${base}dict/en-ipa-us.txt.gz`).catch(() => null),
       fetch(`${base}dict/en-ipa-uk.txt.gz`).catch(() => null),
     ])
-    if (!main.ok) throw new Error(`内置词库加载失败（HTTP ${main.status}）：${base}dict/cc-cedict.txt.gz`)
+    if (!main.ok) {
+      const hint = src.id === 'ecdict' ? '。可先在首页「离线内核」面板预缓存「英汉大词库 ECDICT」，或检查 fetch-dict 是否已拉取该数据' : ''
+      throw new Error(`内置词库加载失败（HTTP ${main.status}）：${base}${src.file}${hint}`)
+    }
     const text = await maybeGunzip(await main.arrayBuffer())
     ipaTexts.value = {
       us: us && us.ok ? await maybeGunzip(await us.arrayBuffer()) : '',
       uk: uk && uk.ok ? await maybeGunzip(await uk.arrayBuffer()) : '',
     }
-    await applyEntries(text, 'CC-CEDICT（内置）')
-    precacheDict() // 后台静默预缓存词库（SW 管辖，访一次词典即可永久离线）
+    await applyEntries(text, src.name)
+    precacheDict(src.id === 'ecdict' ? 'dict-en' : 'dict') // 后台静默预缓存（SW 管辖，访一次即可永久离线）
   } catch (e) {
     error.value = `${e.message}。可先在下方导入一份 CC-CEDICT / JSONL / TSV 词库继续使用。`
   } finally {
@@ -93,12 +105,12 @@ async function loadBuiltin() {
 }
 
 /* ---------------- 词库预缓存（与 ffmpeg / tesseract 内核同一机制） ---------------- */
-async function precacheDict() {
+async function precacheDict(group = 'dict') {
   try {
     if (!swSupported()) return
     const st = await coreStatus()
-    if (st && st.groups && st.groups.dict && st.groups.dict.ready) return
-    await precacheCores(['dict'])
+    if (st && st.groups && st.groups[group] && st.groups[group].ready) return
+    await precacheCores([group])
   } catch { /* SW 不可用就当没这回事，HTTP 缓存仍会兜底 */ }
 }
 
@@ -251,6 +263,12 @@ onBeforeUnmount(() => clearTimeout(timer))
           <option v-for="m in MODES" :key="m" :value="m">{{ MODE_LABEL[m] }}</option>
         </select>
       </div>
+      <div class="field" style="min-width:220px;flex:0 0 auto">
+        <label>内置词库</label>
+        <select v-model="builtinId" :disabled="loading" @change="loadBuiltin()">
+          <option v-for="s in BUILTIN_SOURCES" :key="s.id" :value="s.id">{{ s.label }}</option>
+        </select>
+      </div>
       <div class="field" style="flex:0 0 auto">
         <label>示例</label>
         <div class="samples">
@@ -369,6 +387,11 @@ onBeforeUnmount(() => clearTimeout(timer))
       <li>
         <b>CC-CEDICT</b> —— 社区维护的汉英词典，<b>CC BY-SA 4.0</b> 许可，约 12 万条。
         本项目内置文件位于 <code>public/dict/cc-cedict.txt.gz</code>，随仓库以相同许可分发。
+      </li>
+      <li>
+        <b>ECDICT</b> —— 开源英汉/英英双解词库（<b>MIT</b> 许可，约 77 万条，含音标/词频/考级标签），
+        文件位于 <code>public/dict/ecdict.csv.gz</code>（不入 Git，由 <code>fetch-dict</code> 拉取），
+        可在上方「内置词库」切换装载，也可在首页「离线内核」预缓存后断网使用。
       </li>
       <li>
         <b>Kaikki / Wiktextract</b> —— 维基词典结构化导出（CC BY-SA），可用「导入」按语言增量补充。

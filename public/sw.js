@@ -50,6 +50,9 @@ const CORE_GROUPS = {
     '/dict/en-ipa-us.txt.gz',
     '/dict/en-ipa-uk.txt.gz',
   ],
+  // ECDICT 英汉/英英双解大词库（约 77 万条，~19MB gzip）。单独成组：
+  // 体积比主词库大不少，用户可按需选择是否缓存。
+  'dict-en': ['/dict/ecdict.csv.gz'],
   ocr: [
     '/tesseract/worker.min.js',
     '/tesseract/tesseract-core-simd-lstm.wasm.js',

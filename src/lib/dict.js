@@ -156,12 +156,70 @@ export function parseTsv(text, { max = 0 } = {}) {
   return out
 }
 
+// ECDICT（skywind3000/ECDICT，MIT）：英汉 + 英英双解大词库（约 77 万词条）。
+// CSV 带引号字段（translation/definition 内含 \n 换行），必须按引号状态逐字符解析。
+// 列序：word,phonetic,definition,translation,pos,collins,oxford,tag,bnc,frq,exchange,detail,audio
+// 我们只取 word / phonetic / definition / translation 四列，其余不进内存。
+export function parseEcdict(text, { max = 0 } = {}) {
+  const out = []
+  const n = text.length
+  let i = 0
+  // 跳过表头行
+  while (i < n && text.charCodeAt(i) !== 10) i++
+  i++
+  let cur = []        // 当前字段累积
+  const row = []      // 当前行各字段
+  let inQ = false
+  let afterQ = false  // 引号刚结束（其后只允许逗号/换行/空白）
+  const flushField = () => { row.push(cur.join('')); cur = [] }
+  const flushRow = () => {
+    flushField()
+    const word = row[0] || ''
+    if (word) {
+      const d = []
+      const tr = (row[3] || '').trim()
+      const de = (row[2] || '').trim()
+      if (tr) for (const x of tr.split('\n')) { const t = x.trim(); if (t) d.push(t) }
+      if (de) for (const x of de.split('\n')) { const t = x.trim(); if (t) d.push(t) }
+      out.push({ t: word, s: word, p: (row[1] || '').trim(), d })
+      if (max && out.length >= max) return true
+    }
+    row.length = 0
+    return false
+  }
+  for (; i < n; i++) {
+    const c = text[i]
+    if (inQ) {
+      if (c === '"') {
+        // 双引号转义（"" → 字面引号）
+        if (text[i + 1] === '"') { cur.push('"'); i++ } else { inQ = false; afterQ = true }
+      } else cur.push(c)
+      continue
+    }
+    if (c === '"' && cur.length === 0) { inQ = true; continue }
+    if (c === ',') { flushField(); afterQ = false; continue }
+    if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++
+      if (flushRow()) return out
+      afterQ = false
+      continue
+    }
+    if (afterQ && (c === ' ' || c === '\t')) continue // 引号后拖尾空白
+    cur.push(c)
+  }
+  if (cur.length || row.length) flushRow()
+  return out
+}
+
 // 按文件名/内容嗅探格式，统一入口
 export function parseDict(text, name = '') {
   const lower = String(name).toLowerCase()
   if (lower.endsWith('.jsonl') || lower.endsWith('.json')) return parseJsonl(text)
-  if (lower.endsWith('.tsv') || lower.endsWith('.csv')) return parseTsv(text)
+  if (lower.includes('ecdict') || lower.endsWith('.ecdict.csv')) return parseEcdict(text)
   const head = String(text).slice(0, 400)
+  // ECDICT 表头优先于扩展名：.csv 一名两用，靠表头区分才是硬判据
+  if (/^"?\s*word"?\s*,\s*"?\s*phonetic/i.test(head)) return parseEcdict(text)
+  if (lower.endsWith('.tsv') || lower.endsWith('.csv')) return parseTsv(text)
   if (head.trimStart().startsWith('{')) return parseJsonl(text)
   if (head.includes('\t')) return parseTsv(text)
   return parseCedict(text)
@@ -185,7 +243,15 @@ function addGloss(map, key, i) {
   if (arr[arr.length - 1] !== i) arr.push(i)
 }
 
-export function buildIndex(entries) {
+// 大词库的索引护栏：ECDICT（77 万条，中文释义极多）若不限制，
+// 释义倒排会膨胀到数百万 posting（内存 + 建索引时间双爆）。
+// 策略：不建「英文释义词」倒排（英译中反查由主词库 CC-CEDICT 承担），
+// 每条词条的中文义项最多取前 6 段。
+export function indexOptsFor(name) {
+  return /ecdict/i.test(String(name || '')) ? { glossWords: false, maxGlossSeg: 6 } : {}
+}
+
+export function buildIndex(entries, { glossWords = true, maxGlossSeg = 0 } = {}) {
   const byWord = new Map()
   const byPinyin = new Map()
   const byInitials = new Map()
@@ -212,7 +278,7 @@ export function buildIndex(entries) {
       for (let k = 0; k < d.length; k++) {
         const low = d[k].toLowerCase()
         // 一次 match 直接取出 ≥3 字符的英文词，省掉 split 产生的短词与后续长度判断
-        const words = low.match(/[a-z0-9']{3,}/g)
+        const words = glossWords ? low.match(/[a-z0-9']{3,}/g) : null
         if (words) {
           for (let w = 0; w < words.length; w++) {
             const t = words[w]
@@ -224,7 +290,8 @@ export function buildIndex(entries) {
         // 先用首字符码位快速排除纯 ASCII 释义，避免对每条释义都跑一次 CJK 正则。
         if (low.charCodeAt(0) > 0x2e80 && CJK.test(low)) {
           const parts = low.split(/[;,，；]/)
-          for (let p = 0; p < parts.length; p++) {
+          const lim = maxGlossSeg ? Math.min(parts.length, maxGlossSeg) : parts.length
+          for (let p = 0; p < lim; p++) {
             const seg = parts[p].trim()
             if (seg) addGloss(byGlossSeg, seg, i)
           }

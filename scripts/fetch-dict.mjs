@@ -2,14 +2,16 @@
 // 拉取 / 更新内置词典数据。词库是「数据」不是「代码」：
 // 应当可替换、可校验、可定时更新；仓库不保留快照（public/dict/*.gz 已 gitignore）。
 //
-// 管辖三份数据：
+// 管辖四份数据：
 //   1. cc-cedict.txt.gz   CC-CEDICT 汉英词库（CC BY-SA 4.0，~12 万条）
-//   2. en-ipa-us.txt.gz   英语 IPA 音标·美式（open-dict-data/ipa-dict，MIT）
-//   3. en-ipa-uk.txt.gz   英语 IPA 音标·英式（open-dict-data/ipa-dict，MIT）
+//   2. ecdict.csv.gz      ECDICT 英汉/英英双解词库（MIT，~77 万条）
+//   3. en-ipa-us.txt.gz   英语 IPA 音标·美式（open-dict-data/ipa-dict，MIT）
+//   4. en-ipa-uk.txt.gz   英语 IPA 音标·英式（open-dict-data/ipa-dict，MIT）
 //
 // 用法：
 //   node scripts/fetch-dict.mjs                     # 下载全部缺失/无效的文件
 //   node scripts/fetch-dict.mjs --only cedict       # 只处理某一份数据
+//   node scripts/fetch-dict.mjs --skip ecdict       # 跳过大词库（dev/build 钩子用，避免首装拉 66MB）
 //   node scripts/fetch-dict.mjs --check             # 只校验现有快照，不联网（CI 用）
 //   node scripts/fetch-dict.mjs --if-missing        # dev / build 钩子用
 //
@@ -21,7 +23,7 @@ import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'node:fs'
 import { gunzipSync, gzipSync } from 'node:zlib'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseCedict } from '../src/lib/dict.js'
+import { parseCedict, parseEcdict } from '../src/lib/dict.js'
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..')
 const DIR = 'public/dict'
@@ -43,6 +45,22 @@ const SOURCES = [
       return { count: entries.length, sample: entries[Math.floor(entries.length / 2)] }
     },
     sampleText(s) { return `${s.s}（${s.t}）[${s.p}] ${s.d[0]}` },
+  },
+  {
+    id: 'ecdict',
+    out: `${DIR}/ecdict.csv.gz`,
+    // ECDICT 主仓库单文件 ~53MB，超出 jsDelivr gh 的 20MB 上限，只能走 raw 源。
+    urls: [
+      'https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv',
+    ],
+    min: 700000,
+    verify(text) {
+      const entries = parseEcdict(text)
+      const bad = entries.filter((e) => !e.s || !e.d.length)
+      if (bad.length) throw new Error(`${bad.length} 条字段不完整，首条：${JSON.stringify(bad[0])}`)
+      return { count: entries.length, sample: entries[Math.floor(entries.length / 2)] }
+    },
+    sampleText(s) { return `${s.s}${s.p ? ' /' + s.p + '/' : ''} ${s.d[0]}` },
   },
   {
     id: 'ipa-us',
@@ -153,7 +171,10 @@ async function handle(src) {
 
 async function main() {
   const only = flag('only')
-  const list = only ? SOURCES.filter((s) => s.id === only) : SOURCES
+  let list = only ? SOURCES.filter((s) => s.id === only) : SOURCES
+  const skip = flag('skip').split(',').map((x) => x.trim()).filter(Boolean)
+  if (has('all')) list = SOURCES
+  else if (skip.length && !only) list = list.filter((s) => !skip.includes(s.id))
   if (!list.length) throw new Error(`--only ${only} 不存在，可选：${SOURCES.map((s) => s.id).join(' / ')}`)
   if (has('check')) console.log('校验现有快照（不联网）…')
   for (const src of list) await handle(src)

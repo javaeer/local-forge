@@ -20,10 +20,31 @@ https://creativecommons.org/licenses/by-sa/4.0/
 与代码的关系
 ------------
 LocalForge 的**代码**沿用仓库根目录的 MIT 许可；
-本目录下的**数据文件**独立适用 CC BY-SA 4.0。
+本目录下的**数据文件**独立适用各自许可。
 两者互不影响：分发本数据不改变 LocalForge 代码的许可，反之亦然。
 
 更新方式
 --------
 pnpm dict:fetch    # 重新下载并校验，写入本目录
 pnpm dict:check    # 仅校验快照完整性（CI 可当门禁）
+
+================================
+
+ECDICT 数据文件许可与来源
+
+文件：public/dict/ecdict.csv.gz
+内容：ECDICT 英汉/英英双解词库快照（约 77 万条），UTF-8 CSV（带引号字段），gzip 压缩。
+
+来源
+----
+ECDICT — https://github.com/skywind3000/ECDICT
+开源英汉词典数据，含 IPA 音标、英文释义、中文翻译、词频（BNC/COCA）与考级标签。
+
+许可
+----
+MIT（与该仓库 LICENSE 一致）。使用时保留本署名即可。
+
+说明
+----
+本文件体积较大（约 19MB gzip），不入 Git，由 scripts/fetch-dict.mjs 按需拉取；
+不进默认 SW 预缓存（'dict' 组），单独归入 'dict-en' 内核组，由用户按需缓存。

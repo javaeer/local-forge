@@ -1,7 +1,7 @@
 // 词典后台线程 —— 装载解析、建索引、检索的重活全在这里，主线程只收发小消息。
 // 协议：入参 { id, op, ... }，回执 { id, ok, payload } 或 { id, ok: false, error }。
 // 索引常驻本线程内存，不与主线程共享（免掉 50MB 结构化克隆的开销）。
-import { parseDict, buildIndex, search, stats, buildIpaIndex, isSingleEnglishWord } from './dict.js'
+import { parseDict, buildIndex, indexOptsFor, search, stats, buildIpaIndex, isSingleEnglishWord } from './dict.js'
 
 let index = null
 let ipa = null // { us: Map, uk: Map } —— 英语音标，独立于主词库
@@ -14,7 +14,7 @@ self.onmessage = (e) => {
       const t0 = performance.now()
       const entries = parseDict(e.data.text, e.data.name || '')
       if (!entries.length) throw new Error('解析结果为空，请检查词库格式')
-      index = buildIndex(entries)
+      index = buildIndex(entries, indexOptsFor(e.data.name || ''))
       if (e.data.ipaTexts) {
         ipa = {}
         for (const v of ['us', 'uk']) {

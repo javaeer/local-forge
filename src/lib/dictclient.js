@@ -67,7 +67,7 @@ export async function loadDict(text, name, ipaTexts) {
   if (ipaTexts) {
     for (const v of ['us', 'uk']) if (ipaTexts[v]) ipa[v] = lib.buildIpaIndex(ipaTexts[v])
   }
-  main = { index: lib.buildIndex(entries), ipa }
+  main = { index: lib.buildIndex(entries, lib.indexOptsFor(name || '')), ipa }
   return {
     entries: main.index.entries.length,
     words: lib.stats(main.index).words,

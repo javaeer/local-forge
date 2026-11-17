@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   toneMark, stripTones, pinyinInitials,
-  parseCedict, parseJsonl, parseTsv, parseDict,
+  parseCedict, parseJsonl, parseTsv, parseDict, parseEcdict,
   buildIndex, search, editDistance, stats,
   buildIpaIndex, isSingleEnglishWord,
 } from '../../src/lib/dict.js'
@@ -236,4 +236,34 @@ test('isSingleEnglishWord：只放行单个纯英文词', () => {
   for (const no of ['green tea', '绿色', 'bicycle!', '', ' ', '3d']) {
     assert.ok(!isSingleEnglishWord(no), `应拒绝：${JSON.stringify(no)}`)
   }
+})
+
+test('parseEcdict 解析引号 CSV（含内嵌换行与双引号转义）', () => {
+  const csv = [
+    'word,phonetic,definition,translation,pos,collins,oxford,tag,bnc,frq,exchange,detail,audio',
+    'bicycle,"ˈbaɪsɪkl","a wheeled vehicle","n. 自行车\nvi. 骑自行车",,3,1,cet4 cet6 ky,2082,2255,"bicycles\nbicycling\nbicycled",,',
+    '"say, ""hi""","sei","","int. 你好\n打招呼用语",,,,,,,9,,,',
+  ].join('\n')
+  const rows = parseEcdict(csv)
+  assert.equal(rows.length, 2)
+  assert.equal(rows[0].s, 'bicycle')
+  assert.equal(rows[0].p, 'ˈbaɪsɪkl', '音标列应带出（供 IPA 展示）')
+  assert.deepEqual(rows[0].d.slice(0, 2), ['n. 自行车', 'vi. 骑自行车'], '中文释义在前')
+  assert.deepEqual(rows[0].d[2], 'a wheeled vehicle', '英文释义跟在中文后')
+  assert.equal(rows[1].s, 'say, "hi"', '双引号应解转义')
+  assert.deepEqual(rows[1].d, ['int. 你好', '打招呼用语'])
+})
+
+test('parseEcdict：跳表头 / max 截断 / 空行容忍', () => {
+  const csv = 'word,phonetic,definition,translation\na,,,"一"\nb,,,"二"\n\n'
+  assert.equal(parseEcdict(csv).length, 2)
+  assert.equal(parseEcdict(csv, { max: 1 }).length, 1)
+  assert.equal(parseEcdict(csv, { max: 1 })[0].s, 'a')
+})
+
+test('parseDict 嗅探 ECDICT（文件名与表头两种途径）', () => {
+  const csv = 'word,phonetic,definition,translation\n"bicycle","ˈbaɪsɪkl","x","n. 自行车"\n'
+  assert.equal(parseDict(csv, 'ecdict.csv')[0].s, 'bicycle')
+  assert.equal(parseDict(csv)[0].s, 'bicycle', '按表头 word,phonetic 也应识别')
+  assert.equal(parseDict(csv, 'random.csv')[0].s, 'bicycle', '表头嗅探优先于 .csv → TSV')
 })
