@@ -578,7 +578,10 @@ export function search(index, query, { mode = 'auto', limit = 50, maxDist = 2 } 
 
   // 4) 释义全文（英文查义 / 中文释义里的词）
   //    走倒排索引：义项精确 ＞ 单词精确 ＞ 前缀 ＞ 子串兜底，详见 glossSearch 注释。
-  if (mode === 'gloss' || (useAuto && ascii && hits.size === 0)) {
+  //    注意：**中文输入同样要兜底**。早先这里限定 ascii，导致在英汉词库（ECDICT）下
+  //    查任何中文词都直接空白——该词库没有中文词条，中文只能靠释义反查，
+  //    用户看到的就是"这字典什么都查不到"。
+  if (mode === 'gloss' || (useAuto && hits.size === 0)) {
     glossSearch(index, q, hits, add)
   }
 

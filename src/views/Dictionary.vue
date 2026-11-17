@@ -1,5 +1,5 @@
 <script setup>
-import { ref, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
 // 内核不进主线程：装载 / 建索引 / 检索都在后台线程，见 dictclient.js
@@ -19,6 +19,8 @@ const ipaTexts = ref(null) // { us, uk } 原始音标文本（装载后保留，
 const query = ref('')
 const mode = ref('auto')
 const res = ref(null)
+const suggest = ref([]) // 空结果时的"你是不是想找"候选（自动跑一次模糊纠错）
+const suggestBusy = ref(false)
 const openIdx = ref(-1)
 const saved = ref([]) // 本机持久化的自定义词库
 const savedPersisted = ref(true)
@@ -73,6 +75,21 @@ async function applyEntries(text, name) {
   run()
 }
 
+/* 空态里的「换词库」入口：切库后把当前查询重放一遍，避免用户还要再敲一次 */
+function switchBuiltin(id) {
+  if (builtinId.value === id || loading.value) return
+  loadBuiltin(id).then(() => run())
+}
+
+// 模糊纠错是拿「词表」做编辑距离：英汉词库（ECDICT）的词表全是英文，
+// 拿中文去纠错必然 0 条。此时不该在空态里推荐它，否则等于把用户往死胡同引。
+const fuzzyUsable = computed(() => {
+  const q = String(res.value?.query || '')
+  const cjk = /[\u3400-\u9fff]/.test(q)
+  if (!cjk) return true
+  return builtinId.value !== 'ecdict'
+})
+
 async function loadBuiltin(id) {
   const src = BUILTIN_SOURCES[id || builtinId.value] || BUILTIN_SOURCES.cedict
   if (id) builtinId.value = src.id
@@ -119,11 +136,20 @@ let timer = 0
 let runSeq = 0
 async function run() {
   const q = query.value.trim()
-  if (!q) { res.value = null; return }
+  if (!q) { res.value = null; suggest.value = []; return }
   const my = ++runSeq
   const r = await dictSearch(q, mode.value, 60)
   // 防抖间隔内又敲了字 / 切了模式：这份响应已过期，丢弃
-  if (my === runSeq && r) res.value = r
+  if (my !== runSeq || !r) return
+  res.value = r
+  // 空结果不能让用户对着空白页发懵：后台补跑一次模糊纠错，给出"你是不是想找"
+  suggest.value = []
+  if (!r.items.length) {
+    suggestBusy.value = true
+    const s = await dictSearch(q, 'fuzzy', 8).catch(() => null)
+    if (my === runSeq && s) suggest.value = s.items
+    suggestBusy.value = false
+  }
 }
 watch([query, mode], () => {
   clearTimeout(timer)
@@ -298,6 +324,43 @@ onBeforeUnmount(() => clearTimeout(timer))
   </div>
 
   <!-- 结果 -->
+  <!-- 空结果：绝不能只留一片白 —— 说明为什么没查到、给出下一步动作与相近词 -->
+  <div v-if="res && res.query && !res.items.length" class="empty-state">
+    <div class="es-title"><i class="bi bi-search"></i> 未收录「{{ res.query }}」</div>
+
+    <div v-if="suggest.length" class="es-block">
+      <div class="es-label">你是不是想找</div>
+      <div class="es-chips">
+        <button v-for="it in suggest" :key="it.i" class="chip" @click="pickSample(it.s)">
+          {{ it.s }}<span v-if="it.t && it.t !== it.s" class="es-trad">{{ it.t }}</span>
+        </button>
+      </div>
+    </div>
+    <div v-else-if="suggestBusy" class="es-block es-muted">正在找相近词…</div>
+
+    <ul class="es-tips">
+      <li v-if="builtinId === 'cedict'">
+        当前是 <b>汉英词库 CC-CEDICT</b>（12 万条，只收常见词条）。中文释义可切到
+        <a href="#" @click.prevent="switchBuiltin('ecdict')">英汉双解 ECDICT</a> 反查。
+      </li>
+      <li v-else>
+        当前是 <b>英汉双解 ECDICT</b>（77 万条）。中文词条需用
+        <a href="#" @click.prevent="switchBuiltin('cedict')">汉英 CC-CEDICT</a> 查。
+      </li>
+      <li v-if="mode !== 'fuzzy' && fuzzyUsable">
+        或换 <a href="#" @click.prevent="mode = 'fuzzy'">模糊纠错</a> 模式，
+        按编辑距离找字形相近的词。
+      </li>
+      <li>
+        自有词库可直接拖入下方 <b>导入词库</b>（CC-CEDICT / JSONL / TSV），
+        导入后同样离线可用。
+      </li>
+    </ul>
+    <p class="es-muted" style="margin:8px 0 0">
+      已尝试：精确 → 前缀 → 拼音 → 释义反查<template v-if="builtinId === 'ecdict'"> → 中文义项</template>。
+    </p>
+  </div>
+
   <div v-if="res && res.total" class="result-bar">
     <span><b>{{ res.total.toLocaleString() }}</b> 条结果 · {{ res.took }} ms</span>
     <span class="mono-note">查询「{{ res.query }}」</span>
@@ -470,6 +533,22 @@ onBeforeUnmount(() => clearTimeout(timer))
 }
 .result-bar b { color: var(--accent); }
 .mono-note { font-family: var(--mono); color: var(--faint); }
+
+/* 空结果面板：说明 + 相近词 + 下一步动作 */
+.empty-state {
+  margin: 16px 0 8px; padding: 16px 18px; border-radius: 12px;
+  border: 1px dashed var(--line-strong); background: var(--panel-2);
+}
+.es-title { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 600; color: var(--txt); }
+.es-title i { color: var(--warn, #f59e0b); }
+.es-block { margin-top: 12px; }
+.es-label { font-size: 12px; color: var(--faint); margin-bottom: 6px; }
+.es-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.es-trad { color: var(--faint); margin-left: 4px; font-size: 11.5px; }
+.es-tips { margin: 12px 0 0; padding-left: 18px; font-size: 12.5px; line-height: 1.85; color: var(--muted); }
+.es-tips a { color: var(--accent); text-decoration: none; border-bottom: 1px dashed currentColor; }
+.es-tips a:hover { border-bottom-style: solid; }
+.es-muted { font-size: 12px; color: var(--faint); }
 
 .dict-list { display: flex; flex-direction: column; gap: 8px; }
 .dict-item {

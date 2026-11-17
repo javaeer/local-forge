@@ -81,6 +81,27 @@ async function lookup(q, mode) {
   ok(r.total > 0 && r.words[0]?.startsWith('绿'), '模糊纠错「绿仓」', `total=${r.total} top=${r.words[0]}`)
 }
 
+// 2.5) 未收录词必须给空态 + 相近词建议（不能只留一片白）
+{
+  // 上一条用例把模式留在了 fuzzy，fuzzy 下「颗粒度」是有结果的；必须回到 auto 才有空态
+  await page.select('select', 'auto')
+  await page.evaluate(() => { const el = document.querySelector('.search-input'); el.value = ''; el.dispatchEvent(new Event('input', { bubbles: true })) })
+  await page.click('.search-input')
+  await page.type('.search-input', '颗粒度')
+  await page.waitForSelector('.empty-state', { timeout: 30000 })
+  const txt = await page.$eval('.empty-state', (el) => el.textContent.replace(/\s+/g, ' ').trim())
+  ok(/未收录/.test(txt) && /颗粒度/.test(txt), '未收录词显示空态说明（不再空白）', txt.slice(0, 50))
+  // 相近词是空态出现后异步补跑的模糊纠错，要等它落地
+  await page.waitForFunction(() => {
+    const es = document.querySelector('.empty-state')
+    return es && !/正在找相近词/.test(es.textContent)
+  }, { timeout: 30000 })
+  const chips = await page.$$eval('.es-chips .chip', (els) => els.map((e) => e.textContent.trim()))
+  ok(chips.length > 0, '空态自动给出相近词', chips.slice(0, 3).join(' / '))
+  const tips = await page.$$eval('.es-tips li', (els) => els.map((e) => e.textContent.replace(/\s+/g, ' ').trim()))
+  ok(tips.length >= 2, '空态给出下一步动作（换词库 / 模糊 / 导入）', `${tips.length} 条`)
+}
+
 // 3) 切换到英汉大词库 ECDICT（77 万条），验证同一套检索管道对双语词库有效
 const statusEntries = async () => page.$eval('.status', (el) => {
   const m = /([\d,]+) 条/.exec(el.textContent.replace(/\s+/g, ' '))
@@ -107,6 +128,12 @@ const statusEntries = async () => page.$eval('.status', (el) => {
 
   const g = await lookup('自行车', 'gloss')
   ok(g.words.includes('bicycle') || g.words.includes('bike'), 'ECDICT 中文释义反查「自行车」', `total=${g.total} top=${g.words.slice(0, 3).join(',')}`)
+
+  // auto 模式查中文：英汉词库没有中文词条，必须兜底到释义反查（否则整片空白）
+  const a = await lookup('自行车')
+  ok(a.total > 0, 'ECDICT 下 auto 模式查中文能命中（不再空白）', `total=${a.total} top=${a.words.slice(0, 2).join(',')}`)
+  const a2 = await lookup('精准')
+  ok(a2.total > 0, 'ECDICT 下 auto 模式查「精准」能命中', `total=${a2.total} top=${a2.words.slice(0, 2).join(',')}`)
 }
 
 // 3) 词条展开 + 复制按钮存在

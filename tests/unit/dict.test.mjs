@@ -310,3 +310,31 @@ test('释义检索：词性前缀不影响命中档位，同分按词频排序',
   const exactHit = r.items.find((x) => x.s === 'bike')
   assert.equal(exactHit.score, 45, '剥离词性前缀后应回到精确档 45 分')
 })
+
+
+test('auto 模式：中文无词条时兜底释义反查（英汉词库场景）', () => {
+  // ECDICT 这类词库没有中文词条，中文只能靠释义反查。
+  // 早先 gloss 只在 ascii 输入时触发，导致切到英汉词库后查任何中文都是空白。
+  const entries = [
+    { s: 'precision', t: 'precision', p: '', d: ['n. 精确, 精准, 精密'], f: 3000 },
+    { s: 'bike', t: 'bike', p: '', d: ['n. 自行车'], f: 2163 },
+  ]
+  const idx = buildIndex(entries)
+  const r = search(idx, '精准', { limit: 5 })
+  assert.ok(r.items.length > 0, '中文输入必须触发释义反查，不能直接空结果')
+  assert.equal(r.items[0].s, 'precision')
+  assert.equal(r.items[0].hit, 'gloss')
+  assert.equal(r.items[0].score, 45, '义项精确命中')
+  assert.equal(search(idx, '自行车').items[0].s, 'bike', '同上')
+})
+
+test('auto 模式：中文命中词条时不额外跑释义（避免噪声）', () => {
+  const entries = [
+    { s: '精准', t: '精準', p: 'jīng zhǔn', d: ['accurate'], f: 0 },
+    { s: 'precise', t: 'precise', p: '', d: ['n. 精准'], f: 2000 },
+  ]
+  const idx = buildIndex(entries)
+  const r = search(idx, '精准', { limit: 5 })
+  assert.equal(r.items[0].s, '精准', '词条精确命中优先')
+  assert.equal(r.items[0].hit, 'exact')
+})
