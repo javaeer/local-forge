@@ -277,6 +277,11 @@ onBeforeUnmount(() => clearTimeout(timer))
       </div>
     </div>
 
+    <p v-if="builtinId === 'ecdict'" class="hint" style="margin:6px 0 0">
+      ECDICT 77 万条双解：首载约 <b>21.7 MB</b>（之后由离线内核缓存，断网可用），
+      建索引约 <b>4 秒</b>，常驻内存约 <b>500 MB</b> —— 桌面推荐；手机建议留在汉英词库。
+    </p>
+
     <div class="status">
       <template v-if="info.entries">
         <i class="bi bi-database-check"></i>

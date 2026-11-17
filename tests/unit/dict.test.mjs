@@ -3,7 +3,7 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import {
   toneMark, stripTones, pinyinInitials,
-  parseCedict, parseJsonl, parseTsv, parseDict, parseEcdict,
+  parseCedict, parseJsonl, parseTsv, parseDict, parseEcdict, stripPosTag,
   buildIndex, search, editDistance, stats,
   buildIpaIndex, isSingleEnglishWord,
 } from '../../src/lib/dict.js'
@@ -266,4 +266,47 @@ test('parseDict 嗅探 ECDICT（文件名与表头两种途径）', () => {
   assert.equal(parseDict(csv, 'ecdict.csv')[0].s, 'bicycle')
   assert.equal(parseDict(csv)[0].s, 'bicycle', '按表头 word,phonetic 也应识别')
   assert.equal(parseDict(csv, 'random.csv')[0].s, 'bicycle', '表头嗅探优先于 .csv → TSV')
+})
+
+
+test('stripPosTag 剥离 ECDICT 的词性 / 学科前缀', () => {
+  assert.equal(stripPosTag('n. 自行车'), '自行车')
+  assert.equal(stripPosTag('vt. 使烦恼'), '使烦恼')
+  assert.equal(stripPosTag('a. 无所不在的'), '无所不在的')
+  assert.equal(stripPosTag('【化】丙酮'), '丙酮')
+  assert.equal(stripPosTag('[医] 发热'), '发热')
+  assert.equal(stripPosTag('n./v. 增补'), '增补')
+  assert.equal(stripPosTag('自行车'), '自行车', '无前缀应原样返回')
+  assert.equal(stripPosTag('n.'), 'n.', '只有前缀不剩正文时不应清空')
+})
+
+test('parseEcdict 按字面 \\n 拆义项（ECDICT 的真实分隔符）', () => {
+  // 字段内是「反斜杠 + n」两个字符，不是真换行；按真换行拆会得到一条粘连长释义
+  const csv = 'word,phonetic,definition,translation\nbicycle,baisikl,"n. a wheeled vehicle\\nv. ride a bicycle","n. 自行车\\nvi. 骑自行车"\n'
+  const rows = parseEcdict(csv)
+  assert.deepEqual(rows[0].d, ['n. 自行车', 'vi. 骑自行车', 'n. a wheeled vehicle', 'v. ride a bicycle'],
+    '中文义项在前、英文在后，且各自按字面 \\n 拆开')
+})
+
+test('parseEcdict 带出词频（COCA 优先，退 BNC）', () => {
+  const csv = 'word,phonetic,definition,translation,pos,collins,oxford,tag,bnc,frq\na,,,,,,,5312,4366\nb,,,,,,,,900\nc,,,,,,,,,\n'
+  const rows = parseEcdict(csv)
+  assert.equal(rows[0].f, 4366, 'frq(COCA) 优先')
+  assert.equal(rows[1].f, 900, '无 frq 时退 bnc')
+  assert.equal(rows[2].f, 0, '两列都空 → 0')
+})
+
+test('释义检索：词性前缀不影响命中档位，同分按词频排序', () => {
+  const entries = [
+    { s: 'rare', t: 'rare', p: '', d: ['n. 自行车'], f: 9000 },
+    { s: 'bike', t: 'bike', p: '', d: ['n. 自行车'], f: 2163 },
+    { s: 'bikeway', t: 'bikeway', p: '', d: ['n. 自行车道'], f: 40000 },
+  ]
+  const idx = buildIndex(entries)
+  const r = search(idx, '自行车', { mode: 'gloss', limit: 10 })
+  const words = r.items.map((x) => x.s)
+  assert.ok(words.includes('bike'), '「n. 自行车」应命中 bike')
+  assert.equal(r.items[0].s, 'bike', '同为精确命中时词频高的排前')
+  const exactHit = r.items.find((x) => x.s === 'bike')
+  assert.equal(exactHit.score, 45, '剥离词性前缀后应回到精确档 45 分')
 })

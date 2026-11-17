@@ -46,5 +46,6 @@ MIT（与该仓库 LICENSE 一致）。使用时保留本署名即可。
 
 说明
 ----
-本文件体积较大（约 19MB gzip），不入 Git，由 scripts/fetch-dict.mjs 按需拉取；
+本文件体积较大（约 21.7MB gzip，66MB 原文），不入 Git，由 scripts/fetch-dict.mjs 按需拉取；
 不进默认 SW 预缓存（'dict' 组），单独归入 'dict-en' 内核组，由用户按需缓存。
+装载后索引常驻内存约 500MB（77 万条），移动端建议改用汉英词库。

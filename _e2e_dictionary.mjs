@@ -81,6 +81,34 @@ async function lookup(q, mode) {
   ok(r.total > 0 && r.words[0]?.startsWith('绿'), '模糊纠错「绿仓」', `total=${r.total} top=${r.words[0]}`)
 }
 
+// 3) 切换到英汉大词库 ECDICT（77 万条），验证同一套检索管道对双语词库有效
+const statusEntries = async () => page.$eval('.status', (el) => {
+  const m = /([\d,]+) 条/.exec(el.textContent.replace(/\s+/g, ' '))
+  return { n: m ? Number(m[1].replace(/,/g, '')) : 0, loading: /正在装载/.test(el.textContent), text: el.textContent.replace(/\s+/g, ' ').trim() }
+})
+{
+  const sels = await page.$$('select')
+  ok(sels.length >= 2, '词库切换器存在', `selects=${sels.length}`)
+  await sels[1].select('ecdict')
+  await page.waitForFunction(() => {
+    const el = document.querySelector('.status')
+    if (!el || /正在装载/.test(el.textContent)) return false
+    const m = /([\d,]+) 条/.exec(el.textContent)
+    return !!m && Number(m[1].replace(/,/g, '')) > 700000
+  }, { timeout: 240000 })
+  const st = await statusEntries()
+  ok(st.n > 700000, 'ECDICT 装载完成（77 万条）', `${st.n} 条`)
+  ok(/后台线程/.test(st.text), '大词库仍在后台线程建索引', st.text)
+
+  const r = await lookup('ubiquitous', 'exact')
+  ok(r.words[0] === 'ubiquitous', 'ECDICT 精确检索 ubiquitous', `total=${r.total} top=${r.words[0]}`)
+  const d0 = await page.$eval('.dict-item .di-def', (el) => el.textContent).catch(() => '')
+  ok(/无所不在/.test(d0), '释义带中文翻译（词性前缀已剥离展示）', d0.slice(0, 40))
+
+  const g = await lookup('自行车', 'gloss')
+  ok(g.words.includes('bicycle') || g.words.includes('bike'), 'ECDICT 中文释义反查「自行车」', `total=${g.total} top=${g.words.slice(0, 3).join(',')}`)
+}
+
 // 3) 词条展开 + 复制按钮存在
 {
   await page.click('.dict-item .di-head')

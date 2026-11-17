@@ -157,9 +157,12 @@ export function parseTsv(text, { max = 0 } = {}) {
 }
 
 // ECDICT（skywind3000/ECDICT，MIT）：英汉 + 英英双解大词库（约 77 万词条）。
-// CSV 带引号字段（translation/definition 内含 \n 换行），必须按引号状态逐字符解析。
+// CSV 带引号字段，必须按引号状态逐字符解析。
 // 列序：word,phonetic,definition,translation,pos,collins,oxford,tag,bnc,frq,exchange,detail,audio
 // 我们只取 word / phonetic / definition / translation 四列，其余不进内存。
+// 字段内的行分隔符是字面 `\n`（反斜杠 + n）而非真换行，两种都接受。
+const ECDICT_LINE = /\r?\n|\\n/
+
 export function parseEcdict(text, { max = 0 } = {}) {
   const out = []
   const n = text.length
@@ -179,9 +182,14 @@ export function parseEcdict(text, { max = 0 } = {}) {
       const d = []
       const tr = (row[3] || '').trim()
       const de = (row[2] || '').trim()
-      if (tr) for (const x of tr.split('\n')) { const t = x.trim(); if (t) d.push(t) }
-      if (de) for (const x of de.split('\n')) { const t = x.trim(); if (t) d.push(t) }
-      out.push({ t: word, s: word, p: (row[1] || '').trim(), d })
+      // ECDICT 的字段内行分隔是**字面 `\n` 两字符**（反斜杠 + n），不是真换行；
+      // 按真换行拆会得到一条超长释义，义项粘连且界面把 `\n` 当普通字符显示。
+      if (tr) for (const x of tr.split(ECDICT_LINE)) { const t = x.trim(); if (t) d.push(t) }
+      if (de) for (const x of de.split(ECDICT_LINE)) { const t = x.trim(); if (t) d.push(t) }
+      // 词频（COCA 优先，缺失时退 BNC）：排名越小越常用，0/缺失表示未收录。
+      // 只用于同分时排序——查「无所不在」时 ubiquitous 应压过 immanence 这类低频词。
+      const f = Number(row[9]) || Number(row[8]) || 0
+      out.push({ t: word, s: word, p: (row[1] || '').trim(), d, f })
       if (max && out.length >= max) return true
     }
     row.length = 0
@@ -243,6 +251,19 @@ function addGloss(map, key, i) {
   if (arr[arr.length - 1] !== i) arr.push(i)
 }
 
+// ECDICT 每条释义形如「n. 自行车」「a. 无所不在的」「【化】丙酮」，词性/学科前缀会把
+// 「自行车」挤成"包含"档（30 分），导致 bike-lane 之类同分甚至反超 bicycle。
+// 建索引与打分都把前缀剥掉，让「自行车」对「n. 自行车」重新回到"精确"档。
+// CC-CEDICT 等无前缀词库上该正则不匹配，等价于 no-op。
+const POS_PREFIX = /^(?:(?:[a-z]{1,6}\.\s*\/?\s*)+|\[[^\]\n]{1,8}\]\s*|【[^】\n]{1,8}】\s*)+/i
+
+export function stripPosTag(s) {
+  const t = String(s)
+  const m = t.match(POS_PREFIX)
+  if (!m || m[0].length >= t.length) return t
+  return t.slice(m[0].length)
+}
+
 // 大词库的索引护栏：ECDICT（77 万条，中文释义极多）若不限制，
 // 释义倒排会膨胀到数百万 posting（内存 + 建索引时间双爆）。
 // 策略：不建「英文释义词」倒排（英译中反查由主词库 CC-CEDICT 承担），
@@ -287,9 +308,12 @@ export function buildIndex(entries, { glossWords = true, maxGlossSeg = 0 } = {})
           }
         }
         // 义项级索引只给含中文的释义建（自定义中文词库场景）。
-        // 先用首字符码位快速排除纯 ASCII 释义，避免对每条释义都跑一次 CJK 正则。
-        if (low.charCodeAt(0) > 0x2e80 && CJK.test(low)) {
-          const parts = low.split(/[;,，；]/)
+        // 先剥词性前缀（「n. 自行车」→「自行车」）再取首字符码位快速排除纯 ASCII 释义，
+        // 避免对每条释义都跑一次 CJK 正则。带前缀的释义若不先剥离，首字符是 'n'，
+        // 会被误判成英文释义而漏建索引。
+        const body = stripPosTag(low)
+        if (body.charCodeAt(0) > 0x2e80 && CJK.test(body)) {
+          const parts = body.split(/[;,，；]/)
           const lim = maxGlossSeg ? Math.min(parts.length, maxGlossSeg) : parts.length
           for (let p = 0; p < lim; p++) {
             const seg = parts[p].trim()
@@ -403,7 +427,7 @@ function scoreGloss(entry, needle) {
     let exact = false
     let head = false
     for (let p = 0; p < parts.length; p++) {
-      const seg = parts[p].trim()
+      const seg = stripPosTag(parts[p].trim())
       if (seg === needle) { exact = true; break }
       if (!head && seg.startsWith(needle)) head = true
     }
@@ -589,7 +613,11 @@ export function search(index, query, { mode = 'auto', limit = 50, maxDist = 2 } 
 
   const items = [...hits.entries()]
     .map(([i, h]) => ({ i, hit: h.hit, score: h.score }))
-    .sort((a, b) => b.score - a.score || index.entries[a.i].s.length - index.entries[b.i].s.length || (index.entries[a.i].s < index.entries[b.i].s ? -1 : 1))
+    .sort((a, b) => b.score - a.score
+      // 同分时先按词频（BNC/COCA 排名，越小越常用）；无词频的词库此字段为 0 → 排后
+      || (index.entries[a.i].f || 1e9) - (index.entries[b.i].f || 1e9)
+      || index.entries[a.i].s.length - index.entries[b.i].s.length
+      || (index.entries[a.i].s < index.entries[b.i].s ? -1 : 1))
     .slice(0, Math.max(1, Math.min(500, limit)))
     .map((h) => {
       const e = index.entries[h.i]
