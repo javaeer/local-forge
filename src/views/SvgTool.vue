@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch, onBeforeUnmount } from 'vue'
 import SVGTool from '../lib/svgtool.js'
 import { T } from '../lib/i18n.dev.js'
 
@@ -22,8 +22,25 @@ const message = ref(null)
 
 const fileInput = ref(null)
 
-const previewHTML = computed(() =>
-  source.value.trim() ? SVGTool.sanitizeSVG(source.value) : '')
+// 预览安全策略：不再把清洗后的 SVG 用 v-html 塞进 DOM（正则清洗易被无引号属性绕过），
+// 改为生成 blob: URL 交给 <img> 渲染——img 模式下的 SVG 不会执行脚本、不触发事件处理器，
+// 从根上消除 XSS。sanitizeSVG 仍保留作为纵深防御。
+const previewUrl = ref('')
+let lastUrl = ''
+function revokePreview() { if (lastUrl) { URL.revokeObjectURL(lastUrl); lastUrl = '' } }
+watch(
+  source,
+  (v) => {
+    revokePreview()
+    const clean = v && v.trim() ? SVGTool.sanitizeSVG(v) : ''
+    if (!clean) { previewUrl.value = ''; return }
+    const blob = new Blob([clean], { type: 'image/svg+xml' })
+    lastUrl = URL.createObjectURL(blob)
+    previewUrl.value = lastUrl
+  },
+  { immediate: true },
+)
+onBeforeUnmount(revokePreview)
 
 const colors = computed(() => (source.value ? SVGTool.extractColors(source.value) : []))
 const selColor = ref('#38bdf8')
@@ -174,9 +191,9 @@ function downloadOutput() {
       <textarea v-model="source" rows="8" spellcheck="false" :placeholder="T('svg.sourcePh')"></textarea>
     </label>
 
-    <div v-if="previewHTML" class="svg-preview">
+    <div v-if="previewUrl" class="svg-preview">
       <div class="svg-preview-label">{{ T('svg.preview') }}</div>
-      <div class="svg-preview-box" v-html="previewHTML"></div>
+      <div class="svg-preview-box"><img :src="previewUrl" alt="SVG preview" /></div>
     </div>
   </div>
 
@@ -303,7 +320,7 @@ function downloadOutput() {
   border-radius: 10px; padding: 16px; text-align: center; min-height: 80px;
   display: flex; align-items: center; justify-content: center;
 }
-.svg-preview-box :deep(svg) { max-width: 100%; height: auto; }
+.svg-preview-box img { max-width: 100%; height: auto; }
 textarea {
   width: 100%; background: var(--panel-solid, #121a2c); border: 1px solid var(--line-strong, rgba(120,150,200,.32));
   color: var(--txt, #e8edf7); border-radius: 10px; padding: 11px; font-size: 12.5px;

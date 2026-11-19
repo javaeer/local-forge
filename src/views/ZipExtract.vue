@@ -11,6 +11,7 @@ import { T } from '../lib/i18n.dev.js'
 
 const archive = ref(null)
 const splitSet = ref(null) // 分卷集合（若用户一次拖入多卷）
+const multiFiles = ref(null) // 多个互不相关的归档：逐个解压后合并列出，避免只保留第一个
 const entries = ref([])
 const password = ref('')
 const busy = ref(false)
@@ -34,6 +35,8 @@ async function collectEntries() {
 async function onFiles(list) {
   entries.value = []
   message.value = null
+  splitSet.value = null
+  multiFiles.value = null
   // 多卷 ZIP：一次拖入全部分卷，自动识别并合并
   if (list.length > 1 && isSplitZipSet(list)) {
     splitSet.value = list
@@ -41,7 +44,14 @@ async function onFiles(list) {
     await readEntries()
     return
   }
-  splitSet.value = null
+  // 多个互不相关的归档：不能只取第一个（旧实现会静默丢掉其余文件）。
+  // 这里逐个解压并把条目合并列出。
+  if (list.length > 1) {
+    multiFiles.value = list
+    archive.value = list[0]
+    await readEntries()
+    return
+  }
   archive.value = list[0] || null
   if (archive.value) await readEntries()
 }
@@ -58,16 +68,42 @@ async function readEntries() {
       else message.value = { type: 'ok', text: T('views.zipExtract.msgSplitDone', { n: splitSet.value.length }) }
       return
     }
-    const reader = new ZipReader(new BlobReader(archive.value), { password: password.value || undefined })
-    const list2 = await reader.getEntries()
-    entries.value = list2.map((e) => ({
-      name: e.filename,
-      dir: e.directory,
-      size: e.uncompressedSize || 0,
-      _entry: e,
-      _reader: reader,
-    }))
-    await reader.close()
+    if (multiFiles.value) {
+      // 多个互不相关的归档：逐个用 zip.js 读取并合并条目。
+      const all = []
+      const failed = []
+      for (const f of multiFiles.value) {
+        try {
+          const reader = new ZipReader(new BlobReader(f), { password: password.value || undefined })
+          const list = await reader.getEntries()
+          for (const e of list) {
+            all.push({
+              name: e.filename,
+              dir: e.directory,
+              size: e.uncompressedSize || 0,
+              _entry: e,
+              _reader: reader,
+            })
+          }
+        } catch (e) {
+          failed.push(`${f.name}: ${e.message || e}`)
+        }
+      }
+      entries.value = all
+      if (!all.length) message.value = { type: 'err', text: T('views.zipExtract.msgEmpty') }
+      else if (failed.length) message.value = { type: 'err', text: T('views.zipExtract.msgReadFail', { msg: failed.join('; ') }) }
+    } else {
+      const reader = new ZipReader(new BlobReader(archive.value), { password: password.value || undefined })
+      const list2 = await reader.getEntries()
+      entries.value = list2.map((e) => ({
+        name: e.filename,
+        dir: e.directory,
+        size: e.uncompressedSize || 0,
+        _entry: e,
+        _reader: reader,
+      }))
+      await reader.close()
+    }
     if (!entries.value.length) message.value = { type: 'err', text: T('views.zipExtract.msgEmpty') }
   } catch (e) {
     message.value = { type: 'err', text: T('views.zipExtract.msgReadFail', { msg: e.message || e }) }
@@ -78,23 +114,44 @@ async function readEntries() {
 
 async function downloadOne(item) {
   if (item.dir) return
-  let blob
-  if (item._blob) {
-    blob = await item._blob()
-  } else {
-    blob = await item._entry.getData(new BlobWriter(), {
-      password: password.value || undefined,
-      onprogress: (c, t) => { if (t) progress.value = Math.round((c / t) * 100) },
-    })
+  try {
+    let blob
+    if (item._blob) {
+      blob = await item._blob()
+    } else {
+      blob = await item._entry.getData(new BlobWriter(), {
+        password: password.value || undefined,
+        onprogress: (c, t) => { if (t) progress.value = Math.round((c / t) * 100) },
+      })
+    }
+    downloadBlob(blob, basename(item.name))
+    return true
+  } catch (e) {
+    // 加密条目在 getEntries() 阶段不校验密码，只有取数据时才抛 Invalid password。
+    // 旧实现没有捕获，异常直接逃逸、界面毫无提示。这里转为可见错误。
+    const msg = String(e && e.message ? e.message : e)
+    const isPwd = /invalid password|password|encrypted|解密|密码/i.test(msg)
+    message.value = {
+      type: 'err',
+      text: isPwd
+        ? T('views.zipExtract.msgBadPassword')
+        : T('views.zipExtract.msgDownloadFail', { name: basename(item.name), msg }),
+    }
+    return false
+  } finally {
+    progress.value = 0
   }
-  progress.value = 0
-  downloadBlob(blob, basename(item.name))
 }
 
 async function downloadAll() {
+  let failed = 0
   for (const item of entries.value) {
     if (item.dir) continue
-    await downloadOne(item)
+    const ok = await downloadOne(item)
+    if (ok === false) failed++
+  }
+  if (failed > 0) {
+    message.value = { type: 'err', text: T('views.zipExtract.msgBadPassword') }
   }
 }
 </script>

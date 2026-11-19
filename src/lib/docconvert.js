@@ -101,14 +101,29 @@ export function hasWideChars(s) {
 }
 
 /* ---------------- Markdown → HTML（可直接下载 / 预览） ---------------- */
+// 链接协议白名单：仅放行 http/https/mailto/tel、锚点、站内绝对/相对路径。
+// 其余（javascript:、data:、vbscript: 等）一律降级为 "#"，防止导出 HTML 中残留可执行链接。
+export function safeHref(url) {
+  const u = String(url ?? '').trim()
+  if (!u) return ''
+  const lower = u.toLowerCase()
+  if (/^(https?:|mailto:|tel:)/.test(lower)) return u
+  if (u.startsWith('#') || u.startsWith('/') || u.startsWith('./') || u.startsWith('../')) return u
+  // 不含冒号的视为相对路径（如 a/b.html、?q=1）
+  if (!/^[a-z][a-z0-9+.-]*:/i.test(u)) return u
+  return '#'
+}
+
 export function markdownToHtml(md, { title = 'Document' } = {}) {
   const blocks = parseMarkdown(md)
   const esc = (s) => String(s).replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]))
+  // 属性值转义：在正文转义基础上额外转义引号，防止 href 截断
+  const escAttr = (s) => esc(s).replace(/"/g, '&quot;')
   const inline = (s) => esc(s)
     .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
     .replace(/\*([^*]+)\*/g, '<em>$1</em>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
-    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, (m, text, url) => `<a href="${escAttr(safeHref(url.replace(/&amp;/g, '&')))}">${text}</a>`)
   const body = blocks.map((b) => {
     switch (b.type) {
       case 'heading': return `<h${b.level}>${inline(b.text)}</h${b.level}>`

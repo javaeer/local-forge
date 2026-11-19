@@ -40,7 +40,10 @@ export function hexEncode(text) {
   return Array.from(u8, (b) => b.toString(16).padStart(2, '0')).join('')
 }
 export function hexDecode(hex) {
-  const clean = String(hex ?? '').replace(/[^0-9a-fA-F]/g, '')
+  // 允许常见写法中的空白分隔（"48 65" / 换行缩进），但其余非十六进制字符必须报错，
+  // 不能像旧实现那样静默丢弃——否则 'zz' 会得到空串，用户拿不到任何提示。
+  const clean = String(hex ?? '').replace(/\s+/g, '')
+  if (/[^0-9a-fA-F]/.test(clean)) throw new Error('包含非十六进制字符（仅允许 0-9、a-f、A-F 与空白）')
   if (clean.length % 2) throw new Error('十六进制长度必须为偶数')
   const u8 = new Uint8Array(clean.length / 2)
   for (let i = 0; i < u8.length; i++) u8[i] = parseInt(clean.substr(i * 2, 2), 16)
@@ -48,12 +51,88 @@ export function hexDecode(hex) {
 }
 
 /* ---------------- JSON ---------------- */
+// 说明：JSON.parse + JSON.stringify 会把超过 Number.MAX_SAFE_INTEGER 的整数丢精度
+// （12345678901234567890 → ...67000），并把 1e400 变成 null。这类"雪花 ID / 大数值"
+// 场景下属于静默数据损坏，必须避免。因此格式化/压缩改为对原始文本做词法扫描：
+// 只用 JSON.parse 做合法性校验，输出则原样搬运数字字面量，只重排空白。
+function scanJson(text, { indent = 2, minify = false } = {}) {
+  const src = String(text ?? '')
+  const step = minify ? '' : ' '.repeat(Math.max(0, Number(indent) || 0))
+  const nl = () => (minify ? '' : '\n')
+  let out = ''
+  let depth = 0
+  let i = 0
+  const pad = () => nl() + step.repeat(depth)
+  const peekNonWs = (from) => {
+    let j = from
+    while (j < src.length && /\s/.test(src[j])) j++
+    return src[j]
+  }
+  while (i < src.length) {
+    const c = src[i]
+    if (c === '"') {
+      // 字符串：整段原样拷贝（含转义），不做任何改写
+      let j = i + 1
+      while (j < src.length) {
+        if (src[j] === '\\') { j += 2; continue }
+        if (src[j] === '"') { j++; break }
+        j++
+      }
+      out += src.slice(i, j)
+      i = j
+      continue
+    }
+    if (/\s/.test(c)) { i++; continue }
+    if (c === '{' || c === '[') {
+      const closeCh = c === '{' ? '}' : ']'
+      if (peekNonWs(i + 1) === closeCh) { // 空对象/数组保持紧凑
+        out += c + closeCh
+        i += 1
+        // 跳过中间的空白与闭合符
+        while (i < src.length && /\s/.test(src[i])) i++
+        i += 1
+        continue
+      }
+      out += c
+      depth++
+      out += pad()
+      i++
+      continue
+    }
+    if (c === '}' || c === ']') {
+      depth = Math.max(0, depth - 1)
+      out += pad() + c
+      i++
+      continue
+    }
+    if (c === ',') {
+      out += ',' + pad()
+      i++
+      continue
+    }
+    if (c === ':') {
+      out += minify ? ':' : ': '
+      i++
+      continue
+    }
+    // 数字 / true / false / null：原样搬运到下一个分隔符，保留字面量
+    let j = i
+    while (j < src.length && !/[\s,{}\[\]:]/.test(src[j])) j++
+    out += src.slice(i, j)
+    i = j
+  }
+  return out
+}
+
 export function jsonFormat(text, indent = 2) {
-  const obj = JSON.parse(String(text ?? ''))
-  return JSON.stringify(obj, null, Number(indent) || 0)
+  const src = String(text ?? '')
+  JSON.parse(src) // 仅校验；不参与输出，避免改写数字精度
+  return scanJson(src, { indent: Number(indent) || 0, minify: false })
 }
 export function jsonMinify(text) {
-  return JSON.stringify(JSON.parse(String(text ?? '')))
+  const src = String(text ?? '')
+  JSON.parse(src)
+  return scanJson(src, { minify: true })
 }
 // 校验并给出人类可读的错误（含大致位置），失败时不抛异常，由调用方决定展示方式
 export function jsonValidate(text) {
@@ -99,7 +178,8 @@ export function jwtParse(token) {
 }
 
 /* ---------------- 正则测试 ---------------- */
-export function regexTest(pattern, flags, text) {
+// 抽取纯匹配逻辑，供主线程兜底与 Worker 复用同一套语义。
+export function collectRegexMatches(pattern, flags, text) {
   const src = String(text ?? '')
   if (src.length > 20000) throw new Error('测试文本过长（上限 20000 字符），请精简后再试')
   let re
@@ -121,6 +201,39 @@ export function regexTest(pattern, flags, text) {
     if (m) matches.push({ match: m[0], index: m.index, groups: m.slice(1) })
   }
   return { count: matches.length, matches: matches.slice(0, 200) }
+}
+
+// 同步版本：单元测试与简单输入使用。灾难性回溯会阻塞调用线程，UI 请改用 regexTestAsync。
+export function regexTest(pattern, flags, text) {
+  return collectRegexMatches(pattern, flags, text)
+}
+
+// 异步版本：把正则放进独立 Worker 执行，超时即 terminate，避免 (a+)+$ 之类把页面卡死。
+// 无 Worker 环境（Node 测试 / 极老浏览器）回退到同步实现。
+export function regexTestAsync(pattern, flags, text, { timeout = 1500 } = {}) {
+  if (typeof Worker === 'undefined') {
+    try { return Promise.resolve(collectRegexMatches(pattern, flags, text)) }
+    catch (e) { return Promise.reject(e) }
+  }
+  return new Promise((resolve, reject) => {
+    let worker
+    try {
+      worker = new Worker(new URL('./regex.worker.js', import.meta.url), { type: 'module' })
+    } catch (e) {
+      try { resolve(collectRegexMatches(pattern, flags, text)) } catch (e2) { reject(e2) }
+      return
+    }
+    let settled = false
+    const finish = (fn, v) => { if (settled) return; settled = true; clearTimeout(timer); try { worker.terminate() } catch { /* ignore */ } fn(v) }
+    const timer = setTimeout(() => finish(reject, new Error('正则执行超时（可能存在灾难性回溯），已中止')), timeout)
+    worker.onmessage = (e) => {
+      const d = e.data || {}
+      if (d.ok) finish(resolve, d.result)
+      else finish(reject, new Error(d.error || '正则执行失败'))
+    }
+    worker.onerror = () => finish(reject, new Error('正则 Worker 执行失败，已中止'))
+    worker.postMessage({ pattern, flags, text })
+  })
 }
 
 /* ---------------- 时间 ---------------- */

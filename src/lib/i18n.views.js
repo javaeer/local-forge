@@ -110,6 +110,8 @@ export const VIEW_MESSAGES = {
         msgEmpty: '该 ZIP 为空或无法读取。',
         msgSplitDone: '已合并 {n} 个分卷并解压。',
         msgReadFail: '读取失败：{msg}（若为加密 ZIP，请填写密码后点「重新读取」）',
+        msgBadPassword: '无法解密：密码错误或文件已损坏。请检查密码后重试。',
+        msgDownloadFail: '下载「{name}」失败：{msg}',
         nextTitle: '下一步（含 {n} 个文件）',
       },
       about: {
@@ -431,6 +433,8 @@ export const VIEW_MESSAGES = {
         msgEmpty: 'This ZIP is empty or cannot be read.',
         msgSplitDone: 'Merged {n} volumes and extracted.',
         msgReadFail: 'Read failed: {msg} (for encrypted ZIP, enter the password then click "Re-read")',
+        msgBadPassword: 'Cannot decrypt: wrong password or corrupted file. Check the password and try again.',
+        msgDownloadFail: 'Failed to download "{name}": {msg}',
         nextTitle: 'Next step ({n} files)',
       },
       about: {
@@ -729,6 +733,8 @@ export const VIEW_MESSAGES = {
         msgEmpty: 'この ZIP は空か、読み取れません。',
         msgSplitDone: '{n} 個のボリュームを統合して解凍しました。',
         msgReadFail: '読み込み失敗：{msg}（暗号化 ZIP の場合はパスワードを入力して「再読み込み」をクリック）',
+        msgBadPassword: '復号できません：パスワードが間違っているか、ファイルが破損しています。パスワードを確認して再試行してください。',
+        msgDownloadFail: '「{name}」のダウンロードに失敗しました：{msg}',
         nextTitle: '次のステップ（{n} ファイル）',
       },
       about: {
@@ -1005,6 +1011,8 @@ export const VIEW_MESSAGES = {
         msgEmpty: '이 ZIP은 비어 있거나 읽을 수 없습니다.',
         msgSplitDone: '볼륨 {n}개를 병합해 해제했습니다.',
         msgReadFail: '읽기 실패: {msg}(암호화 ZIP은 비밀번호를 입력한 뒤 "다시 읽기" 클릭)',
+        msgBadPassword: '복호화할 수 없습니다: 비밀번호가 틀렸거나 파일이 손상되었습니다. 비밀번호를 확인한 뒤 다시 시도하세요.',
+        msgDownloadFail: '"{name}" 다운로드 실패: {msg}',
         nextTitle: '다음 단계({n}개 파일)',
       },
       about: {
@@ -1281,6 +1289,8 @@ export const VIEW_MESSAGES = {
         msgEmpty: 'Este ZIP está vacío o no se puede leer.',
         msgSplitDone: 'Fusionados {n} volúmenes y extraídos.',
         msgReadFail: 'Error de lectura: {msg} (para ZIP cifrado, introduce la contraseña y haz clic en "Volver a leer")',
+        msgBadPassword: 'No se pudo descifrar: contraseña incorrecta o archivo dañado. Verifica la contraseña e inténtalo de nuevo.',
+        msgDownloadFail: 'No se pudo descargar "{name}": {msg}',
         nextTitle: 'Siguiente paso ({n} archivos)',
       },
       about: {

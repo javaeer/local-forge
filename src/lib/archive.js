@@ -150,19 +150,47 @@ export async function merge(files, { outExt = 'zip', compression = 'NONE', onpro
 // 命名形态 B（7-Zip 分卷）：name.zip.001, name.zip.002, ...（无单独 .zip）
 function splitPartKey(name) {
   const n = name.toLowerCase()
-  const m = n.match(/\.z(\d{1,3})$/)
-  if (m) return { kind: 'z', num: parseInt(m[1], 10) } // 形态 A 的 .z01…（排在 .zip 之前）
-  if (n.endsWith('.zip')) return { kind: 'zip', num: Infinity } // 形态 A 末卷
-  const m2 = n.match(/\.(\d{2,4})$/)
-  if (m2) return { kind: 'num', num: parseInt(m2[1], 10) } // 形态 B 的 .001…
+  const m = n.match(/^(.*)\.z(\d{1,3})$/)
+  if (m) return { base: m[1], kind: 'z', num: parseInt(m[2], 10) } // 形态 A 的 .z01…（排在 .zip 之前）
+  const mZip = n.match(/^(.*)\.zip$/)
+  if (mZip) return { base: mZip[1], kind: 'zip', num: Infinity } // 形态 A 末卷
+  const m2 = n.match(/^(.*)\.(\d{2,4})$/)
+  if (m2) return { base: m2[1], kind: 'num', num: parseInt(m2[2], 10) } // 形态 B 的 .001…
   return null
 }
 
-// 判断一批文件是否构成一个分卷 ZIP 集合（≥2 个且命名均符合上述规则）
+// 判断一批文件是否构成一个分卷 ZIP 集合。
+// 仅看后缀会让 a.zip + b.zip 被误判为分卷（合并后只剩一个文件，静默丢数据），
+// 因此必须同时满足：同一主名、编号连续、且两种命名形态各自完整。
+//   - 形态 A（name.z01…name.zNN + name.zip）：恰好一个 .zip 收尾，.z 编号 1..N 连续
+//   - 形态 B（name.zip.001…name.zip.NNN）：编号 1..N 连续，不含 .zip 末卷
 export function isSplitZipSet(fileList) {
   if (!fileList || fileList.length < 2) return false
   const keys = fileList.map((f) => splitPartKey(f.name))
-  return keys.every((k) => k !== null)
+  if (keys.some((k) => k === null)) return false
+
+  // 1) 主名必须一致
+  const base = keys[0].base
+  if (!keys.every((k) => k.base === base)) return false
+
+  // 2) 不允许两种形态混用
+  const hasZ = keys.some((k) => k.kind === 'z' || k.kind === 'zip')
+  const hasNum = keys.some((k) => k.kind === 'num')
+  if (hasZ && hasNum) return false
+
+  // 3) 编号必须从 1 开始连续无缺口
+  if (hasNum) {
+    const nums = keys.map((k) => k.num).sort((a, b) => a - b)
+    if (nums.length !== keys.length) return false
+    return nums.every((v, i) => v === i + 1)
+  }
+
+  // 形态 A：.z 部分编号 1..N 连续，且恰好一个 .zip 末卷
+  const zipCount = keys.filter((k) => k.kind === 'zip').length
+  if (zipCount !== 1) return false
+  const zNums = keys.filter((k) => k.kind === 'z').map((k) => k.num).sort((a, b) => a - b)
+  if (!zNums.length) return false
+  return zNums.every((v, i) => v === i + 1)
 }
 
 // 将多卷按顺序拼接为一个 Blob，再走通用解压

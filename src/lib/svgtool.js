@@ -419,14 +419,45 @@ export class SVGTool {
   static isDataURI(str) { return /^data:/i.test(str); }
 
   // 安全净化：预览前剥离 <script>、事件处理属性与 javascript: 协议，防止 XSS。
+  // 优先走 DOM 解析（浏览器）：比正则更彻底，能覆盖无引号属性、<svg/onload> 等畸形写法。
+  // 无 DOM 环境（Node 单测）回退到强化后的正则实现。
   static sanitizeSVG(svg) {
     if (!svg) return '';
-    let s = String(svg);
-    s = s.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
-    s = s.replace(/<script\b[^>]*\/?>/gi, '');
-    s = s.replace(/\son\w+\s*=\s*["'][^"']*["']/gi, '');
-    s = s.replace(/(?:href|xlink:href|src)\s*=\s*["']\s*javascript:[^"']*["']/gi, '$1=""');
-    return s;
+    const s = String(svg);
+    const DANGEROUS = new Set(['script', 'foreignobject', 'iframe', 'object', 'embed', 'link', 'meta']);
+    if (typeof DOMParser !== 'undefined' && typeof XMLSerializer !== 'undefined') {
+      try {
+        const doc = new DOMParser().parseFromString(s, 'image/svg+xml');
+        if (doc.querySelector && doc.querySelector('parsererror')) return '';
+        const root = doc.documentElement;
+        if (!root) return '';
+        if (DANGEROUS.has(root.tagName.toLowerCase())) return '';
+        const nodes = [root, ...Array.from(doc.querySelectorAll('*'))];
+        for (const el of nodes) {
+          const tag = el.tagName.toLowerCase();
+          if (DANGEROUS.has(tag)) { if (el.remove) el.remove(); continue; }
+          if (!el.attributes) continue;
+          for (const attr of Array.from(el.attributes)) {
+            const name = attr.name.toLowerCase();
+            const val = String(attr.value || '').trim();
+            if (name.startsWith('on')) { el.removeAttribute(attr.name); continue; }
+            if ((name === 'href' || name === 'xlink:href' || name === 'src') && /^javascript:/i.test(val)) {
+              el.removeAttribute(attr.name); continue;
+            }
+            if (name === 'style' && /expression\s*\(|javascript:/i.test(val)) el.removeAttribute(attr.name);
+          }
+        }
+        return new XMLSerializer().serializeToString(doc);
+      } catch { return ''; }
+    }
+    // 正则兜底：覆盖带引号 / 无引号 / <svg/onload> 等写法
+    let out = s;
+    out = out.replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, '');
+    out = out.replace(/<script\b[^>]*\/?>/gi, '');
+    out = out.replace(/<\/?(?:foreignObject|iframe|object|embed|link|meta)\b[^>]*>/gi, '');
+    out = out.replace(/(?:^|[\s/])on\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi, '');
+    out = out.replace(/\b(href|xlink:href|src)\s*=\s*(?:"\s*javascript:[^"]*"|'\s*javascript:[^']*'|[^\s>]*javascript:[^\s>]*)/gi, '$1=""');
+    return out;
   }
 }
 

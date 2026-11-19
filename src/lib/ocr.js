@@ -82,36 +82,65 @@ function makeLogger(prefix) {
 // 获取（或按需重建）worker。切换语言时必须重建——tesseract 的语言在初始化时载入。
 // 回退链：本地内核+本地语言包 → 本地内核+CDN语言包 → 全 CDN。
 // 注：tesseract.js 会把语言包缓存进 IndexedDB，已缓存时 langPath 不会被用到。
+//
+// 失败路径修复（D-9）：语言包缺失前旧实现会挂起约 120s 才超时，并抛出
+// "Cannot read properties of undefined (reading 'resolve')" 这类内部错误。
+// 现在为每次初始化加超时，并在明显离线时跳过 CDN，快速给出可读错误。
+function withTimeout(promise, ms, label) {
+  let timer
+  return Promise.race([
+    promise.finally(() => clearTimeout(timer)),
+    new Promise((_, reject) => {
+      timer = setTimeout(() => reject(new Error(`${label} 超时（${Math.round(ms / 1000)}s），语言包或内核可能缺失`)), ms)
+    }),
+  ])
+}
+
+function isOffline() {
+  return typeof navigator !== 'undefined' && navigator.onLine === false
+}
+
 async function getWorker(langs) {
   const sources = [
     { name: 'local', workerPath: LOCAL_WORKER, corePath: pickCorePath(LOCAL_DIR), langPath: LOCAL_LANG_DIR },
     { name: 'local+cdnlang', workerPath: LOCAL_WORKER, corePath: pickCorePath(LOCAL_DIR) },
     { name: 'cdn', workerPath: CDN_WORKER, corePath: `${CDN_CORE}/${hasSimd() ? CORE_VARIANT.simd : CORE_VARIANT.plain}` },
   ]
+  let lastErr = null
   for (const src of sources) {
+    // 离线时 CDN 源必然失败，直接跳过，避免无谓等待
+    if (isOffline() && (src.name === 'cdn' || src.name === 'local+cdnlang')) {
+      lastErr = new Error('当前离线，且本地语言包不可用')
+      continue
+    }
     try {
       if (worker && workerLangs === langs && workerSource === src.name) return { worker, source: src.name }
       if (worker) {
         try { await worker.terminate() } catch { /* 终止失败不影响新建 */ }
         worker = null
       }
-      const w = await createWorker(langs, 1, {
-        workerPath: src.workerPath,
-        corePath: src.corePath,
-        langPath: src.langPath,
-        logger: makeLogger(),
-      })
+      const w = await withTimeout(
+        createWorker(langs, 1, {
+          workerPath: src.workerPath,
+          corePath: src.corePath,
+          langPath: src.langPath,
+          logger: makeLogger(),
+        }),
+        20000,
+        `OCR 内核初始化（${src.name}）`,
+      )
       worker = w
       workerLangs = langs
       workerSource = src.name
       return { worker: w, source: src.name }
     } catch (e) {
+      lastErr = e
       console.warn(`[ocr] 内核初始化失败（${src.name}）：`, e)
       if (worker) { try { await worker.terminate() } catch { /* ignore */ } worker = null }
-      if (src.name === 'cdn') throw new Error('OCR 内核初始化失败（本地与 CDN 均不可用）：' + (e.message || e))
+      if (src.name === 'cdn') break
     }
   }
-  throw new Error('OCR 内核初始化失败')
+  throw new Error('OCR 内核初始化失败（本地与 CDN 均不可用）：' + (lastErr && lastErr.message ? lastErr.message : '未知错误'))
 }
 
 // 释放 worker（切换页面 / 长时间不用时调用，避免常驻占用内存）

@@ -1,9 +1,9 @@
 <script setup>
-import { ref, reactive, computed, onMounted } from 'vue'
+import { ref, reactive, computed, watch, onMounted } from 'vue'
 import HelpTip from '../components/HelpTip.vue'
 import {
   jsonFormat, jsonMinify, jsonValidate, base64Encode, base64Decode, hexEncode, hexDecode,
-  jwtParse, regexTest, timestampToDate, dateToTimestamp, uuidV4, randomPassword, passwordStrength, shaDigest,
+  jwtParse, regexTestAsync, timestampToDate, dateToTimestamp, uuidV4, randomPassword, passwordStrength, shaDigest,
 } from '../lib/text.js'
 import { consumePendingText } from '../lib/workflow.js'
 import { pushToast } from '../lib/toast.js'
@@ -71,9 +71,21 @@ const jwtIn = ref('')
 const jwtOut = computed(() => (jwtIn.value.trim() ? safe(() => jwtParse(jwtIn.value)) : { ok: true, value: null }))
 function fmtJson(v) { return JSON.stringify(v, null, 2) }
 
-/* 正则 */
+/* 正则：放进 Worker 异步执行，超时即中止，避免灾难性回溯卡死页面 */
 const re = reactive({ pattern: '(\\d{4})-(\\d{2})-(\\d{2})', flags: 'g', text: '今天是 2026-10-13，明天是 2026-10-14' })
-const reOut = computed(() => (re.pattern ? safe(() => regexTest(re.pattern, re.flags, re.text)) : { ok: true, value: null }))
+const reOut = ref({ ok: true, value: null })
+let reSeq = 0
+async function runRegex() {
+  const seq = ++reSeq
+  if (!re.pattern) { reOut.value = { ok: true, value: null }; return }
+  try {
+    const value = await regexTestAsync(re.pattern, re.flags, re.text)
+    if (seq === reSeq) reOut.value = { ok: true, value }
+  } catch (e) {
+    if (seq === reSeq) reOut.value = { ok: false, error: e.message }
+  }
+}
+watch(() => [re.pattern, re.flags, re.text], runRegex, { immediate: true })
 
 /* 时间 */
 const tsIn = ref(String(Math.floor(Date.now() / 1000)))
