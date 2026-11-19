@@ -38,3 +38,8 @@ public/pdfjs/
 # 许可与来源见 public/dict/LICENSE.txt（该文件入库）。
 public/dict/*.gz
 /dist-infinityfree/
+
+# 韵书数据快照不进 Git（与 public/dict/*.gz 同理）：
+# 由 scripts/fetch-classics.mjs 在 dev / build 前按需拉取，--check 可离线校验。
+# 许可与来源见 public/classics/LICENSE.txt（该文件入库）。
+public/classics/*.gz

@@ -85,6 +85,7 @@ const VIEW_ROUTES = [
   { path: '/svg-tool', file: 'SvgTool.vue' },
   { path: '/css-reference', file: 'CssReference.vue' },
   { path: '/dictionary', file: 'Dictionary.vue' },
+  { path: '/poem-meter', file: 'PoemMeter.vue' },
   { path: '/about', file: 'About.vue' },
   { path: '/privacy', file: 'Privacy.vue' },
 ]

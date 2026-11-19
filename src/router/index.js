@@ -33,6 +33,7 @@ const views = {
   SvgTool: () => import('../views/SvgTool.vue'),
   CssReference: () => import('../views/CssReference.vue'),
   Dictionary: () => import('../views/Dictionary.vue'),
+  PoemMeter: () => import('../views/PoemMeter.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -65,6 +66,7 @@ const fileToPath = {
   'SvgTool.vue': '/svg-tool',
   'CssReference.vue': '/css-reference',
   'Dictionary.vue': '/dictionary',
+  'PoemMeter.vue': '/poem-meter',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }
