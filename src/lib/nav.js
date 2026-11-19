@@ -37,6 +37,7 @@ export const NAV = [
   { path: '/dictionary', title: '离线词典', short: '词典', titleKey: 'nav.dict', shortKey: 'nav.dictShort', icon: 'bi-book', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '词典 字典 查词 汉字 拼音 部首 释义 dictionary cedict 离线 cc-cedict 新华 英汉' },
   { path: '/poem-meter', title: '近体诗格律', short: '格律', titleKey: 'nav.poemMeter', shortKey: 'nav.poemMeterShort', icon: 'bi-rulers', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '诗 词 格律 平仄 押韵 平水韵 韵部 绝句 律诗 唐诗 宋词 近体诗 孤平 三平调 拗救 校勘' },
   { path: '/ci-meter', title: '词牌格律', short: '词律', titleKey: 'nav.ciMeter', shortKey: 'nav.ciMeterShort', icon: 'bi-music-note-list', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '词 词牌 词谱 填词 平仄 押韵 词林正韵 宋词 水调歌头 念奴娇 如梦令 钦定词谱 格律 校勘' },
+  { path: '/classics', title: '诗文精选', short: '诗文', titleKey: 'nav.classics', shortKey: 'nav.classicsShort', icon: 'bi-journal-bookmark', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '唐诗 宋词 古文观止 唐诗三百首 宋词三百首 古诗 古文 选集 竖排 卡片 阅读 检索 名篇 静夜思 春望 岳阳楼记' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },
   { path: '/about', title: '关于', titleKey: 'nav.about', icon: 'bi-info-circle', group: '关于', groupKey: 'group.about', keywords: 'about 关于 开源 技术栈' },
   { path: '/privacy', title: '隐私协议', titleKey: 'nav.privacy', icon: 'bi-shield-lock', group: '关于', groupKey: 'group.about', keywords: '隐私 privacy 协议 零上传' },

@@ -1,10 +1,12 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
 import { T } from '../lib/i18n.dev.js'
 import { loadClassics } from '../lib/classics.js'
 import { analyzePoem, lookupChar, groupChars, rhymeCatalog, TONE_MULTI } from '../lib/poemmeter.js'
 
+const route = useRoute()
 const tab = ref('check')
 const loading = ref(true)
 const error = ref('')
@@ -30,6 +32,12 @@ onMounted(async () => {
     error.value = e.message || String(e)
   } finally {
     loading.value = false
+  }
+  // 从「诗文精选」点「校验格律」跳过来时带 text：直接填入并出结果，省掉一次复制粘贴
+  const q = route.query.text
+  if (typeof q === 'string' && q.trim() && index.value) {
+    text.value = q
+    run()
   }
 })
 

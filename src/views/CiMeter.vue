@@ -1,11 +1,13 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import HelpTip from '../components/HelpTip.vue'
 import { T } from '../lib/i18n.dev.js'
 import { loadClassics } from '../lib/classics.js'
 import { loadCiTunes } from '../lib/citunes.js'
 import { analyzeCi, tuneGrid, resolveTune, MARK_RHYME, MARK_YE, MARK_READ } from '../lib/cimeter.js'
 
+const route = useRoute()
 const tab = ref('check')
 const loading = ref(true)
 const error = ref('')
@@ -35,6 +37,14 @@ onMounted(async () => {
     error.value = e.message || String(e)
   } finally {
     loading.value = false
+  }
+  // 从「诗文精选」跳过来：词牌与正文都带过来，直接出校验结果
+  const qt = route.query.text
+  const qn = route.query.tune
+  if (typeof qt === 'string' && qt.trim() && toneIndex.value && ciIndex.value) {
+    if (typeof qn === 'string' && qn.trim()) tuneName.value = qn
+    text.value = qt
+    run()
   }
 })
 

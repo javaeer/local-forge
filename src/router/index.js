@@ -35,6 +35,7 @@ const views = {
   Dictionary: () => import('../views/Dictionary.vue'),
   PoemMeter: () => import('../views/PoemMeter.vue'),
   CiMeter: () => import('../views/CiMeter.vue'),
+  Classics: () => import('../views/Classics.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -69,6 +70,7 @@ const fileToPath = {
   'Dictionary.vue': '/dictionary',
   'PoemMeter.vue': '/poem-meter',
   'CiMeter.vue': '/ci-meter',
+  'Classics.vue': '/classics',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }

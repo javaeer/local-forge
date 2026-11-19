@@ -43,3 +43,4 @@ public/dict/*.gz
 # 由 scripts/fetch-classics.mjs 在 dev / build 前按需拉取，--check 可离线校验。
 # 许可与来源见 public/classics/LICENSE.txt（该文件入库）。
 public/classics/*.gz
+public/classics/full/
