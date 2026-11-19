@@ -36,6 +36,7 @@ const views = {
   PoemMeter: () => import('../views/PoemMeter.vue'),
   CiMeter: () => import('../views/CiMeter.vue'),
   Classics: () => import('../views/Classics.vue'),
+  TcmChants: () => import('../views/TcmChants.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -71,6 +72,7 @@ const fileToPath = {
   'PoemMeter.vue': '/poem-meter',
   'CiMeter.vue': '/ci-meter',
   'Classics.vue': '/classics',
+  'TcmChants.vue': '/chants',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }

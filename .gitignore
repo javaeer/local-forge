@@ -44,3 +44,4 @@ public/dict/*.gz
 # 许可与来源见 public/classics/LICENSE.txt（该文件入库）。
 public/classics/*.gz
 public/classics/full/
+public/tcm/*.gz
