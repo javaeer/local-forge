@@ -86,6 +86,7 @@ const VIEW_ROUTES = [
   { path: '/css-reference', file: 'CssReference.vue' },
   { path: '/dictionary', file: 'Dictionary.vue' },
   { path: '/poem-meter', file: 'PoemMeter.vue' },
+  { path: '/ci-meter', file: 'CiMeter.vue' },
   { path: '/about', file: 'About.vue' },
   { path: '/privacy', file: 'Privacy.vue' },
 ]

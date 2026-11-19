@@ -29,7 +29,7 @@ test('每条卡片都有 to / icon / 三套 key / 中文原值', () => {
       assert.ok(it.title && it.desc, `卡片 ${it.to} 缺中文原值`)
     }
   }
-  assert.equal(n, 50) // 卡片总数：新增「近体诗格律」后 49 → 50，改卡片时请同步
+  assert.equal(n, 51) // 卡片总数：新增「近体诗格律」后 49 → 50，再增「词牌格律」后 50 → 51，改卡片时请同步
 })
 
 test('CREATE_FORMATS / COMPRESSIONS 结构', () => {

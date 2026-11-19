@@ -112,6 +112,7 @@ export const TOOLS = [
     items: [
       { to: '/dictionary', icon: 'bi-book', titleKey: 'home.t.dict', descKey: 'home.d.dict', title: '离线词典', desc: 'CC-CEDICT 汉英词库在浏览器内建索引，汉字/拼音/首字母/释义检索，纯本地' },
       { to: '/poem-meter', icon: 'bi-rulers', titleKey: 'home.t.poemMeter', descKey: 'home.d.poemMeter', title: '近体诗格律', desc: '按平水韵 106 韵部逐字校勘平仄、粘对与押韵，指出出律、孤平、三平调' },
+      { to: '/ci-meter', icon: 'bi-music-note-list', titleKey: 'home.t.ciMeter', descKey: 'home.d.ciMeter', title: '词牌格律', desc: '按钦定词谱 818 词牌 2475 体逐字校勘，词林正韵 19 部判韵，附带填词助手' },
     ],
   },
   {
