@@ -149,7 +149,7 @@ try {
 
   // 13. 删除全量库
   await page.click('.lib-bar button')
-  await new Promise((r) => setTimeout(r, 500))
+  await page.waitForFunction(() => !/已就绪/.test(document.querySelector('.lib-bar')?.textContent || ''), { timeout: 10000 })
   const libAfter = await page.$eval('.lib-bar', (el) => el.textContent)
   ok(!/已就绪/.test(libAfter), '删除全量库后回到未装状态')
 

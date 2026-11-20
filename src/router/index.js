@@ -38,6 +38,7 @@ const views = {
   Classics: () => import('../views/Classics.vue'),
   TcmChants: () => import('../views/TcmChants.vue'),
   Bencao: () => import('../views/Bencao.vue'),
+  TcmBooks: () => import('../views/TcmBooks.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -75,6 +76,7 @@ const fileToPath = {
   'Classics.vue': '/classics',
   'TcmChants.vue': '/chants',
   'Bencao.vue': '/bencao',
+  'TcmBooks.vue': '/tcmbooks',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }

@@ -90,6 +90,7 @@ const VIEW_ROUTES = [
   { path: '/classics', file: 'Classics.vue' },
   { path: '/chants', file: 'TcmChants.vue' },
   { path: '/bencao', file: 'Bencao.vue' },
+  { path: '/tcmbooks', file: 'TcmBooks.vue' },
   { path: '/about', file: 'About.vue' },
   { path: '/privacy', file: 'Privacy.vue' },
 ]

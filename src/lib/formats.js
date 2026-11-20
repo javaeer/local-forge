@@ -116,6 +116,7 @@ export const TOOLS = [
       { to: '/classics', icon: 'bi-journal-bookmark', titleKey: 'home.t.classics', descKey: 'home.d.classics', title: '诗文精选', desc: '唐诗三百首、宋词三百首、古文观止共 868 篇，本地检索阅读，可导出竖排卡片' },
       { to: '/chants', icon: 'bi-capsule', titleKey: 'home.t.tcmChants', descKey: 'home.d.tcmChants', title: '中医药歌诀', desc: '汤头歌诀、濒湖脉学、药性歌括四百味等八本 1143 条，附遮盖背诵与默写比对' },
       { to: '/bencao', icon: 'bi-flower1', titleKey: 'home.t.bencao', descKey: 'home.d.bencao', title: '本草纲目', desc: '16 部 52 卷 1775 条药条与主治全文，目录树浏览、药名主治检索，全量库可下载离线阅读' },
+      { to: '/tcmbooks', icon: 'bi-journal-medical', titleKey: 'home.t.tcmBooks', descKey: 'home.d.tcmBooks', title: '中医医典', desc: '千金要方、外台秘要、内经、伤寒论等九部医典 5954 篇，篇章目录浏览与 Worker 全文检索' },
     ],
   },
   {
