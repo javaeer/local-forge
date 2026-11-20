@@ -327,7 +327,7 @@ textarea {
   font-family: var(--mono, monospace); line-height: 1.6; resize: vertical; outline: none; transition: .15s;
 }
 .out-area { margin-top: 10px; }
-textarea:focus { border-color: var(--accent, #38bdf8); box-shadow: 0 0 0 3px rgba(56,189,248,.15); }
+textarea:focus { border-color: var(--accent, #38bdf8); box-shadow: 0 0 0 3px rgba(232,149,74,.15); }
 .palette { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
 .swatch { width: 26px; height: 26px; border-radius: 7px; border: 1px solid var(--line-strong, rgba(120,150,200,.32)); cursor: pointer; }
 .btn.sm { padding: 7px 12px; font-size: 12.5px; }

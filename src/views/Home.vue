@@ -51,7 +51,7 @@ onMounted(loadRecent)
 <template>
   <!-- 英雄区 -->
   <section class="hero">
-    <span class="hero-badge"><i class="bi bi-shield-lock"></i> {{ t('home.badge') }}</span>
+    <span class="hero-badge"><i class="bi bi-hammer"></i> {{ t('home.badge') }}</span>
     <h1 class="hero-title">{{ t('home.title') }} <span class="grad">LocalForge</span></h1>
     <p class="hero-sub">{{ t('home.sub') }}</p>
     <div class="hero-pills">
@@ -74,6 +74,7 @@ onMounted(loadRecent)
   <!-- 工具分组 -->
   <div v-for="g in TOOLS" :key="g.groupKey || g.group" class="cat">
     <h2 class="cat-title"><i class="bi bi-collection"></i> {{ T(g.groupKey) }}</h2>
+    <p v-if="g.noteKey" class="cat-note">{{ T(g.noteKey) }}</p>
     <div class="tools">
       <RouterLink v-for="item in g.items" :key="item.to" :to="item.to" class="tool-card">
         <i class="bi" :class="item.icon"></i>
@@ -150,9 +151,9 @@ onMounted(loadRecent)
   align-items: center;
   gap: 7px;
   font-size: 12px;
-  color: var(--accent-2, #34d399);
-  border: 1px solid rgba(52,211,153,.35);
-  background: rgba(52,211,153,.08);
+  color: var(--accent, #e8954a);
+  border: 1px solid rgba(232,149,74,.35);
+  background: rgba(232,149,74,.08);
   padding: 5px 12px;
   border-radius: 999px;
   margin-bottom: 14px;
@@ -177,8 +178,7 @@ onMounted(loadRecent)
 }
 .hero-pills { display: flex; flex-wrap: wrap; gap: 9px; }
 
-.recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }
-.recent-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }.recent-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
 .recent-head h3 i { color: var(--accent, #38bdf8); }
 .recent-filters { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 12px; }
 .chip {
@@ -188,10 +188,10 @@ onMounted(loadRecent)
   background: var(--panel-2, rgba(28,37,60,.55)); color: var(--muted, #93a2bd);
   transition: .15s;
 }
-.chip:hover { border-color: rgba(56,189,248,.45); color: var(--txt, #e8edf7); }
+.chip:hover { border-color: rgba(232,149,74,.45); color: var(--txt, #e8edf7); }
 .chip.active {
-  border-color: rgba(56,189,248,.5); color: var(--accent, #38bdf8);
-  background: var(--grad-soft, rgba(56,189,248,.12));
+  border-color: rgba(232,149,74,.5); color: var(--accent, #38bdf8);
+  background: var(--grad-soft, rgba(232,149,74,.12));
 }
 .chip i { font-size: 13px; }
 .recent-list { display: flex; flex-direction: column; gap: 6px; }
@@ -201,7 +201,7 @@ onMounted(loadRecent)
   border: 1px solid var(--line, rgba(120,150,200,.16)); background: var(--panel-2, rgba(28,37,60,.55));
   color: var(--txt, #e8edf7); font-size: 13px; transition: .15s;
 }
-.recent-item:hover { border-color: rgba(56,189,248,.45); background: var(--grad-soft, rgba(56,189,248,.1)); }
+.recent-item:hover { border-color: rgba(232,149,74,.45); background: var(--grad-soft, rgba(232,149,74,.1)); }
 .recent-item i { color: var(--accent, #38bdf8); font-size: 15px; width: 18px; text-align: center; }
 .recent-title { font-weight: 600; flex: none; }
 .recent-name { color: var(--muted, #93a2bd); font-family: var(--mono, monospace); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40%; }

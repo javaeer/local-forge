@@ -22,23 +22,23 @@ import { TCMBOOKS_MESSAGES } from './i18n.tcmbooks.js'
 export const DEV_MESSAGES = {
   'zh-CN': {
     nav: { svgTool: 'SVG 工具箱', svgToolShort: 'SVG', wechatSearch: '公众号文章检索', wechatSearchShort: '检索', cssReference: 'CSS 速查表', cssReferenceShort: 'CSS', dict: '离线词典', dictShort: '词典', mediaFetch: '媒体获取', mediaFetchShort: '获取' },
-    group: { dev: '开发者工具', lookup: '文字 / 查阅' },
+    group: { dev: '开发者工序', lookup: '知识矿藏' },
   },
   en: {
     nav: { svgTool: 'SVG Toolkit', svgToolShort: 'SVG', wechatSearch: 'WeChat Article Search', wechatSearchShort: 'Search', cssReference: 'CSS Reference', cssReferenceShort: 'CSS', dict: 'Offline Dictionary', dictShort: 'Dictionary', mediaFetch: 'Media Fetch', mediaFetchShort: 'Fetch' },
-    group: { dev: 'Developer Tools', lookup: 'Text / Reference' },
+    group: { dev: 'Developer Workshop', lookup: 'Knowledge Vault' },
   },
   'ja-JP': {
     nav: { svgTool: 'SVG ツール', svgToolShort: 'SVG', wechatSearch: '微信公衆号の記事検索', wechatSearchShort: '検索', cssReference: 'CSS リファレンス', cssReferenceShort: 'CSS', dict: 'オフライン辞書', dictShort: '辞書', mediaFetch: 'メディア取得', mediaFetchShort: '取得' },
-    group: { dev: '開発者ツール', lookup: '文字 / 参照' },
+    group: { dev: '開発者工程', lookup: '知識の鉱脈' },
   },
   'ko-KR': {
     nav: { svgTool: 'SVG 도구', svgToolShort: 'SVG', wechatSearch: '위챗 공중호 글 검색', wechatSearchShort: '검색', cssReference: 'CSS 참조', cssReferenceShort: 'CSS', dict: '오프라인 사전', dictShort: '사전', mediaFetch: '미디어 가져오기', mediaFetchShort: '가져오기' },
-    group: { dev: '개발자 도구', lookup: '텍스트 / 참조' },
+    group: { dev: '개발자 공정', lookup: '지식 광맥' },
   },
   'es-ES': {
     nav: { svgTool: 'Herramientas SVG', svgToolShort: 'SVG', wechatSearch: 'Búsqueda de artículos de WeChat', wechatSearchShort: 'Buscar', cssReference: 'Referencia CSS', cssReferenceShort: 'CSS', dict: 'Diccionario sin conexión', dictShort: 'Diccionario', mediaFetch: 'Obtener medios', mediaFetchShort: 'Obtener' },
-    group: { dev: 'Herramientas de desarrollo', lookup: 'Texto / Consulta' },
+    group: { dev: 'Taller de desarrollo', lookup: 'Veta de conocimiento' },
   },
 }
 

@@ -534,12 +534,12 @@ onMounted(() => {
   background: var(--panel-2, rgba(28,37,60,.55)); color: var(--txt, #e8edf7);
   border: 1px solid var(--line, rgba(120,150,200,.16));
 }
-.md-input:focus { outline: none; border-color: rgba(56,189,248,.5); }
+.md-input:focus { outline: none; border-color: rgba(232,149,74,.5); }
 .split { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin: 12px 0; }
 .pane { min-width: 0; }
 .preview { width: 100%; height: 460px; border: 1px solid var(--line, rgba(120,150,200,.16)); border-radius: 10px; background: #fff; }
 .chk { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--muted, #93a2bd); }
-.chk input { accent-color: #38bdf8; }
+.chk input { accent-color: #e8954a; }
 .field input[type=range] { width: 110px; vertical-align: middle; }
 .tag.warn { color: #fbbf24; border-color: rgba(251,191,36,.4); }
 .toolbar-sub { margin-top: 8px; gap: 10px; }

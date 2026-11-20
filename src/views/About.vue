@@ -11,6 +11,13 @@ import { T } from '../lib/i18n.dev.js'
   <AdSlot :label="T('views.about.adTop')" />
 
   <div class="panel">
+    <h3 style="margin-top: 0"><i class="bi bi-fire"></i> {{ T('views.about.whyTitle') }}</h3>
+    <p style="color: var(--muted)">
+      {{ T('views.about.whyBody') }}
+    </p>
+  </div>
+
+  <div class="panel">
     <h3 style="margin-top: 0"><i class="bi bi-info-circle"></i> {{ T('views.about.whatTitle') }}</h3>
     <p style="color: var(--muted)">
       {{ T('views.about.whatBody') }}

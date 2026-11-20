@@ -441,8 +441,8 @@ function flash(msg) {
   cursor: pointer;
 }
 .tabs button.active {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(232, 149, 74, 0.14);
+  border-color: rgba(232, 149, 74, 0.4);
   color: var(--accent, #38bdf8);
 }
 .tabs .cnt {
@@ -526,7 +526,7 @@ function flash(msg) {
   background: rgba(120, 150, 200, 0.1);
 }
 .toc-item.active {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(232, 149, 74, 0.16);
   color: var(--accent, #38bdf8);
 }
 .toc-title {
@@ -661,7 +661,7 @@ function flash(msg) {
   cursor: pointer;
 }
 .seg button.on {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(232, 149, 74, 0.16);
   color: var(--accent, #38bdf8);
 }
 .prog {
@@ -705,8 +705,8 @@ function flash(msg) {
   display: inline-block;
   min-width: 1.1em;
   text-align: center;
-  color: rgba(56, 189, 248, 0.45);
-  background: rgba(56, 189, 248, 0.1);
+  color: rgba(232, 149, 74, 0.45);
+  background: rgba(232, 149, 74, 0.1);
   border-radius: 4px;
   cursor: pointer;
   user-select: none;

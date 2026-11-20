@@ -19,7 +19,7 @@ export const COMPRESSIONS = [
 // groupKey / titleKey / descKey 为 i18n 键，视图渲染时按当前语言取（见 Home.vue）。
 export const TOOLS = [
   {
-    group: 'ZIP 工具箱', groupKey: 'home.g.zip',
+    group: '压缩 / 归档', groupKey: 'home.g.zip',
     items: [
       { to: '/zip-compress', icon: 'bi-file-earmark-zip', titleKey: 'home.t.zipCompress', descKey: 'home.d.zipCompress', title: '压缩为 ZIP', desc: '多文件/文件夹打包，支持 AES 密码、压缩级别' },
       { to: '/zip-compress?split=1', icon: 'bi-scissors', titleKey: 'home.t.zipSplit', descKey: 'home.d.zipSplit', title: '拆分 ZIP（分卷）', desc: '按指定大小切分为多卷 ZIP' },
@@ -60,7 +60,7 @@ export const TOOLS = [
     ],
   },
   {
-    group: '图片', groupKey: 'home.g.image',
+    group: '图片工序', groupKey: 'home.g.image',
     items: [
       { to: '/image-convert', icon: 'bi-image', titleKey: 'home.t.imgConvert', descKey: 'home.d.imgConvert', title: '图片格式转换', desc: 'PNG/JPG/WEBP/AVIF 互转（浏览器原生解码）' },
       { to: '/image-convert?mode=compress', icon: 'bi-badge-ad', titleKey: 'home.t.imgCompress', descKey: 'home.d.imgCompress', title: '压缩图片', desc: 'PNG 走 upng 有损量化保透明（类 TinyPNG），JPG/WEBP/AVIF 走原生编码' },
@@ -108,7 +108,7 @@ export const TOOLS = [
     ],
   },
   {
-    group: '文字 / 查阅', groupKey: 'home.g.lookup',
+    group: '知识矿藏', groupKey: 'home.g.lookup', noteKey: 'home.note.lookup',
     items: [
       { to: '/dictionary', icon: 'bi-book', titleKey: 'home.t.dict', descKey: 'home.d.dict', title: '离线词典', desc: 'CC-CEDICT 汉英词库在浏览器内建索引，汉字/拼音/首字母/释义检索，纯本地' },
       { to: '/poem-meter', icon: 'bi-rulers', titleKey: 'home.t.poemMeter', descKey: 'home.d.poemMeter', title: '近体诗格律', desc: '按平水韵 106 韵部逐字校勘平仄、粘对与押韵，指出出律、孤平、三平调' },
@@ -120,7 +120,7 @@ export const TOOLS = [
     ],
   },
   {
-    group: '开发者工具', groupKey: 'home.g.dev',
+    group: '开发者工序', groupKey: 'home.g.dev',
     items: [
       { to: '/text', icon: 'bi-code-slash', titleKey: 'home.t.textTool', descKey: 'home.d.textTool', title: '文本 / 编码工具箱', desc: 'JSON · Base64 · JWT · 正则 · 时间戳 · UUID · 密码 · 摘要' },
       { to: '/svg-tool', icon: 'bi-bounding-box', titleKey: 'home.t.svgTool', descKey: 'home.d.svgTool', title: 'SVG 工具箱', desc: '压缩 / 格式化 / 缩放 / 重着色 / Base64 / 优化，纯本地' },

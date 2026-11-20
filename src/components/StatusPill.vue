@@ -32,7 +32,7 @@ defineProps({
 }
 .statuspill .spin { animation: spspin .9s linear infinite; }
 @keyframes spspin { to { transform: rotate(360deg); } }
-.statuspill.working { color: var(--accent, #38bdf8); border-color: rgba(56,189,248,.45); background: rgba(56,189,248,.1); }
+.statuspill.working { color: var(--accent, #38bdf8); border-color: rgba(232,149,74,.45); background: rgba(232,149,74,.1); }
 .statuspill.done { color: var(--accent-2, #34d399); border-color: rgba(52,211,153,.45); background: rgba(52,211,153,.1); }
 .statuspill.error { color: var(--danger, #fb7185); border-color: rgba(251,113,133,.45); background: rgba(251,113,133,.1); }
 .statuspill.idle .dot-idle { font-size: 8px; }

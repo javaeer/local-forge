@@ -682,12 +682,12 @@ onMounted(() => {
   font-size: 12.5px;
 }
 .type-card i { font-size: 20px; }
-.type-card:hover { border-color: rgba(56,189,248,.45); color: var(--txt, #e6ebf2); }
+.type-card:hover { border-color: rgba(232,149,74,.45); color: var(--txt, #e6ebf2); }
 .type-card.active {
   color: var(--accent, #38bdf8);
   border-color: var(--accent, #38bdf8);
-  background: rgba(56,189,248,.1);
-  box-shadow: 0 0 14px rgba(56,189,248,.22);
+  background: rgba(232,149,74,.1);
+  box-shadow: 0 0 14px rgba(232,149,74,.22);
 }
 .form-grid {
   display: grid;

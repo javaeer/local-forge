@@ -66,7 +66,7 @@ defineProps({
 .step.active .dot {
   border-color: var(--accent, #38bdf8);
   color: var(--accent, #38bdf8);
-  box-shadow: 0 0 12px rgba(56,189,248,.4);
+  box-shadow: 0 0 12px rgba(232,149,74,.4);
 }
 .step.done .dot {
   border-color: var(--accent-2, #34d399);

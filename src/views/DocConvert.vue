@@ -138,7 +138,7 @@ function preview() {
   background: var(--panel-2, rgba(28,37,60,.55)); color: var(--txt, #e8edf7);
   border: 1px solid var(--line, rgba(120,150,200,.16));
 }
-.md-input:focus { outline: none; border-color: rgba(56,189,248,.5); }
+.md-input:focus { outline: none; border-color: rgba(232,149,74,.5); }
 .tag.warn { color: #fbbf24; border-color: rgba(251,191,36,.4); }
 .preview { width: 100%; height: 420px; margin-top: 14px; border: 1px solid var(--line, rgba(120,150,200,.16)); border-radius: 10px; background: #fff; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }

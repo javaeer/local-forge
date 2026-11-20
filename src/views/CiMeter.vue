@@ -472,8 +472,8 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   cursor: pointer;
 }
 .tab.active {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(232, 149, 74, 0.14);
+  border-color: rgba(232, 149, 74, 0.4);
   color: var(--accent, #38bdf8);
   font-weight: 600;
 }
@@ -523,7 +523,7 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   font-size: 11px;
   padding: 1px 8px;
   border-radius: 999px;
-  background: rgba(56, 189, 248, 0.12);
+  background: rgba(232, 149, 74, 0.12);
   color: var(--accent, #38bdf8);
 }
 .fmt-desc {
@@ -554,7 +554,7 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   color: var(--txt, #e8edf7);
 }
 .tag.accent {
-  border-color: rgba(56, 189, 248, 0.35);
+  border-color: rgba(232, 149, 74, 0.35);
 }
 .tag .feet {
   letter-spacing: 0.16em;
@@ -619,7 +619,7 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   height: 11px;
 }
 .cell.foot {
-  border-color: rgba(56, 189, 248, 0.4);
+  border-color: rgba(232, 149, 74, 0.4);
 }
 .cell.ok {
   background: rgba(52, 211, 153, 0.1);
@@ -638,7 +638,7 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   color: #ffc4cf;
 }
 .cell.multi {
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(232, 149, 74, 0.1);
 }
 .cell.unknown b {
   opacity: 0.55;
@@ -676,7 +676,7 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   background: #fb7185;
 }
 .lg.multi i {
-  background: #38bdf8;
+  background: #e8954a;
 }
 .lg.unknown i {
   border: 1px dashed var(--line-strong, #4a5a78);
@@ -745,8 +745,8 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
   gap: 6px;
 }
 .chip.on {
-  background: rgba(56, 189, 248, 0.16);
-  border-color: rgba(56, 189, 248, 0.45);
+  background: rgba(232, 149, 74, 0.16);
+  border-color: rgba(232, 149, 74, 0.45);
   color: var(--accent, #38bdf8);
 }
 .rate {

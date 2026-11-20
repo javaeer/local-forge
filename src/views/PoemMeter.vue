@@ -424,9 +424,9 @@ onMounted(() => {
   font-size: 12.5px;
 }
 .tag.accent {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(232, 149, 74, 0.16);
   color: var(--accent, #38bdf8);
-  border-color: rgba(56, 189, 248, 0.3);
+  border-color: rgba(232, 149, 74, 0.3);
 }
 .feet {
   display: flex;
@@ -437,7 +437,7 @@ onMounted(() => {
   font-weight: 600;
   padding: 1px 8px;
   border-radius: 6px;
-  background: rgba(56, 189, 248, 0.12);
+  background: rgba(232, 149, 74, 0.12);
   color: var(--accent, #38bdf8);
 }
 
@@ -523,7 +523,7 @@ onMounted(() => {
   color: #f3d08a;
 }
 .cell.multi {
-  background: rgba(56, 189, 248, 0.1);
+  background: rgba(232, 149, 74, 0.1);
 }
 .cell.multi small {
   color: var(--accent, #38bdf8);
@@ -569,7 +569,7 @@ onMounted(() => {
   background: #fbbf24;
 }
 .lg.multi i {
-  background: #38bdf8;
+  background: #e8954a;
 }
 .lg.unknown i {
   border: 1px dashed var(--line-strong, #4a5a78);
@@ -692,7 +692,7 @@ onMounted(() => {
   font-weight: 600;
 }
 .tone-badge.p {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(232, 149, 74, 0.16);
   color: var(--accent, #38bdf8);
 }
 .tone-badge.z {
@@ -739,7 +739,7 @@ onMounted(() => {
   color: var(--txt, #e8edf7);
 }
 .gchar:hover {
-  background: rgba(56, 189, 248, 0.14);
+  background: rgba(232, 149, 74, 0.14);
   color: var(--accent, #38bdf8);
 }
 .empty {

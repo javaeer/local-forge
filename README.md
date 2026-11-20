@@ -5,8 +5,8 @@
 <h1 align="center">LocalForge</h1>
 
 <p align="center">
-  <b>纯浏览器端的本地文件工具箱</b> —— 压缩、解压、格式转换、媒体转码、PDF 处理、公众号排版、App 图标生成、P2P 直传，<br/>
-  <b>全部在本地完成，文件不上传任何服务器。</b>
+  <b>纯浏览器端的本地工坊</b> —— 文件、数据与知识皆是原料，56 道工序在本地锤炼成可用成果：<br/>
+  <b>压缩、解压、转码、PDF、图片、OCR、离线词典、诗词格律、中医经典……原料进、成品出，全程不出本机。</b>
 </p>
 
 <p align="center">
@@ -18,8 +18,8 @@
   <img src="https://img.shields.io/badge/100%25-client--side-0f172a" alt="client-side" />
 </p>
 
-> **LocalForge** 受 ezyzip.pro 启发，在本地浏览器里提供同类文件处理能力并做了扩展：
-> 没有后端、没有上传、没有追踪。文件在你自己的设备里被 zip.js / libarchive.js / ffmpeg.wasm 处理完毕即销毁。
+> **LocalForge** —— 一座装在你浏览器里的本地工坊。受 ezyzip.pro 启发并大幅扩展：
+> 没有后端、没有上传、没有追踪。原料在你自己的设备里，被 zip.js / libarchive.js / ffmpeg.wasm 等工序锤炼成成品，用完即销毁。
 
 ---
 
@@ -46,9 +46,15 @@
 | **PDF** | 重压缩（内嵌图像重压 + 对象流去重）／**逐页预览（pdf.js 本地渲染）／合并多个 PDF／拆分为单页** | [pdf-lib](https://github.com/Hopding/pdf-lib) + [pdfjs-dist](https://github.com/mozilla/pdf.js) |
 | **分享 / 安全** | WebRTC P2P 直传（手动 SDP 信令，无后端）；ZIP 密码字典恢复；归档修复 | WebRTC / 本地引擎 |
 | **PWA / 离线** | 可安装（manifest + Service Worker）；**按需预缓存 WASM 内核**，断网也能用；缓存策略：外壳 network-first、内核 cache-first、静态资源 stale-while-revalidate | 自研 `public/sw.js` |
-| **离线词典** | CC-CEDICT 汉英词库（约 12 万条）在后台线程建索引与检索；支持汉字、带调拼音、无调拼音、首字母、英文释义五种查法，英文查义走倒排索引（`bicycle` 0.2 ms 出结果）、支持多词 AND（`green tea`）、繁体前缀展开，模糊纠错可选；英文单词附 IPA 音标（美/英 19 万词，可朗读）；可导入 CC-CEDICT / Kaikki JSONL / TSV 换源，导入的词库经 IndexedDB 持久化；词库进 SW 预缓存，访一次即可彻底断网查词 | 自研零依赖内核 [`src/lib/dict.js`](src/lib/dict.js)（Node 可单测）+ Web Worker（[`dict.worker.js`](src/lib/dict.worker.js) / [`dictclient.js`](src/lib/dictclient.js)，主线程零重活、Worker 不可用自动降级）+ 原生 `DecompressionStream`；词库由 `pnpm dict:fetch` 拉取（CC BY-SA 4.0）；音标来自 [ipa-dict](https://github.com/open-dict-data/ipa-dict)（MIT） |
+| **知识矿藏 · 离线词典** | CC-CEDICT 汉英词库（约 12 万条）在后台线程建索引与检索；支持汉字、带调拼音、无调拼音、首字母、英文释义五种查法，英文查义走倒排索引（`bicycle` 0.2 ms 出结果）、支持多词 AND（`green tea`）、繁体前缀展开，模糊纠错可选；英文单词附 IPA 音标（美/英 19 万词，可朗读）；可导入 CC-CEDICT / Kaikki JSONL / TSV 换源，导入的词库经 IndexedDB 持久化；词库进 SW 预缓存，访一次即可彻底断网查词 | 自研零依赖内核 [`src/lib/dict.js`](src/lib/dict.js)（Node 可单测）+ Web Worker（[`dict.worker.js`](src/lib/dict.worker.js) / [`dictclient.js`](src/lib/dictclient.js)，主线程零重活、Worker 不可用自动降级）+ 原生 `DecompressionStream`；词库由 `pnpm dict:fetch` 拉取（CC BY-SA 4.0）；音标来自 [ipa-dict](https://github.com/open-dict-data/ipa-dict)（MIT） |
 | **媒体获取** | 粘贴媒体直链（含 m3u8 分片）在本地逐条拉取并显示进度，多分片可本地合并；跨域可选「自托管桥接」模式，地址只存本机 localStorage | 内核 [`src/lib/mediadl.js`](src/lib/mediadl.js)（纯函数 Node 可单测，ffmpeg 管线懒加载）+ 复用 `media.js` 的 concat 合并；不内置任何第三方解析后端 |
 | **多语言** | 中文 / English / 日本語 / 한국어 / Español 五语界面，自动检测系统语言 + 持久化 | 零依赖 i18n 内核 `src/lib/i18n.js` |
+| **知识矿藏 · 近体诗格律** | 按平水韵 106 韵部逐字校勘平仄、粘对与押韵，指出出律、孤平、三平调、拗救 | 自研零依赖内核 `src/lib/poemmeter.js` |
+| **知识矿藏 · 词牌格律** | 按钦定词谱 818 调 2475 体校勘，词林正韵 19 部判韵，附填词助手 | 自研零依赖内核 `src/lib/cimeter.js` |
+| **知识矿藏 · 诗文精选** | 唐诗三百首、宋词三百首、古文观止共 868 篇，本地检索阅读，可导出竖排卡片 | 自研 `src/lib/poems.js` + 全量库 Worker 检索 |
+| **知识矿藏 · 中医药歌诀** | 汤头歌诀、濒湖脉学、药性歌括四百味等八本 1143 条，遮盖背诵与默写比对（LCS 评分） | 自研零依赖内核 `src/lib/tcmchants.js` |
+| **知识矿藏 · 本草纲目** | 16 部 52 卷 1775 条药条与主治全文，目录树浏览、药名主治检索，全量库可下载离线阅读 | 自研 `src/lib/bencao.js` + IndexedDB |
+| **知识矿藏 · 中医医典** | 千金要方、外台秘要、内经、伤寒论等九部医典 5954 篇，篇章目录 + Worker 全文检索 | 自研 `src/lib/tcmfull.js` + 17 分片 |
 
 > **关于 7Z / ISO / XZ / ZST / BZ2 的「创建」**：这些格式需要原版专有的 WASM 编码模块（网页端不可得），
 > 本项目**不伪造**其创建能力——`createArchive` 对不支持的格式会明确报错并建议改用 ZIP / TAR / TAR.GZ。

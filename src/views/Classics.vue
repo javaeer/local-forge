@@ -575,8 +575,8 @@ function flash(msg) {
   cursor: pointer;
 }
 .tabs button.active {
-  background: rgba(56, 189, 248, 0.14);
-  border-color: rgba(56, 189, 248, 0.4);
+  background: rgba(232, 149, 74, 0.14);
+  border-color: rgba(232, 149, 74, 0.4);
   color: var(--accent, #38bdf8);
 }
 .tabs .cnt {
@@ -657,7 +657,7 @@ function flash(msg) {
   background: rgba(120, 150, 200, 0.1);
 }
 .toc-item.active {
-  background: rgba(56, 189, 248, 0.16);
+  background: rgba(232, 149, 74, 0.16);
   color: var(--accent, #38bdf8);
 }
 .toc-title {
@@ -918,8 +918,8 @@ mark {
   font-size: 13.5px;
 }
 .full-hit:hover {
-  border-color: rgba(56, 189, 248, 0.4);
-  background: rgba(56, 189, 248, 0.07);
+  border-color: rgba(232, 149, 74, 0.4);
+  background: rgba(232, 149, 74, 0.07);
 }
 .fh-head {
   display: flex;

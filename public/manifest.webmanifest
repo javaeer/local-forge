@@ -1,7 +1,7 @@
 {
-  "name": "LocalForge · 本地文件工具箱",
+  "name": "LocalForge · 本地工坊",
   "short_name": "LocalForge",
-  "description": "纯浏览器端的本地文件工具箱：压缩、解压、格式转换、媒体转码、PDF 处理、二维码、OCR。全部在本地完成，文件不出设备。",
+  "description": "纯浏览器端的本地工坊：文件、数据与知识皆是原料，56 道工序在本地锤炼成可用成果，全程不出设备。压缩、解压、转码、PDF、图片、OCR、离线词典、诗词格律、中医经典一应俱全。",
   "lang": "zh-CN",
   "dir": "ltr",
   "start_url": "/",
@@ -9,8 +9,8 @@
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "orientation": "any",
-  "background_color": "#070b14",
-  "theme_color": "#0f172a",
+  "background_color": "#0d0b09",
+  "theme_color": "#e8954a",
   "categories": ["utilities", "productivity", "photo"],
   "icons": [
     { "src": "/icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

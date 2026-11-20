@@ -491,7 +491,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   font-size: 12.5px; cursor: pointer; color: var(--muted);
   border: 1px solid var(--line-strong); background: var(--panel-2); transition: .15s;
 }
-.chip:hover { color: var(--accent); border-color: var(--accent); background: rgba(56,189,248,.08); }
+.chip:hover { color: var(--accent); border-color: var(--accent); background: rgba(232,149,74,.08); }
 
 .thread-badge {
   font-size: 11px; padding: 1px 7px; border-radius: 999px;
@@ -555,7 +555,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   border: 1px solid var(--line); border-radius: var(--radius-sm);
   background: var(--panel-2); overflow: hidden; transition: border-color .15s;
 }
-.dict-item.open, .dict-item:hover { border-color: rgba(56,189,248,.45); }
+.dict-item.open, .dict-item:hover { border-color: rgba(232,149,74,.45); }
 .di-head {
   display: flex; align-items: center; gap: 10px; padding: 11px 14px; cursor: pointer;
 }
@@ -566,7 +566,7 @@ onBeforeUnmount(() => clearTimeout(timer))
   margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 999px;
   border: 1px solid var(--line-strong); color: var(--faint);
 }
-.di-hit[data-hit="exact"] { color: var(--accent); border-color: rgba(56,189,248,.5); }
+.di-hit[data-hit="exact"] { color: var(--accent); border-color: rgba(232,149,74,.5); }
 .di-hit[data-hit="fuzzy"] { color: #fbbf24; border-color: rgba(251,191,36,.45); }
 .di-caret { color: var(--faint); font-size: 12px; }
 .di-def { padding: 0 14px 11px; color: var(--muted); font-size: 13.5px; line-height: 1.6; }

@@ -66,9 +66,9 @@ async function go(flow) {
 .ns-btn {
   display: inline-flex; align-items: center; gap: 3px;
   padding: 6px 12px; border-radius: 999px; cursor: pointer; font-size: 12.5px;
-  border: 1px solid rgba(56,189,248,.35); color: var(--accent, #38bdf8);
-  background: var(--grad-soft, rgba(56,189,248,.1)); transition: .15s;
+  border: 1px solid rgba(232,149,74,.35); color: var(--accent, #38bdf8);
+  background: var(--grad-soft, rgba(232,149,74,.1)); transition: .15s;
 }
-.ns-btn:hover { border-color: var(--accent, #38bdf8); background: rgba(56,189,248,.18); }
+.ns-btn:hover { border-color: var(--accent, #38bdf8); background: rgba(232,149,74,.18); }
 .ns-btn i { font-size: 15px; }
 </style>
