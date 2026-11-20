@@ -39,6 +39,7 @@ export const NAV = [
   { path: '/ci-meter', title: '词牌格律', short: '词律', titleKey: 'nav.ciMeter', shortKey: 'nav.ciMeterShort', icon: 'bi-music-note-list', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '词 词牌 词谱 填词 平仄 押韵 词林正韵 宋词 水调歌头 念奴娇 如梦令 钦定词谱 格律 校勘' },
   { path: '/classics', title: '诗文精选', short: '诗文', titleKey: 'nav.classics', shortKey: 'nav.classicsShort', icon: 'bi-journal-bookmark', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '唐诗 宋词 古文观止 唐诗三百首 宋词三百首 古诗 古文 选集 竖排 卡片 阅读 检索 名篇 静夜思 春望 岳阳楼记' },
   { path: '/chants', title: '中医药歌诀', short: '歌诀', titleKey: 'nav.tcmChants', shortKey: 'nav.tcmChantsShort', icon: 'bi-capsule', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '中医 中医药 歌诀 汤头歌诀 濒湖脉学 药性歌括四百味 药性赋 医学三字经 长沙方歌括 金匮方歌括 时方歌括 背诵 默写 挖空 方歌 脉诀 tcm medicine mnemonic' },
+  { path: '/bencao', title: '本草纲目', short: '本草', titleKey: 'nav.bencao', shortKey: 'nav.bencaoShort', icon: 'bi-flower1', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '本草纲目 李时珍 中药 本草 药物 主治 气味 释名 集解 附方 发明 明代 bencao materia medica li shizhen' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },
   { path: '/about', title: '关于', titleKey: 'nav.about', icon: 'bi-info-circle', group: '关于', groupKey: 'group.about', keywords: 'about 关于 开源 技术栈' },
   { path: '/privacy', title: '隐私协议', titleKey: 'nav.privacy', icon: 'bi-shield-lock', group: '关于', groupKey: 'group.about', keywords: '隐私 privacy 协议 零上传' },

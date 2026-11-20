@@ -115,6 +115,7 @@ export const TOOLS = [
       { to: '/ci-meter', icon: 'bi-music-note-list', titleKey: 'home.t.ciMeter', descKey: 'home.d.ciMeter', title: '词牌格律', desc: '按钦定词谱 818 词牌 2475 体逐字校勘，词林正韵 19 部判韵，附带填词助手' },
       { to: '/classics', icon: 'bi-journal-bookmark', titleKey: 'home.t.classics', descKey: 'home.d.classics', title: '诗文精选', desc: '唐诗三百首、宋词三百首、古文观止共 868 篇，本地检索阅读，可导出竖排卡片' },
       { to: '/chants', icon: 'bi-capsule', titleKey: 'home.t.tcmChants', descKey: 'home.d.tcmChants', title: '中医药歌诀', desc: '汤头歌诀、濒湖脉学、药性歌括四百味等八本 1143 条，附遮盖背诵与默写比对' },
+      { to: '/bencao', icon: 'bi-flower1', titleKey: 'home.t.bencao', descKey: 'home.d.bencao', title: '本草纲目', desc: '16 部 52 卷 1775 条药条与主治全文，目录树浏览、药名主治检索，全量库可下载离线阅读' },
     ],
   },
   {

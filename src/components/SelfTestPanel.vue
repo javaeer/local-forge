@@ -89,6 +89,7 @@ const VIEW_ROUTES = [
   { path: '/ci-meter', file: 'CiMeter.vue' },
   { path: '/classics', file: 'Classics.vue' },
   { path: '/chants', file: 'TcmChants.vue' },
+  { path: '/bencao', file: 'Bencao.vue' },
   { path: '/about', file: 'About.vue' },
   { path: '/privacy', file: 'Privacy.vue' },
 ]

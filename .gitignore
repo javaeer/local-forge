@@ -45,3 +45,4 @@ public/dict/*.gz
 public/classics/*.gz
 public/classics/full/
 public/tcm/*.gz
+public/tcm/bencao*.gz

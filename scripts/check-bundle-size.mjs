@@ -26,9 +26,12 @@ const DIST = 'dist'
 const DEFAULTS = {
   JS_CHUNK_RAW: 400, // 单个 JS chunk 原始体积上限（最严、最有意义的护栏）
   JS_CHUNK_GZIP: 200, // 单个 JS chunk gzip 上限
-  APP_RAW: 4096, // 应用代码（全部 JS+CSS，不含 WASM 内核）原始体积上限（宽松，留足余量）
-  APP_GZIP: 1500, // 应用代码 gzip 上限（宽松）
-  CORE_RAW: 92160, // WASM 内核总量上限（≈90MB，防内核被误翻倍 / 新增）
+  // 2026-11 实测放宽：古典文学四模块 + 中医药两模块上线后应用代码到 4.9MB / gzip 1.62MB，
+  // WASM 内核随上游版本更新到 92.15MB——此前预算（4MB / 1.5MB / 90MB）在 HEAD 上即已突破（存量），
+  // 按实测值 +15% 余量重设，护栏意义不变（捕捉反常膨胀）。
+  APP_RAW: 5800, // 应用代码（全部 JS+CSS，不含 WASM 内核）原始体积上限（宽松，留足余量）
+  APP_GZIP: 1900, // 应用代码 gzip 上限（宽松）
+  CORE_RAW: 108_000, // WASM 内核总量上限（防内核被误翻倍 / 新增）
 }
 const budget = (k) => {
   const env = process.env['BUDGET_' + k]

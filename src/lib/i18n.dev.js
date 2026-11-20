@@ -15,6 +15,7 @@ import { HOME_ES } from './i18n.home.es.js'
 import { VIEW_MESSAGES } from './i18n.views.js'
 import { CLASSICS_MESSAGES } from './i18n.classics.js'
 import { TCM_MESSAGES } from './i18n.tcm.js'
+import { BENCAO_MESSAGES } from './i18n.bencao.js'
 
 // 通用词条：导航项与分组名
 export const DEV_MESSAGES = {
@@ -41,7 +42,7 @@ export const DEV_MESSAGES = {
 }
 
 // 查找顺序：通用 → SVG → CSS → 古典文学 → 首页卡片（按语言）→ 视图（按语言）→ 主 i18n
-const PACKS = [DEV_MESSAGES, SVG_MESSAGES, CSS_MESSAGES, CLASSICS_MESSAGES, TCM_MESSAGES, HOME_ZH, HOME_EN, HOME_JA, HOME_KO, HOME_ES, VIEW_MESSAGES]
+const PACKS = [DEV_MESSAGES, SVG_MESSAGES, CSS_MESSAGES, CLASSICS_MESSAGES, TCM_MESSAGES, BENCAO_MESSAGES, HOME_ZH, HOME_EN, HOME_JA, HOME_KO, HOME_ES, VIEW_MESSAGES]
 
 function lookup(packs, loc, key) {
   for (const pack of packs) {

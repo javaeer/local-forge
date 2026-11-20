@@ -37,6 +37,7 @@ const views = {
   CiMeter: () => import('../views/CiMeter.vue'),
   Classics: () => import('../views/Classics.vue'),
   TcmChants: () => import('../views/TcmChants.vue'),
+  Bencao: () => import('../views/Bencao.vue'),
   About: () => import('../views/About.vue'),
   Privacy: () => import('../views/Privacy.vue'),
 }
@@ -73,6 +74,7 @@ const fileToPath = {
   'CiMeter.vue': '/ci-meter',
   'Classics.vue': '/classics',
   'TcmChants.vue': '/chants',
+  'Bencao.vue': '/bencao',
   'About.vue': '/about',
   'Privacy.vue': '/privacy',
 }

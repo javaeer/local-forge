@@ -34,7 +34,7 @@ const formatsSrc = read('src/lib/formats.js')
 // i18n.views.js 承载全部 views.* 词条（视图 T('views.xxx') 的落点）；
 // 漏扫会让断言 E 把真实存在的词条误报为缺失。
 // 新增词条包（如 i18n.classics.js）必须在此登记，否则该包的 key 会被判缺失。
-const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js', 'src/lib/i18n.classics.js', 'src/lib/i18n.tcm.js', 'src/lib/i18n.views.js'].map(read)
+const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js', 'src/lib/i18n.classics.js', 'src/lib/i18n.tcm.js', 'src/lib/i18n.bencao.js', 'src/lib/i18n.views.js'].map(read)
 
 // ---------- 解析 ----------
 // NAV 条目：逐行抽取（每行一个对象字面量）
