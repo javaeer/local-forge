@@ -13,7 +13,7 @@
 //
 // 全文检索走主线程：1921 条约 200 万字，indexOf 一遍 < 20ms，不值得开 Worker
 //（第 4 期开 Worker 是因为 8.9 万首 25MB 文本，量级差一个数量级）。
-import { fetchGzJson, dataUrl, decodeMaybeGzip } from './gzjson.js'
+import { fetchGzJson, parseGzJson, dataUrl } from './gzjson.js'
 
 const INDEX_FILE = 'tcm/bencao-index.json.gz'
 const FULL_FILE = 'tcm/bencao.json.gz'
@@ -195,8 +195,12 @@ export async function downloadFull(onProgress) {
     buf = new Uint8Array(await res.arrayBuffer())
     onProgress?.(buf.length, buf.length, 'download')
   }
-  const text = await decodeMaybeGzip(buf.buffer)
-  const data = JSON.parse(text)
+  const data = await parseGzJson(buf.buffer, {
+    label: '本草纲目全量',
+    cmd: CMD,
+    url: dataUrl(FULL_FILE),
+    contentType: res.headers.get('content-type') || '',
+  })
   if (data.v !== 1 || !Array.isArray(data.items)) throw new Error('全量数据结构异常，请重新运行 ' + CMD)
 
   const rec = { id: META_ID, v: data.v, built: data.built, items: data.items, savedAt: Date.now() }

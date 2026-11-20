@@ -22,6 +22,7 @@ export const SUITES = [
   { id: 'tcmchants', file: '_e2e_tcm_chants.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '中医药歌诀（八书浏览 · 检索高亮 · 挖空/首字/默写背诵 · 已会进度 · 五语言免责声明）' },
   { id: 'bencao', file: '_e2e_bencao.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '本草纲目（17 组目录树 · 索引摘要 · 全量库下载/删除 · 分节导航 · 全文检索 · 双语免责声明）' },
   { id: 'tcmbooks', file: '_e2e_tcm_books.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '方书与医经（九书 tab · 卷篇目录 · 全量库下载/删除 · Worker 全文检索 · 命中打开 · 双语免责声明）' },
+  { id: 'classicsfull', file: '_e2e_classics_full.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '诗文全量库（HTML 回退诊断 · 46 分片下载/删除 · Worker 全文检索 · 篇目阅读）' },
   { id: 'mediafetch', file: '_e2e_media_fetch.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '媒体获取（直链解析 · 桥接拼接 · 空输入拦截 · 合并门槛 · 首页卡片 · 零外发请求）' },
   { id: 'batch', file: '_e2e_batch.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '批处理队列' },
   { id: 'imagepro', file: '_e2e_imagepro.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '音视频进阶（GIF/抽帧/裁剪）' },

@@ -11,9 +11,10 @@
 //
 // 检索放 Worker（poem.worker.js）：8.9 万首约 25 MB 文本，主线程 indexOf 一遍要
 // 卡顿 100ms+，Worker 里做则是无感的。本模块只负责下载、缓存与取正文。
-import { dataUrl, decodeMaybeGzip } from './gzjson.js'
+import { fetchGzJson } from './gzjson.js'
 
 const INDEX_FILE = 'classics/full-index.json.gz'
+const FETCH_CMD = 'npm run poems-full:fetch'
 const DB_NAME = 'lf-poems'
 const META_STORE = 'meta'
 const SHARD_STORE = 'shards'
@@ -89,10 +90,8 @@ export async function downloadFull(onProgress) {
   let index
   try {
     onProgress?.(0, 1, 'index')
-    const res = await fetch(dataUrl(INDEX_FILE))
-    if (!res.ok) throw new Error(`索引下载失败：HTTP ${res.status}`)
-    const text = await decodeMaybeGzip(await res.arrayBuffer())
-    index = JSON.parse(text)
+    const { data } = await fetchGzJson(INDEX_FILE, { cmd: FETCH_CMD, label: '全量库索引' })
+    index = data
     if (index.v !== 1 || !Array.isArray(index.entries)) throw new Error('索引结构异常，请重新生成数据快照')
   } catch (e) {
     throw e
@@ -114,11 +113,10 @@ export async function downloadFull(onProgress) {
         /* IDB 不可用 → 不缓存，每次都从网络拿 */
       }
       if (!have) {
-        const url = dataUrl(`classics/full/s${s}.json.gz`)
-        const res = await fetch(url)
-        if (!res.ok) throw new Error(`分片 s${s} 下载失败：HTTP ${res.status}`)
-        const text = await decodeMaybeGzip(await res.arrayBuffer())
-        const items = JSON.parse(text)
+        const { data: items } = await fetchGzJson(`classics/full/s${s}.json.gz`, {
+          cmd: FETCH_CMD,
+          label: `全量库分片 s${s}`,
+        })
         if (!Array.isArray(items) || !items.length) throw new Error(`分片 s${s} 内容为空`)
         if (!memoryOnly) {
           try {
@@ -177,10 +175,11 @@ export async function readPiece(shard, off) {
     if (items) memShards.set(shard, items)
   }
   if (!items) {
-    const res = await fetch(dataUrl(`classics/full/s${shard}.json.gz`))
-    if (!res.ok) throw new Error(`分片 s${shard} 读取失败：HTTP ${res.status}`)
-    const text = await decodeMaybeGzip(await res.arrayBuffer())
-    items = JSON.parse(text)
+    const { data } = await fetchGzJson(`classics/full/s${shard}.json.gz`, {
+      cmd: FETCH_CMD,
+      label: `全量库分片 s${shard}`,
+    })
+    items = data
     memShards.set(shard, items)
   }
   const it = items[off]

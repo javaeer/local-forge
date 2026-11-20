@@ -10,7 +10,7 @@
 //
 // 检索在 Worker（tcmbook.worker.js）：219 万字正文逐字扫描在主线程会卡顿，
 // 规则实现在 tcmbooksearch.js 与单测共用。
-import { dataUrl, decodeMaybeGzip, fetchGzJson } from './gzjson.js'
+import { fetchGzJson } from './gzjson.js'
 
 const INDEX_FILE = 'tcm/full-index.json.gz'
 const DB_NAME = 'lf-tcmfull'
@@ -105,10 +105,11 @@ export async function downloadFull(onProgress) {
   let index
   try {
     onProgress?.(0, 1, 'index')
-    const res = await fetch(dataUrl(INDEX_FILE))
-    if (!res.ok) throw new Error(`索引下载失败：HTTP ${res.status}`)
-    const text = await decodeMaybeGzip(await res.arrayBuffer())
-    index = JSON.parse(text)
+    const fetched = await fetchGzJson(INDEX_FILE, {
+      cmd: 'npm run tcmbooks:fetch',
+      label: '方书库索引',
+    })
+    index = fetched.data
     if (index.v !== 1 || !Array.isArray(index.entries) || !Array.isArray(index.shardFrom)) {
       throw new Error('索引结构异常，请重新运行 npm run tcmbooks:fetch')
     }
@@ -130,9 +131,10 @@ export async function downloadFull(onProgress) {
         have = await withStore('readonly', (_m, st) => request(st.get(s)))
       } catch { /* IDB 不可用 → 本轮会话内存 */ }
       if (!have) {
-        const res = await fetch(dataUrl(`tcm/full/s${s}.json.gz`))
-        if (!res.ok) throw new Error(`分片 s${s} 下载失败：HTTP ${res.status}`)
-        const items = JSON.parse(await decodeMaybeGzip(await res.arrayBuffer()))
+        const { data: items } = await fetchGzJson(`tcm/full/s${s}.json.gz`, {
+          cmd: 'npm run tcmbooks:fetch',
+          label: `方书库分片 s${s}`,
+        })
         if (!Array.isArray(items) || !items.length) throw new Error(`分片 s${s} 内容为空`)
         memShards.set(s, items)
         if (!memoryOnly) {
@@ -184,9 +186,11 @@ export async function readPiece(shard, off) {
     if (items) memShards.set(shard, items)
   }
   if (!items) {
-    const res = await fetch(dataUrl(`tcm/full/s${shard}.json.gz`))
-    if (!res.ok) throw new Error(`分片 s${shard} 读取失败：HTTP ${res.status}`)
-    items = JSON.parse(await decodeMaybeGzip(await res.arrayBuffer()))
+    const { data } = await fetchGzJson(`tcm/full/s${shard}.json.gz`, {
+      cmd: 'npm run tcmbooks:fetch',
+      label: `方书库分片 s${shard}`,
+    })
+    items = data
     memShards.set(shard, items)
   }
   const it = items[off]
