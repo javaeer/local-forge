@@ -44,7 +44,7 @@ try {
     }
   })
   check('A3：首页「离线内核」面板可见', !!panel, panel ? panel.title : 'missing')
-  check('A3：展示 8 个内核组（解压/词典汉英/英汉ECDICT/PDF/OCR/OCR语言包/媒体/媒体ST）', !!panel && panel.cards === 8, panel ? `cards=${panel.cards}` : '')
+  check('A3：展示 11 个内核组（8 个内核 + 诗文基础/全量库 + 中医药数据）', !!panel && panel.cards === 11, panel ? `cards=${panel.cards}` : '')
   check('A3：存在「全部下载」按钮', !!panel && panel.hasFetchAll)
 
   /* 3) 初始状态：尚无任何内核缓存 */
@@ -99,6 +99,36 @@ try {
   }))
   check('A3：解压组状态变为「就绪」', !!status1 && status1.archive && status1.archive.ready,
     status1 ? `archive=${status1.archive.cached}/${status1.archive.total}` : 'null')
+
+  /* 5b) 离线数据包：预缓存「诗文基础数据」，并验证断网读取走 CORE_CACHE */
+  const dataResult = await page.evaluate(() => new Promise((resolve) => {
+    const sw = navigator.serviceWorker.controller
+    if (!sw) { resolve(null); return }
+    const onMsg = (e) => {
+      if (e.data && e.data.type === 'PRECACHE_DONE') {
+        navigator.serviceWorker.removeEventListener('message', onMsg)
+        resolve({ done: e.data.done, total: e.data.total, bytes: e.data.bytes })
+      }
+    }
+    navigator.serviceWorker.addEventListener('message', onMsg)
+    sw.postMessage({ type: 'PRECACHE_CORES', groups: ['classics'] })
+    setTimeout(() => resolve(null), 30000)
+  }))
+  check('A3：预缓存「诗文基础数据」完成', !!dataResult && dataResult.done === dataResult.total && dataResult.total === 3,
+    dataResult ? `done=${dataResult.done}/${dataResult.total}` : 'timeout')
+
+  // 删掉被动缓存，确保下面的离线读取只能来自刚预缓存的 CORE_CACHE
+  await page.evaluate(() => caches.delete('lf-v2-assets'))
+  await page.setOfflineMode(true)
+  const offlineData = await page.evaluate(async () => {
+    try {
+      const r = await fetch('/classics/poems.json.gz')
+      return { ok: r.ok, size: (await r.arrayBuffer()).byteLength }
+    } catch (e) { return { ok: false, err: String(e) } }
+  })
+  check('A3：断网后数据包仍可读（来自预缓存 CORE_CACHE）', offlineData.ok && offlineData.size > 0,
+    offlineData.ok ? `${(offlineData.size / 1024).toFixed(0)} KB` : offlineData.err)
+  await page.setOfflineMode(false)
 
   /* 6) 真·离线：断网后内核文件仍可从缓存取得 */
   await page.setOfflineMode(true)

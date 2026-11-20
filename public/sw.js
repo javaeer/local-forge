@@ -28,7 +28,16 @@ const CORE_CACHE = VERSION + '-cores'
 const CORE_URL_RE = /\/(ffmpeg|ffmpeg-st|tesseract|libarchive|pdfjs)\//
 
 // 零 WASM 内核依赖、首次访问后即可离线使用的工具（声明式，供 CORE_STATUS 上报）
-const OFFLINE_NATIVE_TOOLS = ['/wechat-article', '/dictionary']
+const OFFLINE_NATIVE_TOOLS = [
+  '/wechat-article',
+  '/dictionary',
+  '/classics',
+  '/poem-meter',
+  '/ci-meter',
+  '/tcmchants',
+  '/bencao',
+  '/tcmbooks',
+]
 
 // 预缓存：应用外壳（构建产物由运行时 stale-while-revalidate 覆盖）
 const SHELL_ASSETS = [
@@ -40,6 +49,11 @@ const SHELL_ASSETS = [
   '/icons/icon-512.png',
   '/icons/maskable-512.png',
 ]
+
+// 模块化数据快照的分片清单（与 scripts/fetch-poems-full.mjs / fetch-tcmbooks.mjs 的产物一致）。
+// 放在这里而不是各页面：首页「离线内核」要能一次性把这些资源纳入预缓存与状态统计。
+const CLASSICS_SHARDS = Array.from({ length: 46 }, (_, i) => `/classics/full/s${i}.json.gz`)
+const TCM_SHARDS = Array.from({ length: 17 }, (_, i) => `/tcm/full/s${i}.json.gz`)
 
 // 内核清单：逻辑分组 → 需要预缓存的文件 URL。页面按 group 触发预缓存。
 // 注：ffmpeg-st 属于兜底内核，默认不在"媒体"组里，单独按需（详见 lib/media.js 分级兜底）。
@@ -78,6 +92,24 @@ const CORE_GROUPS = {
   pdf: ['/pdfjs/pdf.worker.min.mjs'],
   media: ['/ffmpeg/ffmpeg-core.js', '/ffmpeg/ffmpeg-core.wasm', '/ffmpeg/ffmpeg-core.worker.js'],
   'media-st': ['/ffmpeg-st/ffmpeg-core.js', '/ffmpeg-st/ffmpeg-core.wasm'],
+
+  // 离线数据包（B-4 延伸）：原本散落在各模块按需加载的 .json.gz 统一聚合到这里。
+  // 页面清单在 src/lib/offline.js 的 CORE_GROUPS_META，两处 id 必须一一对应。
+  // 注意：这些快照不进 Git；缺文件时 precacheCores 会跳过，CORE_STATUS 显示未就绪，
+  // 正好把「构建机忘了生成/上传」暴露在首页，而不是等到下载时才报 JSON 解析错。
+  classics: [
+    '/classics/rhyme.json.gz',
+    '/classics/citunes.json.gz',
+    '/classics/poems.json.gz',
+  ],
+  'classics-full': ['/classics/full-index.json.gz', ...CLASSICS_SHARDS],
+  tcm: [
+    '/tcm/tcmchants.json.gz',
+    '/tcm/bencao-index.json.gz',
+    '/tcm/bencao.json.gz',
+    '/tcm/full-index.json.gz',
+    ...TCM_SHARDS,
+  ],
 }
 
 self.addEventListener('install', (e) => {
@@ -198,9 +230,17 @@ self.addEventListener('fetch', (e) => {
     return
   }
 
-  // 3) 其他同源静态资源：stale-while-revalidate
+  // 3) 其他同源静态资源：先认显式预缓存（CORE_CACHE，词典与诗文/中医数据包都在这里），
+  //    未命中再走 stale-while-revalidate 的 ASSET_CACHE。
+  //    早期版本只查 ASSET_CACHE，导致首页点「下载」预缓存了词库/数据，断网却读不到——
+  //    这里必须双查，否则 CORE_GROUPS 对这些非 WASM 资源只是"假离线就绪"。
   e.respondWith(
-    caches.open(ASSET_CACHE).then(async (cache) => {
+    (async () => {
+      const coreCache = await caches.open(CORE_CACHE)
+      const coreHit = await coreCache.match(req)
+      if (coreHit) return coreHit
+
+      const cache = await caches.open(ASSET_CACHE)
       const hit = await cache.match(req)
       const network = fetch(req)
         .then((res) => {
@@ -209,6 +249,6 @@ self.addEventListener('fetch', (e) => {
         })
         .catch(() => hit) // 离线时回退缓存
       return hit || network
-    })
+    })()
   )
 })

@@ -3,7 +3,7 @@
 // 让用户按需把 WASM 内核（压缩/OCR/媒体）缓存到本地，实现"真正的离线可用"，
 // 而不是仅在首次联网使用时被动缓存。与 public/sw.js 的 PRECACHE_CORES 协议对接。
 import { ref, computed, onMounted } from 'vue'
-import { swSupported, precacheCores, coreStatus, clearCores, CORE_GROUPS_META } from '../lib/offline.js'
+import { swSupported, precacheCores, coreStatus, clearCores, CORE_GROUPS_META, CORE_GROUP_IDS } from '../lib/offline.js'
 import { t } from '../lib/i18n.js'
 
 const supported = swSupported()
@@ -38,7 +38,7 @@ async function fetchAll() {
   busy.value = true
   progress.value = { done: 0, total: 0, bytes: 0 }
   note.value = ''
-  const res = await precacheCores(CORE_GROUPS_META.map((g) => g.id), (p) => { progress.value = p })
+  const res = await precacheCores(CORE_GROUP_IDS, (p) => { progress.value = p })
   await refresh()
   busy.value = false
   note.value = res && !res.error ? t('offline.done', { n: res.done, size: human(res.bytes || 0) }) : t('offline.failed')

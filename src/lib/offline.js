@@ -4,6 +4,8 @@
 //  - clearCores()          → 清空内核缓存
 // 页面无需自己 fetch 大文件，进度由 SW 的 PRECACHE_PROGRESS 回传。
 
+// 与 public/sw.js 的 CORE_GROUPS 一一对应：前半是 WASM/词库内核，
+// 后半是原本散落在各页面按需加载的数据快照（诗文 / 中医经典），统一在首页预缓存。
 export const CORE_GROUPS_META = [
   { id: 'archive', label: '压缩 / 解压', size: '约 1 MB' },
   { id: 'dict', label: '离线词典词库（汉英）', size: '约 5.5 MB' },
@@ -13,7 +15,12 @@ export const CORE_GROUPS_META = [
   { id: 'ocr-lang', label: 'OCR 语言包（9 种语言）', size: '约 16 MB' },
   { id: 'media', label: '音视频转换（多线程）', size: '约 31 MB' },
   { id: 'media-st', label: '音视频转换（单线程兜底）', size: '约 31 MB' },
+  { id: 'classics', label: '诗文基础数据（韵书 / 词谱 / 精选）', size: '约 0.6 MB' },
+  { id: 'classics-full', label: '诗文全量库（全唐诗 / 宋词 / 元曲）', size: '约 12 MB' },
+  { id: 'tcm', label: '中医药经典数据（歌诀 / 本草 / 医典）', size: '约 4.8 MB' },
 ]
+
+export const CORE_GROUP_IDS = CORE_GROUPS_META.map((g) => g.id)
 
 export function swSupported() {
   return typeof navigator !== 'undefined' && 'serviceWorker' in navigator

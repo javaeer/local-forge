@@ -118,7 +118,7 @@ const messages = {
     },
     offline: {
       title: '离线内核',
-      desc: '把这些 WASM 内核下载到本地缓存，之后断网也能直接使用对应工具。不用的话无需下载——内核按需拉取，不占首装体积。',
+      desc: '把这些内核与数据包（词典、诗文、中医经典）下载到本地缓存，之后断网也能直接使用对应工具和阅读数据。不用的话无需下载——按需拉取，不占首装体积。',
       unsupported: '当前环境不支持 Service Worker，无法预缓存内核（请使用 HTTPS 或 localhost 访问）。',
       fetch: '下载',
       fetchAll: '全部下载',
@@ -241,7 +241,7 @@ const messages = {
     },
     offline: {
       title: 'Offline Cores',
-      desc: 'Download these WASM cores into local cache so the matching tools keep working with no network. Nothing is downloaded unless you ask — cores are fetched on demand and add nothing to the initial install.',
+      desc: 'Download these cores and data packs (dictionaries, poetry, TCM classics) into the local cache so the matching tools and data keep working with no network. Nothing is downloaded unless you ask.',
       unsupported: 'Service Worker is unavailable here, so cores cannot be precached (use HTTPS or localhost).',
       fetch: 'Download',
       fetchAll: 'Download all',
@@ -293,7 +293,7 @@ const messages = {
     wf: { nextStep: '次のステップ', sendTo: '送信先' },
     progress: { done: '完了' },
     offline: {
-      title: 'オフラインコア', desc: 'WASM コアをローカルにキャッシュすると、オフラインでも各ツールが使えます。不要なら何もダウンロードされません（コアは必要時に取得）。',
+      title: 'オフラインコア', desc: 'WASM コアとデータパック（辞書・詩文・中医古典）をローカルにキャッシュすると、オフラインでも各ツールとデータが使えます。不要なら何もダウンロードされません（必要時に取得）。',
       unsupported: 'この環境では Service Worker が使えないため、コアの事前キャッシュができません（HTTPS または localhost でアクセスしてください）。',
       fetch: 'ダウンロード', fetchAll: 'すべてダウンロード', cached: '準備完了', ready: 'オフライン可', clear: 'キャッシュ削除', cleared: 'コアキャッシュを削除しました。',
       done: '{n} 個のファイルをキャッシュしました（{size}）。', failed: '事前キャッシュが完了しませんでした。ネットワークを確認して再試行してください。',
@@ -339,7 +339,7 @@ const messages = {
     wf: { nextStep: '다음 단계', sendTo: '보내기' },
     progress: { done: '완료' },
     offline: {
-      title: '오프라인 코어', desc: 'WASM 코어를 로컬에 캐시하면 오프라인에서도 해당 도구를 사용할 수 있습니다. 요청하지 않으면 아무것도 다운로드되지 않습니다(코어는 필요 시 가져옵니다).',
+      title: '오프라인 코어', desc: 'WASM 코어와 데이터 팩(사전·시문·한의학 고전)을 로컬에 캐시하면 오프라인에서도 도구와 데이터를 사용할 수 있습니다. 요청하지 않으면 아무것도 다운로드되지 않습니다(필요 시 가져옵니다).',
       unsupported: '이 환경에서는 Service Worker를 사용할 수 없어 코어를 미리 캐시할 수 없습니다(HTTPS 또는 localhost로 접속하세요).',
       fetch: '다운로드', fetchAll: '전체 다운로드', cached: '준비됨', ready: '오프라인 가능', clear: '캐시 삭제', cleared: '코어 캐시를 삭제했습니다.',
       done: '{n}개 파일을 캐시했습니다({size}).', failed: '사전 캐시가 완료되지 않았습니다. 네트워크를 확인 후 다시 시도하세요.',
@@ -385,7 +385,7 @@ const messages = {
     wf: { nextStep: 'Siguiente paso', sendTo: 'Enviar a' },
     progress: { done: 'Hecho' },
     offline: {
-      title: 'Núcleos sin conexión', desc: 'Descarga estos núcleos WASM a la caché local para usar cada herramienta sin conexión. No se descarga nada salvo que lo pidas: los núcleos se obtienen bajo demanda.',
+      title: 'Núcleos sin conexión', desc: 'Descarga estos núcleos WASM y paquetes de datos (diccionarios, poesía, clásicos de TCM) a la caché local para usar las herramientas y los datos sin conexión. No se descarga nada salvo que lo pidas.',
       unsupported: 'Service Worker no está disponible aquí, así que no se pueden precargar los núcleos (usa HTTPS o localhost).',
       fetch: 'Descargar', fetchAll: 'Descargar todo', cached: 'Listo', ready: 'Sin conexión', clear: 'Borrar caché', cleared: 'Caché de núcleos borrada.',
       done: 'Se almacenaron {n} archivos ({size}).', failed: 'La precarga no finalizó. Comprueba la red y reinténtalo.',
