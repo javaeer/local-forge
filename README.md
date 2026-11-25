@@ -224,6 +224,24 @@ public/ffmpeg-st/    ffmpeg 单线程内核（跨源隔离不可用时的回退�
 
 ---
 
+## 发布流程
+
+发布是显式动作，由打 `v*` tag 触发，不绑定日常 push：
+
+1. **前置**：`main` 上的 CI（build / unit / e2e-core）必须全绿。**CI 红灯时不得发版。**
+2. **打 tag**：维护者创建并推送语义化版本 tag，例如 `git tag v1.0.0 && git push origin v1.0.0`。
+   - tag 受保护，仅维护者可创建；不能用 tag 绕过门禁。
+3. **自动门禁**：`release.yml` 重跑一致性护栏、单测、构建、体积预算、core e2e，任一失败即中止，不产出 Release。
+4. **产物**：自动打包 `dist` + 离线内核数据快照（ffmpeg / tesseract / libarchive / pdfjs / 词典 / 诗文 / 中医），附 `MANIFEST.json` 与逐文件 `SHA256SUMS.txt`，并生成 GitHub Release 与增量变更日志。
+5. **校验**：下载 `local-forge-<version>.zip`，解压后进入包目录执行 `sha256sum -c SHA256SUMS.txt`（包内自带该清单）。
+
+也可在 Actions 面板手动触发 Release（workflow_dispatch），用于补发或演练；演练时建议先把 Release 设为 draft。
+
+> 本地想复现打包：`pnpm build && node scripts/pack-release.mjs`，产物在 `release/`。
+> 首次发布前需由管理员在仓库 Settings 中开启 `v*` tag 保护规则（仅维护者可创建）。
+
+---
+
 ## 路线图
 
 - [x] ~~暗色 / 亮色主题切换~~（已上线，含侧栏/顶栏双布局）

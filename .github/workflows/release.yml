@@ -1,0 +1,110 @@
+name: Release
+
+# 发布是显式动作：只在 push v* tag 或手动 dispatch 时触发，不绑定每次 main push。
+# 前置：施工图-CI修复 已落地，ci.yml 全绿；tag 保护仅允许维护者创建 v*。
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: '发布版本号（如 v1.0.0）'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Build, verify & publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # 需要完整历史生成增量 Release Notes
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # —— 门禁：与 ci.yml 逐项一致，任一失败即中止发布 ——
+      - name: Consistency guardrails
+        run: node scripts/check-consistency.mjs
+      - name: Unit tests
+        run: pnpm test:unit
+      - name: Build
+        run: pnpm build
+      - name: Bundle size budget
+        run: node scripts/check-bundle-size.mjs
+
+      - name: Install Chromium & expose path
+        run: |
+          npx puppeteer browsers install chrome
+          CHROME=$(find "$HOME/.cache/puppeteer" -type f \( -name chrome -o -name chrome-headless-shell \) | head -1)
+          test -n "$CHROME" || { echo "::error::未找到 Chromium 可执行文件"; exit 1; }
+          chmod +x "$CHROME"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "CHROMIUM_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "使用浏览器：$CHROME"
+      - name: Core e2e gate
+        run: pnpm test:e2e
+
+      # —— 解析版本号（tag push 用 ref 名；dispatch 用输入）——
+      - name: Resolve version
+        id: ver
+        run: |
+          if [ -n "${GITHUB_REF_NAME}" ] && [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            V="${GITHUB_REF_NAME}"
+          else
+            V="${{ github.event.inputs.version }}"
+          fi
+          echo "value=${V}" >> "$GITHUB_OUTPUT"
+          echo "发布版本：${V}"
+
+      # —— 打包（P2）——
+      - name: Pack release
+        run: node scripts/pack-release.mjs
+        env:
+          RELEASE_VERSION: ${{ steps.ver.outputs.value }}
+
+      # —— 生成 Release Notes（从上一个 tag 增量）——
+      - name: Generate notes
+        id: notes
+        run: |
+          CUR="${{ steps.ver.outputs.value }}"
+          PREV=$(git describe --tags --abbrev=0 "${CUR}^" 2>/dev/null || echo "")
+          if [ -n "$PREV" ]; then RANGE="$PREV..$CUR"; else RANGE="$CUR"; fi
+          {
+            echo "## 变更日志（$RANGE）"
+            git log --pretty='- %h %s' "$RANGE"
+            echo
+            echo "## 发布内容"
+            echo "- 前端产物 dist/（含 PWA manifest / Service Worker）"
+            echo "- 离线内核数据快照（ffmpeg / tesseract / libarchive / pdfjs / 词典 / 诗文 / 中医）"
+            echo "- MANIFEST.json 与逐文件 SHA256SUMS.txt"
+            echo
+            echo "## 校验"
+            echo "下载 zip 并解压，进入包目录执行 \`sha256sum -c SHA256SUMS.txt\` 校验完整性（包内自带清单）。"
+          } > release/NOTES.md
+          cat release/NOTES.md
+
+      # —— 发布 Release ——
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.ver.outputs.value }}
+          name: LocalForge ${{ steps.ver.outputs.value }}
+          body_path: release/NOTES.md
+          files: |
+            release/local-forge-*.zip
+            release/SHA256SUMS.txt
+          draft: false
+          prerelease: false

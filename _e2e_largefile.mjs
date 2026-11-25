@@ -15,7 +15,7 @@ function check(name, ok, detail = '') {
 }
 
 const browser = await puppeteer.launch({
-  executablePath: '/usr/bin/chromium',
+  executablePath: process.env.CHROME_PATH || '/usr/bin/chromium',
   headless: 'new',
   args: ['--no-sandbox', '--disable-setuid-sandbox'],
 })

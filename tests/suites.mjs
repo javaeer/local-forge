@@ -11,6 +11,7 @@ import { TOOL_COUNT } from '../src/lib/formats.js'
 
 export const SUITES = [
   // —— core：快、稳，CI 默认跑 ——
+  { id: 'ciEnv', file: '_e2e_ci_env.mjs', server: 'preview', group: 'core', timeout: 120000, desc: 'CI 环境自检（CHROME_PATH 注入有效 · 浏览器可启动 · 首页零跨域）' },
   { id: 'i18n', file: '_e2e_i18n.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '多语言 5 语种切换 + 本地化不变量（含首页 47 卡片 / 命令面板 / 本地化搜索）' },
   { id: 'homeTasks', file: '_e2e_home_tasks.mjs', server: 'preview', group: 'core', timeout: 180000, desc: `首页任务化（4 任务卡直达 · ${TOOL_COUNT} 工序折叠 · 命令面板 CTA · 五语 · 零跨域）` },
   { id: 'toolRegistry', file: '_e2e_tool_registry.mjs', server: 'preview', group: 'core', timeout: 180000, desc: 'Tool Registry（命令面板条目=34 · 检索命中 · NAV 派生一致 · 零跨域）' },

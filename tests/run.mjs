@@ -54,11 +54,23 @@ function findChrome() {
     if (existsSync(p)) return p
   }
   // puppeteer 缓存目录：~/.cache/puppeteer/chrome/*/chrome-linux*/chrome
-  const base = join(process.env.HOME || '', '.cache/puppeteer/chrome')
-  if (existsSync(base)) {
-    for (const ver of readdirSync(base)) {
+  const cache = join(process.env.HOME || '', '.cache/puppeteer')
+  const chromeBase = join(cache, 'chrome')
+  if (existsSync(chromeBase)) {
+    for (const ver of readdirSync(chromeBase)) {
       for (const sub of ['chrome-linux64/chrome', 'chrome-linux/chrome']) {
-        const p = join(base, ver, sub)
+        const p = join(chromeBase, ver, sub)
+        if (existsSync(p)) return p
+      }
+    }
+  }
+  // 新版 puppeteer 在部分平台只装 headless shell（无完整 chrome），补该候选，
+  // 避免 CI 里 find 不到浏览器又退回脆弱的 /usr/bin 软链。
+  const shellBase = join(cache, 'chrome-headless-shell')
+  if (existsSync(shellBase)) {
+    for (const ver of readdirSync(shellBase)) {
+      for (const sub of ['chrome-headless-shell-linux64/chrome-headless-shell', 'chrome-headless-shell-linux/chrome-headless-shell']) {
+        const p = join(shellBase, ver, sub)
         if (existsSync(p)) return p
       }
     }

@@ -13,6 +13,7 @@
 //   I. 工具总数：formats.js 导出 TOOL_COUNT，文案中的数字与之一致
 //   J. Tool Registry：14 字段齐全、id/route 唯一、5 源一致、resourceIds 合法、titleKey 五语齐全
 //   K. 二级任务：children ≤4、工序可反查、一级+二级无重复、覆盖全部卡片、二级词条五语齐全
+//   L. 发布完整性：pack-release.mjs 覆盖全部数据组、release.yml 门禁齐全、README 有发布流程
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -38,6 +39,10 @@ const panelSrc = read('src/components/SelfTestPanel.vue')
 const formatsSrc = read('src/lib/formats.js')
 const tasksSrc = read('src/lib/tasks.js')
 const taskMsgSrc = read('src/lib/i18n.tasks.js')
+const packSrc = read('scripts/pack-release.mjs')
+const releaseYml = read('.github/workflows/release.yml')
+const ciYml = read('.github/workflows/ci.yml')
+const readmeSrc = read('README.md')
 // i18n.views.js 承载全部 views.* 词条（视图 T('views.xxx') 的落点）；
 // 漏扫会让断言 E 把真实存在的词条误报为缺失。
 // 新增词条包（如 i18n.classics.js）必须在此登记，否则该包的 key 会被判缺失。
@@ -345,6 +350,28 @@ check('secondary-tasks', 'K. 二级任务覆盖 / 无重复 / 五语齐全', () 
   for (const to of uniqueCards) if (!covered.has(to)) bad.push(`未覆盖：${to}`)
   if (bad.length) fail('二级任务异常：' + [...new Set(bad)].join(', '))
   return `二级分组 ${childGroups.length} 个 · 工序 ${allPaths.length} 条 · 覆盖 ${uniqueCards.size} 张唯一卡 · 五语齐全`
+})
+
+check('release', 'L. 发布完整性：打包脚本 / 门禁 / 文档齐全', () => {
+  const bad = []
+  // 1) pack-release.mjs 覆盖全部数据组（与 .gitignore 排除的快照一致）
+  const needGroups = ['public/ffmpeg', 'public/ffmpeg-st', 'public/tesseract', 'public/libarchive', 'public/pdfjs', 'public/dict', 'public/classics', 'public/tcm']
+  for (const g of needGroups) if (!packSrc.includes(g)) bad.push(`打包缺 ${g}`)
+  // 2) 必须有 dist 前置校验与校验和产出，防止发布包不可离线运行/不可校验
+  if (!packSrc.includes('dist/index.html')) bad.push('pack 缺 dist 前置校验')
+  if (!packSrc.includes('SHA256SUMS')) bad.push('pack 缺校验和产出')
+  // 3) release.yml 门禁与 ci.yml 一致：build/unit/护栏/bundle/e2e 缺一不可
+  for (const gate of ['check-consistency.mjs', 'pnpm test:unit', 'pnpm build', 'check-bundle-size.mjs', 'pnpm test:e2e']) {
+    if (!releaseYml.includes(gate)) bad.push(`release 门禁缺 ${gate}`)
+  }
+  if (!releaseYml.includes("tags: ['v*']")) bad.push('release 未按 v* tag 触发')
+  if (!releaseYml.includes('contents: write')) bad.push('release 缺 contents: write 权限')
+  // 4) CI 不再软链 /usr/bin（回归守护：防止有人把 Link 步骤改回来）
+  if (ciYml.includes('Link Chromium to /usr/bin/chromium')) bad.push('ci.yml 残留 /usr/bin 软链步骤')
+  // 5) README 有发布流程小节
+  if (!/##\s*发布流程/.test(readmeSrc)) bad.push('README 缺发布流程')
+  if (bad.length) fail('发布完整性异常：' + [...new Set(bad)].join(', '))
+  return `打包 ${needGroups.length} 数据组 · release 门禁 5 项 · tag 触发 · 无 /usr/bin 软链`
 })
 
 // ---------- 报告 ----------

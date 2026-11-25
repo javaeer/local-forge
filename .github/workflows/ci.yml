@@ -84,13 +84,18 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install Chromium
-        run: npx puppeteer browsers install chrome
-      - name: Link Chromium to /usr/bin/chromium
+      # 不再软链到 /usr/bin（runner 用户无写权限，长期红灯）。
+      # 直接把探测到的绝对路径注入环境变量；tests/run.mjs 优先读 CHROME_PATH
+      # 并再次注入每个 e2e 子进程，脚本无需硬编码系统路径。
+      - name: Install Chromium & expose path
         run: |
-          CHROME=$(find "$HOME/.cache/puppeteer/chrome" -name chrome -type f | head -1)
-          ln -sf "$CHROME" /usr/bin/chromium
-          echo "CHROMIUM_PATH=/usr/bin/chromium" >> "$GITHUB_ENV"
+          npx puppeteer browsers install chrome
+          CHROME=$(find "$HOME/.cache/puppeteer" -type f \( -name chrome -o -name chrome-headless-shell \) | head -1)
+          test -n "$CHROME" || { echo "::error::未找到 Chromium 可执行文件"; exit 1; }
+          chmod +x "$CHROME"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "CHROMIUM_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "使用浏览器：$CHROME"
       - name: Run core e2e
         run: pnpm test:e2e
 
@@ -112,12 +117,15 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-      - name: Install Chromium
-        run: npx puppeteer browsers install chrome
-      - name: Link Chromium to /usr/bin/chromium
+      # 同 e2e-core：注入绝对路径，不再写 /usr/bin。
+      - name: Install Chromium & expose path
         run: |
-          CHROME=$(find "$HOME/.cache/puppeteer/chrome" -name chrome -type f | head -1)
-          ln -sf "$CHROME" /usr/bin/chromium
-          echo "CHROMIUM_PATH=/usr/bin/chromium" >> "$GITHUB_ENV"
+          npx puppeteer browsers install chrome
+          CHROME=$(find "$HOME/.cache/puppeteer" -type f \( -name chrome -o -name chrome-headless-shell \) | head -1)
+          test -n "$CHROME" || { echo "::error::未找到 Chromium 可执行文件"; exit 1; }
+          chmod +x "$CHROME"
+          echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "CHROMIUM_PATH=$CHROME" >> "$GITHUB_ENV"
+          echo "使用浏览器：$CHROME"
       - name: Run heavy e2e
         run: pnpm test:e2e:heavy

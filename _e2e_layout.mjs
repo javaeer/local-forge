@@ -12,7 +12,7 @@ function check(name, ok, detail = '') {
   console.log(`${ok ? '✓' : '✗'} ${name}${detail ? ' — ' + detail : ''}`)
 }
 
-const browser = await puppeteer.launch({ executablePath: '/usr/bin/chromium', headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] })
+const browser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/chromium', headless: 'new', args: ['--no-sandbox', '--disable-setuid-sandbox'] })
 try {
   const page = await browser.newPage()
   // 隔离：每次导航前固定语言为中文，避免与其它 e2e 相互串扰
