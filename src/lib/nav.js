@@ -4,7 +4,7 @@
 import { t, locale } from './i18n.js'
 import { tDev } from './i18n.dev.js'
 
-// 新功能词条（开发者工具等）放在独立补充包，未命中时回退主 i18n
+// 新功能词条（开发者工序等）放在独立补充包，未命中时回退主 i18n
 export const T = (key) => (key ? tDev(key, locale.value, t) : '')
 
 export const NAV = [
@@ -26,28 +26,28 @@ export const NAV = [
   { path: '/ocr', title: 'OCR 文字识别', short: 'OCR', titleKey: 'nav.ocr', shortKey: 'nav.ocrShort', icon: 'bi-card-text', group: '二维码 / 识别', groupKey: 'group.qr', keywords: 'ocr 识别 文字 扫描件 图片转文字 tesseract' },
   { path: '/hash', title: '文件哈希校验', short: '哈希', titleKey: 'nav.hash', shortKey: 'nav.hashShort', icon: 'bi-shield-check', group: '校验 / 隐私', groupKey: 'group.verify', keywords: '哈希 hash md5 sha256 crc32 blake3 校验 重复 查重' },
   { path: '/exif', title: '照片隐私清理', titleKey: 'nav.exif', icon: 'bi-eraser', group: '校验 / 隐私', groupKey: 'group.verify', keywords: 'exif 隐私 gps 定位 清理 元数据 照片' },
-  // 文本 / 编码工具箱：JSON · Base64 · JWT · 正则 · 时间戳 · UUID 均为开发者向能力，归入「开发者工具」
-  { path: '/text', title: '文本 / 编码工具箱', titleKey: 'nav.text', icon: 'bi-code-slash', group: '开发者工具', groupKey: 'group.dev', keywords: '文本 json base64 jwt 正则 时间戳 uuid 密码 编码' },
-  // 文档转换属开发者向能力，曾误归入「校验 / 隐私」，这里纠正为「开发者工具」
-  { path: '/doc-convert', title: '文档转换', short: '文档', titleKey: 'nav.docConvert', shortKey: 'nav.docConvertShort', icon: 'bi-file-earmark-arrow-down', group: '开发者工具', groupKey: 'group.dev', keywords: 'markdown pdf html 文档 转换 导出 md' },
-  { path: '/wechat-article', title: '公众号排版', short: '公众号', titleKey: 'nav.wechatArticle', shortKey: 'nav.wechatArticleShort', icon: 'bi-wechat', group: '开发者工具', groupKey: 'group.dev', keywords: 'markdown 微信 公众号 排版 内联样式 剪贴板 刊头 wechat mp 图文' },
-  { path: '/wechat-search', title: '公众号检索', short: '检索', titleKey: 'nav.wechatSearch', shortKey: 'nav.wechatSearchShort', icon: 'bi-search', group: '开发者工具', groupKey: 'group.dev', keywords: '公众号 检索 搜索 合集 album 文章列表 导出 冀教版 版本 wechat search' },
-  { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', titleKey: 'nav.svgTool', shortKey: 'nav.svgToolShort', icon: 'bi-bounding-box', group: '开发者工具', groupKey: 'group.dev', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
-  { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', titleKey: 'nav.cssReference', shortKey: 'nav.cssReferenceShort', icon: 'bi-palette', group: '开发者工具', groupKey: 'group.dev', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
-  { path: '/dictionary', title: '离线词典', short: '词典', titleKey: 'nav.dict', shortKey: 'nav.dictShort', icon: 'bi-book', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '词典 字典 查词 汉字 拼音 部首 释义 dictionary cedict 离线 cc-cedict 新华 英汉' },
-  { path: '/poem-meter', title: '近体诗格律', short: '格律', titleKey: 'nav.poemMeter', shortKey: 'nav.poemMeterShort', icon: 'bi-rulers', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '诗 词 格律 平仄 押韵 平水韵 韵部 绝句 律诗 唐诗 宋词 近体诗 孤平 三平调 拗救 校勘' },
-  { path: '/ci-meter', title: '词牌格律', short: '词律', titleKey: 'nav.ciMeter', shortKey: 'nav.ciMeterShort', icon: 'bi-music-note-list', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '词 词牌 词谱 填词 平仄 押韵 词林正韵 宋词 水调歌头 念奴娇 如梦令 钦定词谱 格律 校勘' },
-  { path: '/classics', title: '诗文精选', short: '诗文', titleKey: 'nav.classics', shortKey: 'nav.classicsShort', icon: 'bi-journal-bookmark', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '唐诗 宋词 古文观止 唐诗三百首 宋词三百首 古诗 古文 选集 竖排 卡片 阅读 检索 名篇 静夜思 春望 岳阳楼记' },
-  { path: '/chants', title: '中医药歌诀', short: '歌诀', titleKey: 'nav.tcmChants', shortKey: 'nav.tcmChantsShort', icon: 'bi-capsule', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '中医 中医药 歌诀 汤头歌诀 濒湖脉学 药性歌括四百味 药性赋 医学三字经 长沙方歌括 金匮方歌括 时方歌括 背诵 默写 挖空 方歌 脉诀 tcm medicine mnemonic' },
-  { path: '/bencao', title: '本草纲目', short: '本草', titleKey: 'nav.bencao', shortKey: 'nav.bencaoShort', icon: 'bi-flower1', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '本草纲目 李时珍 中药 本草 药物 主治 气味 释名 集解 附方 发明 明代 bencao materia medica li shizhen' },
-  { path: '/tcmbooks', title: '中医医典', short: '医典', titleKey: 'nav.tcmBooks', shortKey: 'nav.tcmBooksShort', icon: 'bi-journal-medical', group: '文字 / 查阅', groupKey: 'group.lookup', keywords: '中医 医典 方书 医经 千金要方 千金翼方 外台秘要 肘后备急方 黄帝内经 素问 伤寒论 金匮要略 神农本草经 本草备要 孙思邈 张仲景 葛洪 王焘 汪昂 篇章 全文检索 tcm classics' },
+  // 文本 / 编码工具箱：JSON · Base64 · JWT · 正则 · 时间戳 · UUID 均为开发者向能力，归入「开发者工序」
+  { path: '/text', title: '文本 / 编码工具箱', titleKey: 'nav.text', icon: 'bi-code-slash', group: '开发者工序', groupKey: 'group.dev', keywords: '文本 json base64 jwt 正则 时间戳 uuid 密码 编码' },
+  // 文档转换属开发者向能力，曾误归入「校验 / 隐私」，这里纠正为「开发者工序」
+  { path: '/doc-convert', title: '文档转换', short: '文档', titleKey: 'nav.docConvert', shortKey: 'nav.docConvertShort', icon: 'bi-file-earmark-arrow-down', group: '开发者工序', groupKey: 'group.dev', keywords: 'markdown pdf html 文档 转换 导出 md' },
+  { path: '/wechat-article', title: '公众号排版', short: '公众号', titleKey: 'nav.wechatArticle', shortKey: 'nav.wechatArticleShort', icon: 'bi-wechat', group: '开发者工序', groupKey: 'group.dev', keywords: 'markdown 微信 公众号 排版 内联样式 剪贴板 刊头 wechat mp 图文' },
+  { path: '/wechat-search', title: '公众号检索', short: '检索', titleKey: 'nav.wechatSearch', shortKey: 'nav.wechatSearchShort', icon: 'bi-search', group: '开发者工序', groupKey: 'group.dev', keywords: '公众号 检索 搜索 合集 album 文章列表 导出 冀教版 版本 wechat search' },
+  { path: '/svg-tool', title: 'SVG 工具箱', short: 'SVG', titleKey: 'nav.svgTool', shortKey: 'nav.svgToolShort', icon: 'bi-bounding-box', group: '开发者工序', groupKey: 'group.dev', keywords: 'svg 压缩 格式化 缩放 重着色 base64 优化 图标 矢量' },
+  { path: '/css-reference', title: 'CSS 速查表', short: 'CSS', titleKey: 'nav.cssReference', shortKey: 'nav.cssReferenceShort', icon: 'bi-palette', group: '开发者工序', groupKey: 'group.dev', keywords: 'css 速查 属性 选择器 布局 盒模型 动画 参考' },
+  { path: '/dictionary', title: '离线词典', short: '词典', titleKey: 'nav.dict', shortKey: 'nav.dictShort', icon: 'bi-book', group: '知识矿藏', groupKey: 'group.lookup', keywords: '词典 字典 查词 汉字 拼音 部首 释义 dictionary cedict 离线 cc-cedict 新华 英汉' },
+  { path: '/poem-meter', title: '近体诗格律', short: '格律', titleKey: 'nav.poemMeter', shortKey: 'nav.poemMeterShort', icon: 'bi-rulers', group: '知识矿藏', groupKey: 'group.lookup', keywords: '诗 词 格律 平仄 押韵 平水韵 韵部 绝句 律诗 唐诗 宋词 近体诗 孤平 三平调 拗救 校勘' },
+  { path: '/ci-meter', title: '词牌格律', short: '词律', titleKey: 'nav.ciMeter', shortKey: 'nav.ciMeterShort', icon: 'bi-music-note-list', group: '知识矿藏', groupKey: 'group.lookup', keywords: '词 词牌 词谱 填词 平仄 押韵 词林正韵 宋词 水调歌头 念奴娇 如梦令 钦定词谱 格律 校勘' },
+  { path: '/classics', title: '诗文精选', short: '诗文', titleKey: 'nav.classics', shortKey: 'nav.classicsShort', icon: 'bi-journal-bookmark', group: '知识矿藏', groupKey: 'group.lookup', keywords: '唐诗 宋词 古文观止 唐诗三百首 宋词三百首 古诗 古文 选集 竖排 卡片 阅读 检索 名篇 静夜思 春望 岳阳楼记' },
+  { path: '/chants', title: '中医药歌诀', short: '歌诀', titleKey: 'nav.tcmChants', shortKey: 'nav.tcmChantsShort', icon: 'bi-capsule', group: '知识矿藏', groupKey: 'group.lookup', keywords: '中医 中医药 歌诀 汤头歌诀 濒湖脉学 药性歌括四百味 药性赋 医学三字经 长沙方歌括 金匮方歌括 时方歌括 背诵 默写 挖空 方歌 脉诀 tcm medicine mnemonic' },
+  { path: '/bencao', title: '本草纲目', short: '本草', titleKey: 'nav.bencao', shortKey: 'nav.bencaoShort', icon: 'bi-flower1', group: '知识矿藏', groupKey: 'group.lookup', keywords: '本草纲目 李时珍 中药 本草 药物 主治 气味 释名 集解 附方 发明 明代 bencao materia medica li shizhen' },
+  { path: '/tcmbooks', title: '中医医典', short: '医典', titleKey: 'nav.tcmBooks', shortKey: 'nav.tcmBooksShort', icon: 'bi-journal-medical', group: '知识矿藏', groupKey: 'group.lookup', keywords: '中医 医典 方书 医经 千金要方 千金翼方 外台秘要 肘后备急方 黄帝内经 素问 伤寒论 金匮要略 神农本草经 本草备要 孙思邈 张仲景 葛洪 王焘 汪昂 篇章 全文检索 tcm classics' },
   { path: '/share-files', title: 'P2P 分享文件', titleKey: 'nav.shareFiles', icon: 'bi-share', group: '分享 / 安全', groupKey: 'group.share', keywords: '分享 p2p webrtc 直传 点对点' },
   { path: '/about', title: '关于', titleKey: 'nav.about', icon: 'bi-info-circle', group: '关于', groupKey: 'group.about', keywords: 'about 关于 开源 技术栈' },
   { path: '/privacy', title: '隐私协议', titleKey: 'nav.privacy', icon: 'bi-shield-lock', group: '关于', groupKey: 'group.about', keywords: '隐私 privacy 协议 零上传' },
 ]
 
 export const NAV_GROUPS = [
-  '常用', '压缩 / 归档', '媒体', '图片', 'PDF', '二维码 / 识别', '校验 / 隐私', '分享 / 安全', '文字 / 查阅', '开发者工具', '关于',
+  '常用', '压缩 / 归档', '媒体', '图片', 'PDF', '二维码 / 识别', '校验 / 隐私', '分享 / 安全', '知识矿藏', '开发者工序', '关于',
 ]
 
 export function navByPath(path) {

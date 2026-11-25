@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, provide, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { NAV, NAV_GROUPS, TAB_ITEMS, navTitle, navShort, groupLabel } from './lib/nav.js'
 import { currentTheme, toggleTheme, currentLayout, setLayout } from './lib/theme.js'
@@ -23,6 +23,8 @@ const sbCloseEl = ref(null)
 
 function closeSidebar() { sidebarOpen.value = false }
 function openPalette() { paletteOpen.value = true }
+// 首页任务入口的「⌘K」按钮复用本组件已有的命令面板状态，不另建实例。
+provide('openPalette', openPalette)
 function onToggleTheme() { theme.value = toggleTheme() }
 const langOpen = ref(false)
 function pickLocale(l) { setLocale(l); langOpen.value = false }

@@ -10,6 +10,7 @@
 export const SUITES = [
   // —— core：快、稳，CI 默认跑 ——
   { id: 'i18n', file: '_e2e_i18n.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '多语言 5 语种切换 + 本地化不变量（含首页 47 卡片 / 命令面板 / 本地化搜索）' },
+  { id: 'homeTasks', file: '_e2e_home_tasks.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '首页任务化（4 任务卡直达 · 55 工序折叠 · 命令面板 CTA · 五语 · 零跨域）' },
   { id: 'layout', file: '_e2e_layout.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '侧栏/顶栏/移动端布局切换 + 汉堡按钮三态 + 命令面板键盘导航' },
   { id: 'features', file: '_e2e_features.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '核心功能端到端冒烟' },
   { id: 'qrcode', file: '_e2e_qrcode.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '二维码生成 / 识别' },

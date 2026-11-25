@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { TOOLS } from '../lib/formats.js'
 import { NAV, navByPath, navTitle } from '../lib/nav.js'
@@ -9,9 +9,11 @@ import { t, tr, locale } from '../lib/i18n.js'
 import { T } from '../lib/i18n.dev.js'
 import SelfTestPanel from '../components/SelfTestPanel.vue'
 import OfflineCores from '../components/OfflineCores.vue'
-import HelpTip from '../components/HelpTip.vue'
+import TaskBoard from '../components/TaskBoard.vue'
 
 const router = useRouter()
+// 复用 App.vue 通过 provide 暴露的命令面板开关；TaskBoard 只 emit，不自建面板。
+const openPalette = inject('openPalette', () => {})
 const recent = ref([])
 const filter = ref('all')
 
@@ -61,17 +63,15 @@ onMounted(loadRecent)
       <span class="tag"><i class="bi bi-phone"></i> {{ t('home.pillP2p') }}</span>
     </div>
 
-    <HelpTip :title="t('home.howtoTitle')" icon="bi-signpost-split" open>
-      <ol class="howto">
-        <li>{{ t('home.howto1') }}</li>
-        <li>{{ t('home.howto2') }}</li>
-        <li>{{ t('home.howto3') }}</li>
-      </ol>
-      <p style="margin:8px 0 0">{{ t('home.howtoNote') }}</p>
-    </HelpTip>
+    <p class="hero-hint"><i class="bi bi-signpost-split"></i> {{ t('home.howto1') }}</p>
   </section>
 
-  <!-- 工具分组 -->
+  <!-- 任务入口层：从「想做什么」直达工序；55 道工序折叠在后，老路径不丢 -->
+  <TaskBoard @open-palette="openPalette" />
+
+  <!-- 工具分组（默认折叠，展开后与原首页完全一致） -->
+  <details id="all-tools" class="all-tools">
+    <summary><i class="bi bi-grid"></i> {{ T('task.allTools') }}</summary>
   <div v-for="g in TOOLS" :key="g.groupKey || g.group" class="cat">
     <h2 class="cat-title"><i class="bi bi-collection"></i> {{ T(g.groupKey) }}</h2>
     <p v-if="g.noteKey" class="cat-note">{{ T(g.noteKey) }}</p>
@@ -83,9 +83,10 @@ onMounted(loadRecent)
       </RouterLink>
     </div>
   </div>
+  </details>
 
-  <!-- 最近处理（纯本地，IndexedDB；支持按文件类型筛选） -->
-  <div class="panel recent">
+  <!-- 最近处理（纯本地，IndexedDB；支持按文件类型筛选；位置由底部上移至任务层之后） -->
+  <div id="recent" class="panel recent">
     <div class="recent-head">
       <h3 style="margin:0"><i class="bi bi-clock-history"></i> {{ t('home.recent') }}</h3>
       <button v-if="recent.length" class="btn ghost sm" @click="clearRecent">
@@ -177,6 +178,25 @@ onMounted(loadRecent)
   margin: 0 0 16px;
 }
 .hero-pills { display: flex; flex-wrap: wrap; gap: 9px; }
+.hero-hint { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; font-size: 12.5px; color: var(--muted, #93a2bd); }
+.hero-hint i { color: var(--accent, #e8954a); }
+.all-tools {
+  margin: 0 0 22px;
+  border: 1px solid var(--line, rgba(120,150,200,.16));
+  border-radius: 12px;
+  background: rgba(127,127,127,.04);
+  padding: 0 12px 12px;
+}
+.all-tools > summary {
+  cursor: pointer; list-style: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 4px; font-size: 13px; font-weight: 600;
+  color: var(--muted, #93a2bd);
+}
+.all-tools > summary::-webkit-details-marker { display: none; }
+.all-tools > summary:hover { color: var(--accent, #e8954a); }
+.all-tools[open] > summary { border-bottom: 1px solid var(--line, rgba(120,150,200,.16)); margin-bottom: 12px; }
+.all-tools > summary i { color: var(--accent, #e8954a); }
 
 .recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }.recent-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
 .recent-head h3 i { color: var(--accent, #38bdf8); }

@@ -9,6 +9,7 @@
 //   E. 所有 i18n key 都能在词条文件里找到（缺 key 会回退成 key 本身）
 //   F. CSS 分类名（动态拼接 key）5 语言齐全
 //   G. 首页卡片 / 分组（动态拼接 key）5 语言齐全
+//   H. 首页任务入口：step 可达且可在 formats.js 反查、任务词条 5 语言齐全
 import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
@@ -31,10 +32,12 @@ const navSrc = read('src/lib/nav.js')
 const routerSrc = read('src/router/index.js')
 const panelSrc = read('src/components/SelfTestPanel.vue')
 const formatsSrc = read('src/lib/formats.js')
+const tasksSrc = read('src/lib/tasks.js')
+const taskMsgSrc = read('src/lib/i18n.tasks.js')
 // i18n.views.js 承载全部 views.* 词条（视图 T('views.xxx') 的落点）；
 // 漏扫会让断言 E 把真实存在的词条误报为缺失。
 // 新增词条包（如 i18n.classics.js）必须在此登记，否则该包的 key 会被判缺失。
-const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js', 'src/lib/i18n.classics.js', 'src/lib/i18n.tcm.js', 'src/lib/i18n.bencao.js', 'src/lib/i18n.tcmbooks.js', 'src/lib/i18n.views.js'].map(read)
+const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js', 'src/lib/i18n.classics.js', 'src/lib/i18n.tcm.js', 'src/lib/i18n.bencao.js', 'src/lib/i18n.tcmbooks.js', 'src/lib/i18n.tasks.js', 'src/lib/i18n.views.js'].map(read)
 
 // ---------- 解析 ----------
 // NAV 条目：逐行抽取（每行一个对象字面量）
@@ -97,6 +100,20 @@ const cardKeys = [...formatsSrc.matchAll(/(?:groupKey|titleKey|descKey):\s*'([^'
 const homeSrc = ['zh', 'en', 'ja', 'ko', 'es']
   .map((l) => { try { return read(`src/lib/i18n.home.${l}.js`) } catch { return '' } })
   .join('\n')
+
+// 任务入口：id、steps（路由 path，含 query 变体）、五语词条块
+const taskIds = [...tasksSrc.matchAll(/^\s{4}id:\s*'([^']+)'/gm)].map((m) => m[1])
+const taskPaths = [...tasksSrc.matchAll(/steps:\s*\[([\s\S]*?)\]/g)]
+  .flatMap((m) => [...m[1].matchAll(/'([^']+)'/g)].map((x) => x[1]))
+const taskLangs = ['zh-CN', 'en', 'ja-JP', 'ko-KR', 'es-ES']
+const taskLangBlocks = {}
+// 词条包中 en 通常写作裸键（en:），其余语言带引号，故两种形式都要识别。
+const langMarks = [...taskMsgSrc.matchAll(/['"]?(zh-CN|en|ja-JP|ko-KR|es-ES)['"]?\s*:\s*\{/g)]
+for (let i = 0; i < langMarks.length; i++) {
+  const start = langMarks[i].index + langMarks[i][0].length
+  const end = i + 1 < langMarks.length ? langMarks[i + 1].index : taskMsgSrc.length
+  taskLangBlocks[langMarks[i][1]] = taskMsgSrc.slice(start, end)
+}
 
 // ---------- 断言 ----------
 check('parse', '数据源解析', () => {
@@ -175,6 +192,35 @@ check('home-card-i18n', 'G. 首页卡片 / 分组 key 5 语言齐全', () => {
   }
   if (bad.length) fail('卡片词条缺语言：' + bad.join(', '))
   return `${cardKeys.length} 个卡片 / 分组 key × 5 语言齐全`
+})
+
+check('task-entry', 'H. 首页任务入口可达且五语齐全', () => {
+  if (taskIds.length !== 4) fail(`任务数应为 4，实际 ${taskIds.length}`)
+  if (taskPaths.length !== 16) fail(`任务步骤应为 16 条，实际 ${taskPaths.length}`)
+  if (new Set(taskPaths).size !== taskPaths.length) fail('任务步骤存在重复 path')
+
+  const badPaths = []
+  for (const p of taskPaths) {
+    if (!routerPaths.has(p.split('?')[0])) badPaths.push(`${p}(路由不可达)`)
+    else if (!cardTos.includes(p)) badPaths.push(`${p}(formats.js 无对应工序)`)
+  }
+  if (badPaths.length) fail('任务入口异常：' + badPaths.join(', '))
+
+  const badI18n = []
+  for (const loc of taskLangs) {
+    const block = taskLangBlocks[loc] || ''
+    for (const id of taskIds) {
+      for (const leaf of ['title', 'desc']) {
+        const re = new RegExp(`\\b${id}\\s*:\\s*\\{[^}]*\\b${leaf}\\s*:\\s*['"\`]`)
+        if (!re.test(block)) badI18n.push(`${loc}:task.${id}.${leaf}`)
+      }
+    }
+    for (const k of ['allTools', 'cmdCta', 'recentCta']) {
+      if (!new RegExp(`\\b${k}\\s*:\\s*['"\`]`).test(block)) badI18n.push(`${loc}:task.${k}`)
+    }
+  }
+  if (badI18n.length) fail('任务词条缺语言：' + badI18n.join(', '))
+  return `任务 ${taskIds.length} 个 · 入口 ${taskPaths.length} 条 · 词条 ${taskLangs.length} 语言齐全`
 })
 
 // ---------- 报告 ----------
