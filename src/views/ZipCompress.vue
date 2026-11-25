@@ -1,6 +1,7 @@
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { saveResume, getResume } from '../lib/resume.js'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
 import StatusPill from '../components/StatusPill.vue'
@@ -23,6 +24,15 @@ const result = ref(null)
 const message = ref(null)
 
 onMounted(() => {
+  // 可恢复任务：query 显式指定优先；否则恢复上次设置（仅选项，不含文件）。
+  const snap = getResume('/zip-compress')
+  if (snap && snap.settings) {
+    const s = snap.settings
+    if (typeof s.level === 'number') level.value = s.level
+    if (typeof s.splitSize === 'number') splitSize.value = s.splitSize
+    if (typeof s.folderMode === 'boolean') folderMode.value = s.folderMode
+    // 密码属敏感项，不写入可恢复快照（仅恢复非敏感选项）。
+  }
   if (route.query.split) splitSize.value = 100
   if (route.query.password) password.value = '' // 聚焦密码
   // 跨工具工作流：接收上一步传来的文件
@@ -31,6 +41,14 @@ onMounted(() => {
     onFiles(pending.files)
     pushToast('info', T('views.zipCompress.toastLoaded', { from: pending.from, n: pending.files.length }))
   }
+})
+
+// 设置快照：仅可序列化选项；不监听 files（绝不存文件字节/文件名以外的东西）。
+watch([level, splitSize, folderMode], () => {
+  saveResume({
+    toolId: '/zip-compress', route: '/zip-compress',
+    settings: { level: level.value, splitSize: splitSize.value, folderMode: folderMode.value },
+  })
 })
 
 function onFiles(list) {

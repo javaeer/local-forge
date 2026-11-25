@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, provide, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { RouterLink, RouterView, useRoute } from 'vue-router'
 import { NAV, NAV_GROUPS, TAB_ITEMS, navTitle, navShort, groupLabel } from './lib/nav.js'
 import { currentTheme, toggleTheme, currentLayout, setLayout } from './lib/theme.js'
@@ -7,6 +7,7 @@ import { recordUsage } from './lib/history.js'
 import { setDownloadHook } from './utils.js'
 import { typeOfName } from './lib/filetype.js'
 import { locale, t, setLocale, initLocale, availableLocales, LOCALE_NAMES, LOCALE_SHORT } from './lib/i18n.js'
+import { APP_COMMANDS_KEY } from './lib/app-commands.js'
 import CommandPalette from './components/CommandPalette.vue'
 import ToastHost from './components/ToastHost.vue'
 
@@ -23,6 +24,9 @@ const sbCloseEl = ref(null)
 
 function closeSidebar() { sidebarOpen.value = false }
 function openPalette() { paletteOpen.value = true }
+// 首页任务入口的「⌘K」按钮复用本组件已有的命令面板状态，不另建实例。
+// 用 Symbol key 统一挂载全局命令，后续新增动作无需再散落 provide 字符串。
+provide(APP_COMMANDS_KEY, { openPalette })
 function onToggleTheme() { theme.value = toggleTheme() }
 const langOpen = ref(false)
 function pickLocale(l) { setLocale(l); langOpen.value = false }

@@ -1,3 +1,5 @@
+import { getByRoute } from './tool-registry.js'
+
 // 归档格式与压缩选项（驱动创建/转换/合并的格式选择器）
 // 网页端可靠创建 = ZIP / TAR / TAR.GZ（自研写入器）；
 // 7Z / ISO / XZ / ZST / BZ2 等创建需原版专有 WASM 模块，仅作解压源，不在此列。
@@ -129,3 +131,24 @@ export const TOOLS = [
     ],
   },
 ]
+
+// 工具总数单一事实来源：由 TOOLS 实际条目数推导，不再手工维护文案里的数字。
+export const TOOL_COUNT = TOOLS.reduce((n, g) => n + g.items.length, 0)
+
+// R3/R4：卡片的呈现层字段（query 变体、中文标题/描述、i18n key）保留在本文件，
+// 而 engine / status / networkPolicy / offlineLevel / resourceIds / workspace 等
+// 能力字段统一由 Tool Registry 反查附加，避免第二份硬编码。
+// 每张卡的 base path 必能在 Registry 反查到（护栏 D + J 双重守护）。
+for (const group of TOOLS) {
+  for (const item of group.items) {
+    const reg = getByRoute(item.to.split('?')[0])
+    if (!reg) continue
+    item.toolId = reg.id
+    item.workspace = reg.workspace
+    item.engine = reg.engine
+    item.status = reg.status
+    item.networkPolicy = reg.networkPolicy
+    item.offlineLevel = reg.offlineLevel
+    item.resourceIds = reg.resourceIds
+  }
+}

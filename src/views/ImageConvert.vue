@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { saveResume, getResume } from '../lib/resume.js'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
 import StatusPill from '../components/StatusPill.vue'
@@ -34,6 +35,14 @@ const savingPct = computed(() => {
 })
 
 onMounted(() => {
+  // 可恢复任务：恢复上次的非敏感选项（输出格式/质量/无损 PNG）。
+  const snap = getResume('/image-convert')
+  if (snap && snap.settings) {
+    const s = snap.settings
+    if (typeof s.quality === 'number') quality.value = s.quality
+    if (typeof s.losslessPng === 'boolean') losslessPng.value = s.losslessPng
+    if (typeof s.outMime === 'string' && !route.query.mode) outMime.value = s.outMime
+  }
   if (route.query.mode === 'compress') {
     quality.value = 0.6
     outMime.value = 'image/png'
@@ -44,6 +53,13 @@ onMounted(() => {
     onFiles([pending.files[0]])
     pushToast('info', `已从「${pending.from}」载入 1 个文件`)
   }
+})
+
+watch([outMime, quality, losslessPng], () => {
+  saveResume({
+    toolId: '/image-convert', route: '/image-convert',
+    settings: { outMime: outMime.value, quality: quality.value, losslessPng: losslessPng.value },
+  })
 })
 
 function onFiles(list) {

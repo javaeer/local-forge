@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
-import { NAV, NAV_GROUPS, searchNav, navTitle, groupLabel } from '../lib/nav.js'
+import { NAV_GROUPS, navTitle, navShort, groupLabel } from '../lib/nav.js'
+import { searchTools, getByRoute } from '../lib/tool-registry.js'
 import { t } from '../lib/i18n.js'
 
 const props = defineProps({ open: { type: Boolean, default: false } })
@@ -12,7 +13,11 @@ const query = ref('')
 const active = ref(0)
 const inputEl = ref(null)
 
-const results = computed(() => searchNav(query.value))
+// 检索源改为 Tool Registry；注入当前语言的标题/短名/分组名作为匹配文本。
+const results = computed(() => searchTools(query.value, (r) => {
+  const n = getByRoute(r.route)
+  return `${navTitle(n)} ${navShort(n)} ${groupLabel(r.group)}`
+}))
 const grouped = computed(() => {
   const map = {}
   for (const n of results.value) (map[n.group] = map[n.group] || []).push(n)

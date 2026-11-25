@@ -2,7 +2,7 @@
 // 与静态护栏 scripts/check-consistency.mjs 互补：护栏扫源码「是否声明」，此处运行时「是否真能取到」。
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { TOOLS, CREATE_FORMATS, COMPRESSIONS } from '../../src/lib/formats.js'
+import { TOOLS, TOOL_COUNT, CREATE_FORMATS, COMPRESSIONS } from '../../src/lib/formats.js'
 import { T } from '../../src/lib/i18n.dev.js'
 import { locale } from '../../src/lib/i18n.js'
 
@@ -29,7 +29,7 @@ test('每条卡片都有 to / icon / 三套 key / 中文原值', () => {
       assert.ok(it.title && it.desc, `卡片 ${it.to} 缺中文原值`)
     }
   }
-  assert.equal(n, 55) // 卡片总数：…→ 54（本草纲目）→ 55（中医医典），改卡片时请同步
+  assert.equal(n, TOOL_COUNT) // 卡片总数由 TOOLS 推导，新增/移除卡片无需改测试
 })
 
 test('CREATE_FORMATS / COMPRESSIONS 结构', () => {

@@ -95,3 +95,7 @@ export async function clearHistory() {
 export function recordUsage(path, name, type) {
   return addHistory({ path, name: name || '', type: type || '' })
 }
+
+// 「最近使用」与「可恢复任务」分离：clearHistory 只清最近使用，
+// 可恢复快照由 resume.js 的 clearResume 独立管理，互不连带删除。
+export { clearResume } from './resume.js'

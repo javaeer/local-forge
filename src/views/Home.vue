@@ -1,18 +1,24 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, inject, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { TOOLS } from '../lib/formats.js'
 import { NAV, navByPath, navTitle } from '../lib/nav.js'
 import { getHistory, clearHistory } from '../lib/history.js'
+import { listResume, clearResume } from '../lib/resume.js'
 import { typeOfName, TYPE_META, FILTER_ORDER, FILTER_LABEL_KEY } from '../lib/filetype.js'
 import { t, tr, locale } from '../lib/i18n.js'
 import { T } from '../lib/i18n.dev.js'
+import { APP_COMMANDS_KEY } from '../lib/app-commands.js'
 import SelfTestPanel from '../components/SelfTestPanel.vue'
 import OfflineCores from '../components/OfflineCores.vue'
-import HelpTip from '../components/HelpTip.vue'
+import TaskBoard from '../components/TaskBoard.vue'
 
 const router = useRouter()
+// 复用 App.vue 通过 Symbol key 暴露的全局命令；TaskBoard 只 emit，不自建面板。
+const appCommands = inject(APP_COMMANDS_KEY, {})
+function openPalette() { appCommands.openPalette?.() }
 const recent = ref([])
+const resumable = ref([])
 const filter = ref('all')
 
 async function loadRecent() {
@@ -21,11 +27,18 @@ async function loadRecent() {
     // 兼容老记录：缺失 type 时按文件名推断
     recent.value = list.map((r) => ({ ...r, type: r.type || typeOfName(r.name) }))
   } catch { recent.value = [] }
+  // 可恢复任务：仅列出仍有效的快照（resume.js 已按 TTL 过滤）
+  try { resumable.value = listResume() } catch { resumable.value = [] }
 }
 async function clearRecent() {
   await clearHistory()
   recent.value = []
 }
+async function clearAllResume() {
+  clearResume()
+  resumable.value = []
+}
+function resumeTo(r) { if (r && r.route) router.push(r.route) }
 function iconOf(path) { return (navByPath(path) || {}).icon || 'bi-clock-history' }
 function titleOf(path) { return navTitle(navByPath(path)) || path }
 function ago(ts) {
@@ -61,17 +74,15 @@ onMounted(loadRecent)
       <span class="tag"><i class="bi bi-phone"></i> {{ t('home.pillP2p') }}</span>
     </div>
 
-    <HelpTip :title="t('home.howtoTitle')" icon="bi-signpost-split" open>
-      <ol class="howto">
-        <li>{{ t('home.howto1') }}</li>
-        <li>{{ t('home.howto2') }}</li>
-        <li>{{ t('home.howto3') }}</li>
-      </ol>
-      <p style="margin:8px 0 0">{{ t('home.howtoNote') }}</p>
-    </HelpTip>
+    <p class="hero-hint"><i class="bi bi-signpost-split"></i> {{ t('home.howto1') }}</p>
   </section>
 
-  <!-- 工具分组 -->
+  <!-- 任务入口层：从「想做什么」直达工序；全部工序折叠在后，老路径不丢 -->
+  <TaskBoard @open-palette="openPalette" />
+
+  <!-- 工具分组（默认折叠，展开后与原首页完全一致） -->
+  <details id="all-tools" class="all-tools">
+    <summary><i class="bi bi-grid"></i> {{ T('task.allTools') }}</summary>
   <div v-for="g in TOOLS" :key="g.groupKey || g.group" class="cat">
     <h2 class="cat-title"><i class="bi bi-collection"></i> {{ T(g.groupKey) }}</h2>
     <p v-if="g.noteKey" class="cat-note">{{ T(g.noteKey) }}</p>
@@ -83,9 +94,28 @@ onMounted(loadRecent)
       </RouterLink>
     </div>
   </div>
+  </details>
 
-  <!-- 最近处理（纯本地，IndexedDB；支持按文件类型筛选） -->
-  <div class="panel recent">
+  <!-- 可恢复任务（条件出现：仅在存在有效快照时显示；与"最近使用"分离） -->
+  <div v-if="resumable.length" id="resumable" class="panel resumable">
+    <div class="recent-head">
+      <h3 style="margin:0"><i class="bi bi-arrow-repeat"></i> {{ T('task.resumeTitle') }}</h3>
+      <button class="btn ghost sm" @click="clearAllResume">
+        <i class="bi bi-eraser"></i> {{ T('task.resumeClear') }}
+      </button>
+    </div>
+    <div class="recent-list">
+      <button v-for="r in resumable" :key="r.id" class="recent-item" @click="resumeTo(r)">
+        <i class="bi" :class="iconOf(r.route)"></i>
+        <span class="recent-title">{{ titleOf(r.route) }}</span>
+        <span class="resume-progress" v-if="r.progress > 0 && r.progress < 1">{{ Math.round(r.progress * 100) }}%</span>
+        <i class="bi bi-arrow-right-short step-arrow"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- 最近处理（纯本地，IndexedDB；支持按文件类型筛选；位置由底部上移至任务层之后） -->
+  <div id="recent" class="panel recent">
     <div class="recent-head">
       <h3 style="margin:0"><i class="bi bi-clock-history"></i> {{ t('home.recent') }}</h3>
       <button v-if="recent.length" class="btn ghost sm" @click="clearRecent">
@@ -177,6 +207,26 @@ onMounted(loadRecent)
   margin: 0 0 16px;
 }
 .hero-pills { display: flex; flex-wrap: wrap; gap: 9px; }
+.hero-hint { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; font-size: 12.5px; color: var(--muted, #93a2bd); }
+.hero-hint i { color: var(--accent, #e8954a); }
+.all-tools {
+  margin: 0 0 22px;
+  border: 1px solid var(--line, rgba(120,150,200,.16));
+  border-radius: 12px;
+  background: rgba(127,127,127,.04);
+  padding: 0 12px 12px;
+}
+.all-tools > summary {
+  cursor: pointer; list-style: none;
+  display: flex; align-items: center; gap: 8px;
+  padding: 12px 4px; font-size: 13px; font-weight: 600;
+  color: var(--muted, #93a2bd);
+}
+.all-tools > summary::-webkit-details-marker { display: none; }
+.all-tools > summary:hover { color: var(--accent, #e8954a); }
+.all-tools[open] > summary { border-bottom: 1px solid var(--line, rgba(120,150,200,.16)); margin-bottom: 12px; }
+.all-tools > summary i { color: var(--accent, #e8954a); }
+.all-tools > summary:focus-visible { outline: 2px solid var(--accent, #e8954a); outline-offset: 2px; }
 
 .recent-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; gap: 10px; }.recent-head h3 { font-size: 15px; display: flex; align-items: center; gap: 8px; }
 .recent-head h3 i { color: var(--accent, #38bdf8); }
@@ -209,5 +259,9 @@ onMounted(loadRecent)
 .recent-type i { width: auto; font-size: 14px; }
 .recent-time { margin-left: auto; color: var(--faint, #6b7a96); font-size: 12px; flex: none; }
 .recent-empty { color: var(--faint, #6b7a96); font-size: 13px; margin: 4px 0 0; }
+.resumable { border-color: rgba(232,149,74,.32); }
+.resumable .recent-head h3 i { color: var(--accent, #e8954a); }
+.resume-progress { color: var(--accent, #e8954a); font-size: 12px; font-family: var(--mono, monospace); }
+.resumable .step-arrow { margin-left: auto; color: var(--faint, #6b7a96); }
 .btn.sm { padding: 6px 11px; font-size: 12.5px; }
 </style>

@@ -7,9 +7,14 @@
 //   group   'core'（CI 默认跑）| 'heavy'（慢 / 需特殊内核，本地或夜跑）
 //   timeout 单套件超时（ms），超时强杀并记失败
 //   desc    CI 输出里展示的说明
+import { TOOL_COUNT } from '../src/lib/formats.js'
+
 export const SUITES = [
   // —— core：快、稳，CI 默认跑 ——
   { id: 'i18n', file: '_e2e_i18n.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '多语言 5 语种切换 + 本地化不变量（含首页 47 卡片 / 命令面板 / 本地化搜索）' },
+  { id: 'homeTasks', file: '_e2e_home_tasks.mjs', server: 'preview', group: 'core', timeout: 180000, desc: `首页任务化（4 任务卡直达 · ${TOOL_COUNT} 工序折叠 · 命令面板 CTA · 五语 · 零跨域）` },
+  { id: 'toolRegistry', file: '_e2e_tool_registry.mjs', server: 'preview', group: 'core', timeout: 180000, desc: 'Tool Registry（命令面板条目=34 · 检索命中 · NAV 派生一致 · 零跨域）' },
+  { id: 'resume', file: '_e2e_resume.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '可恢复任务（二级展开 · 键盘可达 · 快照分区 · 设置恢复 · 清空无残留 · 零跨域）' },
   { id: 'layout', file: '_e2e_layout.mjs', server: 'preview', group: 'core', timeout: 180000, desc: '侧栏/顶栏/移动端布局切换 + 汉堡按钮三态 + 命令面板键盘导航' },
   { id: 'features', file: '_e2e_features.mjs', server: 'preview', group: 'core', timeout: 300000, desc: '核心功能端到端冒烟' },
   { id: 'qrcode', file: '_e2e_qrcode.mjs', server: 'preview', group: 'core', timeout: 240000, desc: '二维码生成 / 识别' },

@@ -1,6 +1,6 @@
 import { watch } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
-import { NAV } from '../lib/nav.js'
+import { getByRoute } from '../lib/tool-registry.js'
 import { T } from '../lib/i18n.dev.js'
 import { locale } from '../lib/i18n.js'
 
@@ -81,7 +81,8 @@ const fileToPath = {
   'Privacy.vue': '/privacy',
 }
 
-const navOf = (path) => NAV.find((n) => n.path === path) || {}
+// 路由 meta 的标题/图标由 Tool Registry 注入（单一事实来源）。
+const navOf = (path) => getByRoute(path) || {}
 
 const routes = Object.entries(fileToPath).map(([file, path]) => ({
   path,

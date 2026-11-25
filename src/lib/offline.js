@@ -4,6 +4,8 @@
 //  - clearCores()          → 清空内核缓存
 // 页面无需自己 fetch 大文件，进度由 SW 的 PRECACHE_PROGRESS 回传。
 
+import { TOOLS_REGISTRY } from './tool-registry.js'
+
 // 与 public/sw.js 的 CORE_GROUPS 一一对应：前半是 WASM/词库内核，
 // 后半是原本散落在各页面按需加载的数据快照（诗文 / 中医经典），统一在首页预缓存。
 export const CORE_GROUPS_META = [
@@ -21,6 +23,20 @@ export const CORE_GROUPS_META = [
 ]
 
 export const CORE_GROUP_IDS = CORE_GROUPS_META.map((g) => g.id)
+
+// R3/R5：离线资源与工具的关联改为反查 Tool Registry。
+// 不再在离线面板里手写"哪些工具用这个内核"，避免与工具目录漂移。
+
+// 某内核组被哪些工具依赖（用于面板提示"预缓存后可离线使用 N 个工具"）。
+export function toolsForResource(groupId) {
+  return TOOLS_REGISTRY.filter((t) => (t.resourceIds || []).includes(groupId))
+}
+
+// 某工具的离线级别与所需资源（工具视图可据此提示"需下载 XX 内核"）。
+export function offlineInfoForTool(route) {
+  const t = TOOLS_REGISTRY.find((x) => x.route === route)
+  return t ? { offlineLevel: t.offlineLevel, resourceIds: t.resourceIds } : null
+}
 
 export function swSupported() {
   return typeof navigator !== 'undefined' && 'serviceWorker' in navigator

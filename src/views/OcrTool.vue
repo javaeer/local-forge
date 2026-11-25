@@ -1,6 +1,7 @@
 <script setup>
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { saveResume, getResume } from '../lib/resume.js'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
 import StepBar from '../components/StepBar.vue'
@@ -65,6 +66,14 @@ function say(type, text) {
 onMounted(() => {
   const t = route.query.tab
   if (t === 'pdf' || t === 'image') tab.value = t
+  // 可恢复任务：恢复上次的识别语言 / PDF 缩放（非敏感选项，不含文件）。
+  const snap = getResume('/ocr')
+  if (snap && snap.settings) {
+    const s = snap.settings
+    if (typeof s.lang === 'string') lang.value = s.lang
+    if (typeof s.pdfScale === 'number') pdfScale.value = s.pdfScale
+    if (!t && (s.tab === 'pdf' || s.tab === 'image')) tab.value = s.tab
+  }
   onOcrProgress((p) => {
     progress.value = p.percent
     progressLabel.value =
@@ -79,6 +88,13 @@ onMounted(() => {
     pushToast('info', `已从「${pending.from}」载入 1 个文件`)
   }
 })
+watch([lang, tab, pdfScale], () => {
+  saveResume({
+    toolId: '/ocr', route: '/ocr',
+    settings: { lang: lang.value, tab: tab.value, pdfScale: pdfScale.value },
+  })
+})
+
 onBeforeUnmount(() => {
   onOcrProgress(null)
   releaseOcr()
