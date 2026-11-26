@@ -48,3 +48,4 @@ public/tcm/*.gz
 public/tcm/bencao*.gz
 public/tcm/full/
 public/tcm/full-index.json.gz
+/release/

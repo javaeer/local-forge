@@ -152,7 +152,7 @@ onMounted(loadRecent)
   <OfflineCores />
 
   <div class="panel">
-    <h3 style="margin-top:0"><i class="bi bi-cpu"></i> 技术选型（相对 ezyzip.pro 的改进）</h3>
+    <h3 style="margin-top:0"><i class="bi bi-cpu"></i> 技术选型（相对 LocalForge 的改进）</h3>
     <ul style="color:var(--muted);font-size:13px;line-height:1.9;margin:6px 0 0">
       <li><b style="color:var(--txt)">zip.js 2.15</b> + 多线程 + AES-256（原版 2.8.34，且真正启用多线程与分卷）</li>
       <li><b style="color:var(--txt)">libarchive.js</b> 开源 WASM 写/读引擎，覆盖 ZIP/7Z/TAR/ISO/RAR/APK/DMG… 200+ 格式</li>

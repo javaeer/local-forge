@@ -13,19 +13,19 @@
   <a href="https://github.com/javaeer/local-forge/actions/workflows/ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/javaeer/local-forge/ci.yml?branch=main&label=build" alt="build" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/javaeer/local-forge" alt="license" /></a>
   <a href="https://github.com/javaeer/local-forge/releases"><img src="https://img.shields.io/github/v/release/javaeer/local-forge" alt="release" /></a>
-  <a href="http://forge.freedev.app/"><img src="https://img.shields.io/website?url=http%3A%2F%2Fforge.freedev.app%2F&label=demo" alt="demo" /></a>
+  <a href="https://forge.freedev.app/"><img src="https://img.shields.io/website?url=http%3A%2F%2Fforge.freedev.app%2F&label=demo" alt="demo" /></a>
   <img src="https://img.shields.io/badge/made%20with-Vue%203-42b883" alt="vue" />
   <img src="https://img.shields.io/badge/100%25-client--side-0f172a" alt="client-side" />
 </p>
 
-> **LocalForge** —— 一座装在你浏览器里的本地工坊。受 ezyzip.pro 启发并大幅扩展：
+> **LocalForge** —— 一座装在你浏览器里的本地工坊。受 LocalForge 启发并大幅扩展：
 > 没有后端、没有上传、没有追踪。原料在你自己的设备里，被 zip.js / libarchive.js / ffmpeg.wasm 等工序锤炼成成品，用完即销毁。
 
 ---
 
 ## 在线体验
 
-**[本地工坊](http://forge.freedev.app/)** —— Your files never leave your browser.
+**[本地工坊](https://forge.freedev.app/)** —— Your files never leave your browser.
 
 ---
 
@@ -264,9 +264,9 @@ public/ffmpeg-st/    ffmpeg 单线程内核（跨源隔离不可用时的回退�
 
 ## 致谢
 
-> **声明**：LocalForge 是一个独立的开源项目，与 ezyzip.pro 无任何隶属、合作或背书关系；其名称仅在与「灵感来源」相关的语境下被引用。
+> **声明**：LocalForge 是一个独立的开源项目，与 LocalForge 无任何隶属、合作或背书关系；其名称仅在与「灵感来源」相关的语境下被引用。
 
-- 灵感来自 [ezyzip.pro](https://ezyzip.pro/)；- 核心引擎依赖 [@zip.js/zip.js](https://github.com/gildas-lormeau/zip.js)、[libarchive.js](https://github.com/libarchive/libarchive.js)、[@ffmpeg/ffmpeg (ffmpeg.wasm)](https://github.com/ffmpegwasm/ffmpeg.wasm)、[pdf-lib](https://github.com/Hopding/pdf-lib)；
+- 灵感来自 [LocalForge](https://lf.yunlou.net.cn/)；- 核心引擎依赖 [@zip.js/zip.js](https://github.com/gildas-lormeau/zip.js)、[libarchive.js](https://github.com/libarchive/libarchive.js)、[@ffmpeg/ffmpeg (ffmpeg.wasm)](https://github.com/ffmpegwasm/ffmpeg.wasm)、[pdf-lib](https://github.com/Hopding/pdf-lib)；
 - 图标来自 [Bootstrap Icons](https://icons.getbootstrap.com/)。
 
 ## 许可证

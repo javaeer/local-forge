@@ -1,4 +1,4 @@
-// 通用归档引擎：覆盖 ezyzip.pro 全部创建/解压/转换/合并能力（纯前端）
+// 通用归档引擎：覆盖 LocalForge 全部创建/解压/转换/合并能力（纯前端）
 import { Archive } from 'libarchive.js'
 import { ZipReader, ZipWriter, BlobReader, BlobWriter } from '@zip.js/zip.js'
 
