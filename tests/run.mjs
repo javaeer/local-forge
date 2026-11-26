@@ -87,8 +87,14 @@ async function ensureServer(kind) {
   const vite = join(root, 'node_modules/vite/bin/vite.js')
   if (!existsSync(vite)) throw new Error('未找到 vite（请先 pnpm install）')
   if (kind === 'preview' && !existsSync(join(root, 'dist/index.html'))) {
-    console.log('  · dist 缺失，先构建一次…')
-    const r = await run(process.execPath, [vite, 'build'], { stdio: ['ignore', 'ignore', 'inherit'] })
+    // 必须补齐数据 + 完整 build，不能裸 vite build：
+    // 离线词典 / 诗文 / 中医的 .gz 由 gitignore 排除、靠 prebuild 拉取，
+    // 其中 ECDICT 与全量诗文库又被 prebuild 故意跳过（体积大），需 prepare-e2e-data 补。
+    // 缺任一项页面都会拿到 HTML 回退而超时（CI 曾因此全红）。
+    console.log('  · dist 缺失，先补齐离线数据并执行 pnpm build…')
+    let r = await run(process.execPath, ['scripts/prepare-e2e-data.mjs'], { stdio: ['ignore', 'ignore', 'inherit'] })
+    if (r.code) throw new Error('e2e 数据准备失败，preview 无法启动')
+    r = await run('pnpm', ['build'], { stdio: ['ignore', 'ignore', 'inherit'] })
     if (r.code) throw new Error('构建失败，preview 无法启动')
   }
   // --host 127.0.0.1：vite 默认 host=localhost 会按系统解析随机落到 [::1]（IPv6），

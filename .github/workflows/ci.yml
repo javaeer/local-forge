@@ -84,6 +84,17 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # 关键：e2e 是独立 job / 独立 checkout，拿不到 build job 的 dist，也没有
+      # gitignore 的离线数据快照（WASM / 词典 / 诗文 / 中医）。依赖这些数据的
+      # dictionary/tcmchants/bencao/tcmbooks/classicsfull 会因 .gz 回退成 HTML 而超时。
+      # 两步缺一不可：
+      #   1) prepare-e2e-data：补齐 prebuild 故意跳过的 66MB ECDICT 与全量诗文库；
+      #   2) pnpm build：prebuild 拉其余小快照 + vite build 把 public/ 拷进 dist/。
+      # 全部脚本幂等（已有有效快照跳过），裸 `vite build` 不够（绕过 prebuild）。
+      - name: Prepare data & build (for preview e2e)
+        run: |
+          node scripts/prepare-e2e-data.mjs
+          pnpm build
       # 不再软链到 /usr/bin（runner 用户无写权限，长期红灯）。
       # 直接把探测到的绝对路径注入环境变量；tests/run.mjs 优先读 CHROME_PATH
       # 并再次注入每个 e2e 子进程，脚本无需硬编码系统路径。
@@ -117,6 +128,11 @@ jobs:
           cache-dependency-path: pnpm-lock.yaml
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+      # 同 e2e-core：独立 checkout 需自带数据快照与 dist，否则依赖快照的用例必挂。
+      - name: Prepare data & build (for preview e2e)
+        run: |
+          node scripts/prepare-e2e-data.mjs
+          pnpm build
       # 同 e2e-core：注入绝对路径，不再写 /usr/bin。
       - name: Install Chromium & expose path
         run: |

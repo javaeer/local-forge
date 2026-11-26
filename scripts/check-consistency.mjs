@@ -40,6 +40,7 @@ const formatsSrc = read('src/lib/formats.js')
 const tasksSrc = read('src/lib/tasks.js')
 const taskMsgSrc = read('src/lib/i18n.tasks.js')
 const packSrc = read('scripts/pack-release.mjs')
+const e2eDataSrc = read('scripts/prepare-e2e-data.mjs')
 const releaseYml = read('.github/workflows/release.yml')
 const ciYml = read('.github/workflows/ci.yml')
 const readmeSrc = read('README.md')
@@ -368,10 +369,17 @@ check('release', 'L. 发布完整性：打包脚本 / 门禁 / 文档齐全', ()
   if (!releaseYml.includes('contents: write')) bad.push('release 缺 contents: write 权限')
   // 4) CI 不再软链 /usr/bin（回归守护：防止有人把 Link 步骤改回来）
   if (ciYml.includes('Link Chromium to /usr/bin/chromium')) bad.push('ci.yml 残留 /usr/bin 软链步骤')
-  // 5) README 有发布流程小节
+  // 5) e2e 独立 checkout 必须补数据：ci 两个 e2e job + release 门禁都要调 prepare-e2e-data，
+  //    且该脚本必须同时拉 ECDICT 与全量诗文库（否则 dictionary/classicsfull 超时红灯）。
+  const prepareCalls = (ciYml.match(/scripts\/prepare-e2e-data\.mjs/g) || []).length
+  if (prepareCalls < 2) bad.push(`ci.yml e2e job 补数据调用不足 2 处（实 ${prepareCalls}）`)
+  if (!releaseYml.includes('scripts/prepare-e2e-data.mjs')) bad.push('release 未补 e2e 数据')
+  if (!e2eDataSrc.includes('fetch-dict.mjs') || !e2eDataSrc.includes('ecdict')) bad.push('prepare 缺 ECDICT')
+  if (!e2eDataSrc.includes('fetch-poems-full.mjs')) bad.push('prepare 缺全量诗文库')
+  // 6) README 有发布流程小节
   if (!/##\s*发布流程/.test(readmeSrc)) bad.push('README 缺发布流程')
   if (bad.length) fail('发布完整性异常：' + [...new Set(bad)].join(', '))
-  return `打包 ${needGroups.length} 数据组 · release 门禁 5 项 · tag 触发 · 无 /usr/bin 软链`
+  return `打包 ${needGroups.length} 数据组 · release 门禁 5 项 · e2e 补数据 ${prepareCalls} 处 · tag 触发 · 无 /usr/bin 软链`
 })
 
 // ---------- 报告 ----------

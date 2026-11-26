@@ -149,7 +149,8 @@ try {
 
   // 13. 删除全量库
   await page.click('.lib-bar button')
-  await page.waitForFunction(() => !/已就绪/.test(document.querySelector('.lib-bar')?.textContent || ''), { timeout: 10000 })
+  // 删除涉及 IndexedDB + Worker 清理，批量跑时资源竞争会让 10s 偶发不足（CI 曾偶发红灯）
+  await page.waitForFunction(() => !/已就绪/.test(document.querySelector('.lib-bar')?.textContent || ''), { timeout: 30000 })
   const libAfter = await page.$eval('.lib-bar', (el) => el.textContent)
   ok(!/已就绪/.test(libAfter), '删除全量库后回到未装状态')
 

@@ -52,6 +52,9 @@ const SOURCES = [
     // ECDICT 主仓库单文件 ~53MB，超出 jsDelivr gh 的 20MB 上限，只能走 raw 源。
     urls: [
       'https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv',
+      // 单一 raw 源遇瞬时抖动会整批失败（CI 曾因 ECDICT 拉不到而 dictionary e2e 超时）。
+      // ghfast 为 raw.githubusercontent 的只读镜像，作为后备；内容校验（min/verify）保证等价。
+      'https://ghfast.top/https://raw.githubusercontent.com/skywind3000/ECDICT/master/ecdict.csv',
     ],
     min: 700000,
     verify(text) {
@@ -126,16 +129,23 @@ function verifyBuf(buf, src, label) {
 
 async function download(src) {
   let lastErr
+  // 每个源最多 3 次尝试：ECDICT 等大文件走公网 raw，瞬时抖动（连接重置/超时）常见，
+  // 单次失败即换源可能把所有镜像都浪费在同一波抖动上。短退避后重试更稳。
+  const ATTEMPTS = 3
   for (const url of src.urls) {
-    try {
-      console.log(`↓ 下载 ${url}`)
-      const res = await fetch(url)
-      if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
-      return Buffer.from(await res.arrayBuffer())
-    } catch (e) {
-      lastErr = e
-      console.log(`  · 源不可用（${e.message}），换下一个镜像`)
+    for (let i = 1; i <= ATTEMPTS; i++) {
+      try {
+        console.log(`↓ 下载 ${url}${i > 1 ? `（重试 ${i}/${ATTEMPTS}）` : ''}`)
+        const res = await fetch(url)
+        if (!res.ok) throw new Error(`HTTP ${res.status} ${res.statusText}`)
+        return Buffer.from(await res.arrayBuffer())
+      } catch (e) {
+        lastErr = e
+        console.log(`  · 源不可用（${e.message}）`)
+        if (i < ATTEMPTS) await new Promise((r) => setTimeout(r, 800 * i))
+      }
     }
+    console.log('  · 换下一个镜像')
   }
   throw lastErr
 }

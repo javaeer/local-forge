@@ -245,7 +245,7 @@ async function main() {
   ]
 
   console.log('· 正在转简体并分片（全量约两千万字，需要一会）…')
-  const { shards, entries } = buildShards(books, s2t)
+  const { shards, entries, shardFrom } = buildShards(books, s2t)
 
   const index = {
     v: 1,

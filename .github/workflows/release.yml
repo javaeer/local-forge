@@ -40,6 +40,10 @@ jobs:
         run: node scripts/check-consistency.mjs
       - name: Unit tests
         run: pnpm test:unit
+      # e2e 门禁依赖 ECDICT 大词库与全量诗文库，prebuild 为速度跳过它们，
+      # 这里先补齐（幂等），再 build，确保 Core e2e gate 不会因数据缺失超时。
+      - name: Prepare e2e data
+        run: node scripts/prepare-e2e-data.mjs
       - name: Build
         run: pnpm build
       - name: Bundle size budget
