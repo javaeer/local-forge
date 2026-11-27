@@ -1,6 +1,6 @@
 {
   "name": "local-forge",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": false,
   "type": "module",
   "description": "LocalForge · 纯浏览器端的本地文件工具箱：压缩/解压/转换/分享全部在本地完成，文件不上传任何服务器。",
