@@ -101,7 +101,14 @@ jobs:
       - name: Install Chromium & expose path
         run: |
           npx puppeteer browsers install chrome
-          CHROME=$(find "$HOME/.cache/puppeteer" -type f \( -name chrome -o -name chrome-headless-shell \) | head -1)
+          # 关键：必须明确优先「完整 chrome」。此前 `find ... | head -1` 会按字典序
+          # 命中 chrome-headless-shell（剪贴板/阶段进度渲染行为与完整 chrome 不同），
+          # 导致 bencao/tcmbooks 的「复制全文 toast」与 progress 阶段组件在 CI 下失败，
+          # 而本地用完整 chrome 全过。仅当完整 chrome 确实不存在时才回退 shell。
+          CHROME=$(find "$HOME/.cache/puppeteer/chrome" -type f -name chrome 2>/dev/null | head -1)
+          if [ -z "$CHROME" ]; then
+            CHROME=$(find "$HOME/.cache/puppeteer" -type f -name chrome-headless-shell 2>/dev/null | head -1)
+          fi
           test -n "$CHROME" || { echo "::error::未找到 Chromium 可执行文件"; exit 1; }
           chmod +x "$CHROME"
           echo "CHROME_PATH=$CHROME" >> "$GITHUB_ENV"

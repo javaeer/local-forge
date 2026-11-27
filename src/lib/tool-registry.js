@@ -10,6 +10,12 @@
 // 字段（14 项，TOOL_FIELDS）：id, route, title, titleKey, descKey, icon, workspace,
 // keywords, status, engine, networkPolicy, offlineLevel, resourceIds, supportedBrowsers。
 // 额外兼容字段：path（= route，供命令面板/导航直接消费）、short / shortKey（导航短名）。
+//
+// status 取值：'stable' | 'beta' | 'pro'。
+//   - 'stable' / 'beta'：开源版工具（当前 34 条均为 stable/beta）。
+//   - 'pro'：为私有 Pro 版预留的标记。私有版可按同样 14 字段结构注册 Pro 工具，
+//     标记 status:'pro' 后用 isProTool() 识别；开源版不注册任何 pro 工具，
+//     功能门默认实现见 src/lib/pro-gate.js（替换该文件即可接入授权）。
 
 export const TOOL_FIELDS = [
   'id', 'route', 'title', 'titleKey', 'descKey', 'icon', 'workspace',
@@ -81,6 +87,13 @@ const BY_ID = new Map(TOOLS_REGISTRY.map((t) => [t.id, t]))
 const BY_ROUTE = new Map(TOOLS_REGISTRY.map((t) => [t.route, t]))
 
 export function allTools() { return TOOLS_REGISTRY }
+
+// 私有化接缝：识别 Pro 工具（status === 'pro'）。
+// 开源版当前无 pro 工具，恒返回空数组；私有版注册 Pro 工具后可据此分组/门控。
+export function isProTool(t) { return !!(t && t.status === 'pro') }
+export function proTools() { return TOOLS_REGISTRY.filter(isProTool) }
+export function freeTools() { return TOOLS_REGISTRY.filter((t) => !isProTool(t)) }
+
 export function getTool(idOrRoute) {
   return BY_ID.get(idOrRoute) || BY_ROUTE.get(idOrRoute) || null
 }

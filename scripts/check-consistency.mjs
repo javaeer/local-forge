@@ -44,6 +44,9 @@ const e2eDataSrc = read('scripts/prepare-e2e-data.mjs')
 const releaseYml = read('.github/workflows/release.yml')
 const ciYml = read('.github/workflows/ci.yml')
 const readmeSrc = read('README.md')
+const clipboardSrc = read('src/lib/clipboard.js')
+const bencaoSrc = read('src/views/Bencao.vue')
+const tcmBooksSrc = read('src/views/TcmBooks.vue')
 // i18n.views.js 承载全部 views.* 词条（视图 T('views.xxx') 的落点）；
 // 漏扫会让断言 E 把真实存在的词条误报为缺失。
 // 新增词条包（如 i18n.classics.js）必须在此登记，否则该包的 key 会被判缺失。
@@ -378,8 +381,16 @@ check('release', 'L. 发布完整性：打包脚本 / 门禁 / 文档齐全', ()
   if (!e2eDataSrc.includes('fetch-poems-full.mjs')) bad.push('prepare 缺全量诗文库')
   // 6) README 有发布流程小节
   if (!/##\s*发布流程/.test(readmeSrc)) bad.push('README 缺发布流程')
+  // 7) CI 必须显式优先完整 chrome（回归守护：防止 find|head -1 又命中 headless-shell，
+  //    造成 bencao/tcmbooks 复制 toast 与 progress 阶段组件在 CI 红灯）。
+  if (!ciYml.includes('/chrome" -type f -name chrome')) bad.push('ci.yml 未显式优先完整 chrome')
+  // 8) 复制降级：clipboard.js 必须含 execCommand 回退，且两个全量库视图必须接入
+  if (!clipboardSrc.includes('execCommand')) bad.push('clipboard.js 缺 execCommand 降级')
+  for (const [name, src] of [['Bencao', bencaoSrc], ['TcmBooks', tcmBooksSrc]]) {
+    if (!src.includes('lib/clipboard.js')) bad.push(`${name} 未接入剪贴板降级`)
+  }
   if (bad.length) fail('发布完整性异常：' + [...new Set(bad)].join(', '))
-  return `打包 ${needGroups.length} 数据组 · release 门禁 5 项 · e2e 补数据 ${prepareCalls} 处 · tag 触发 · 无 /usr/bin 软链`
+  return `打包 ${needGroups.length} 数据组 · release 门禁 5 项 · e2e 补数据 ${prepareCalls} 处 · tag 触发 · 无软链 · 完整 chrome 优先 · 复制降级`
 })
 
 // ---------- 报告 ----------

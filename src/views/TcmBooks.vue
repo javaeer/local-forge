@@ -6,6 +6,7 @@ import { T } from '../lib/i18n.dev.js'
 import { loadIndex, fullStatus, downloadFull, removeFull, readPiece } from '../lib/tcmfull.js'
 import { searchIndex } from '../lib/tcmbooksearch.js'
 import { highlight, escapeHtml } from '../lib/poems.js'
+import { copyText as clipboardCopy } from '../lib/clipboard.js'
 
 const MSG = 'views.tcmBooks'
 
@@ -232,8 +233,8 @@ async function copyText() {
   try {
     const it = current.value
     const head = [it.title, metaText.value].filter(Boolean).join(' · ')
-    await navigator.clipboard.writeText(`${head}\n\n${currentText.value}`)
-    flash(T(`${MSG}.copied`))
+    const ok = await clipboardCopy(`${head}\n\n${currentText.value}`)
+    flash(T(`${MSG}.${ok ? 'copied' : 'copyFail'}`))
   } catch {
     flash(T(`${MSG}.copyFail`))
   }

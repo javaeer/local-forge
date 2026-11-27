@@ -6,6 +6,7 @@ import { ref, computed, onMounted } from 'vue'
 import { T } from '../lib/i18n.dev.js'
 import { loadIndex, searchIndex, searchFull, fullStatus, downloadFull, removeFull, readFull, splitSections } from '../lib/bencao.js'
 import { highlight, escapeHtml } from '../lib/poems.js'
+import { copyText } from '../lib/clipboard.js'
 
 const MSG = 'views.bencao'
 
@@ -146,8 +147,8 @@ async function copyEntry() {
   try {
     const it = currentFull.value
     const head = [it.name, it.bu, it.juan, it.sub].filter(Boolean).join(' · ')
-    await navigator.clipboard.writeText(`${head}\n\n${it.body || it.excerpt}`)
-    flash(T(`${MSG}.copied`))
+    const ok = await copyText(`${head}\n\n${it.body || it.excerpt}`)
+    flash(T(`${MSG}.${ok ? 'copied' : 'copyFail'}`))
   } catch {
     flash(T(`${MSG}.copyFail`))
   }

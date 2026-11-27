@@ -62,20 +62,40 @@ try {
   })
   check('A5：媒体工具接收文件', injected === 'ok', injected)
   await wait(500)
-  // 点击开始 → 阶段进度组件应出现（内核加载需要几秒，先捕获 busy 态）
+  // 点击开始 → 阶段进度组件应出现（内核加载需要几秒，先捕获 busy 态）。
+  // 注意：headless shell 下 2KB 假视频转换极快，busy 可能瞬间归 false，
+  // 固定 700ms 后再查 DOM 会错过组件（曾因此误报 missing）。改为在点击前
+  // 装 MutationObserver 捕获「组件曾出现过」，消除这个竞态。
   await page.evaluate(() => {
+    window.__phaseSeen = null
+    const obs = new MutationObserver(() => {
+      if (window.__phaseSeen) return
+      const el = document.querySelector('.phase-progress')
+      if (!el) return
+      window.__phaseSeen = {
+        segs: el.querySelectorAll('.seg').length,
+        labels: Array.from(el.querySelectorAll('.seg-label')).map((x) => x.textContent.trim()),
+        pct: (el.querySelector('.num') || {}).textContent || '',
+      }
+    })
+    obs.observe(document.body, { childList: true, subtree: true })
+    window.__phaseObs = obs
     const btn = Array.from(document.querySelectorAll('.btn')).find((b) => /开始转换|Start/i.test(b.textContent || ''))
     if (btn) btn.click()
   })
-  await wait(700)
+  await wait(900)
   const hasPhase = await page.evaluate(() => {
+    if (window.__phaseObs) { window.__phaseObs.disconnect(); window.__phaseObs = null }
+    // 组件仍在则优先读实时 DOM（数据最全），否则用 observer 捕获到的快照
     const el = document.querySelector('.phase-progress')
-    if (!el) return null
-    return {
-      segs: el.querySelectorAll('.seg').length,
-      labels: Array.from(el.querySelectorAll('.seg-label')).map((x) => x.textContent.trim()),
-      pct: (el.querySelector('.num') || {}).textContent || '',
+    if (el) {
+      return {
+        segs: el.querySelectorAll('.seg').length,
+        labels: Array.from(el.querySelectorAll('.seg-label')).map((x) => x.textContent.trim()),
+        pct: (el.querySelector('.num') || {}).textContent || '',
+      }
     }
+    return window.__phaseSeen
   })
   check('A5：出现阶段进度组件', !!hasPhase, hasPhase ? `segs=${hasPhase.segs}` : 'missing')
   check('A5：阶段为 内核/读取/转码 三段', !!hasPhase && hasPhase.segs === 3, hasPhase ? hasPhase.labels.join('/') : '')

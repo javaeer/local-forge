@@ -4,7 +4,7 @@ import assert from 'node:assert/strict'
 import {
   TOOL_FIELDS, TOOLS_REGISTRY, NAV_VIEW, WORKSPACE_ORDER, GROUP_ZH,
   allTools, getTool, getByRoute, toolsByWorkspace, navGroups,
-  searchTools, validateRegistry,
+  searchTools, validateRegistry, isProTool, proTools, freeTools,
 } from '../../src/lib/tool-registry.js'
 import { NAV, NAV_GROUPS, searchNav } from '../../src/lib/nav.js'
 import { CORE_GROUP_IDS } from '../../src/lib/offline.js'
@@ -98,4 +98,13 @@ test('每条工具的 titleKey 五语齐全，不泄漏原始 key', () => {
   } finally {
     locale.value = 'zh-CN'
   }
+})
+
+// 私有化接缝（开源版）：status:'pro' 识别 API 就位，但开源版不注册任何 pro 工具。
+test('私有化接缝：开源版无 pro 工具，isProTool/proTools/freeTools 行为正确', () => {
+  assert.equal(isProTool({ status: 'pro' }), true)
+  assert.equal(isProTool({ status: 'stable' }), false)
+  assert.equal(isProTool(null), false)
+  assert.deepEqual(proTools(), [])
+  assert.equal(freeTools().length, TOOLS_REGISTRY.length)
 })
