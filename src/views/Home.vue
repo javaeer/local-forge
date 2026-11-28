@@ -77,6 +77,17 @@ onMounted(loadRecent)
     <p class="hero-hint"><i class="bi bi-signpost-split"></i> {{ t('home.howto1') }}</p>
   </section>
 
+  <!-- Pro 宣传入口：价值先行，首屏直达外部购买页（不含任何本地授权逻辑） -->
+  <a href="https://dodo.pe/localforge" target="_blank" rel="noopener noreferrer" class="pro-banner" data-testid="pro-banner" :title="T('proPromo.title')">
+    <div class="pb-icon"><i class="bi bi-stars"></i></div>
+    <div class="pb-body">
+      <span class="pb-eyebrow">{{ T('proPromo.tag') }}</span>
+      <h2>{{ T('proPromo.hero') }}</h2>
+      <p>{{ T('proPromo.sub') }}</p>
+    </div>
+    <span class="pb-cta">{{ T('proPromo.cta') }} <i class="bi bi-arrow-right"></i></span>
+  </a>
+
   <!-- 任务入口层：从「想做什么」直达工序；全部工序折叠在后，老路径不丢 -->
   <TaskBoard @open-palette="openPalette" />
 
@@ -197,6 +208,47 @@ onMounted(loadRecent)
 .hero-pills { display: flex; flex-wrap: wrap; gap: 9px; }
 .hero-hint { display: flex; align-items: center; gap: 7px; margin: 14px 0 0; font-size: 12.5px; color: var(--muted, #93a2bd); }
 .hero-hint i { color: var(--accent, #e8954a); }
+
+/* Pro 首屏价值横幅（外链，无本地授权逻辑） */
+.pro-banner {
+  display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+  margin: 18px 0 22px; padding: 18px 20px;
+  border: 1px solid rgba(232,149,74,.38);
+  border-radius: 14px;
+  background: linear-gradient(110deg, rgba(240,160,75,.14), rgba(184,70,46,.10) 60%, rgba(48,38,28,.5));
+  text-decoration: none; color: inherit;
+  box-shadow: 0 6px 24px rgba(184,70,46,.12);
+  transition: .18s;
+}
+.pro-banner:hover { transform: translateY(-2px); border-color: var(--accent, #e8954a); box-shadow: 0 10px 30px rgba(184,70,46,.22); }
+.pro-banner:focus-visible { outline: 2px solid var(--accent, #e8954a); outline-offset: 2px; }
+.pb-icon {
+  width: 48px; height: 48px; flex: none; display: grid; place-items: center;
+  border-radius: 13px; color: #fff; font-size: 23px;
+  background: var(--grad, linear-gradient(120deg,#e8954a,#b8462e));
+  box-shadow: 0 4px 14px rgba(184,70,46,.35);
+}
+.pb-body { flex: 1; min-width: 220px; }
+.pb-eyebrow {
+  display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: 1.2px;
+  color: var(--accent, #e8954a); text-transform: uppercase;
+}
+.pb-body h2 { font-size: clamp(17px, 3vw, 21px); margin: 4px 0 5px; line-height: 1.25; }
+.pb-body p { color: var(--muted, #93a2bd); font-size: 12.5px; line-height: 1.6; margin: 0; max-width: 620px; }
+.pb-cta {
+  display: inline-flex; align-items: center; gap: 7px; flex: none;
+  padding: 10px 16px; border-radius: 10px; font-size: 13px; font-weight: 700;
+  color: #fff; background: var(--grad, linear-gradient(120deg,#e8954a,#b8462e));
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 3px 12px rgba(184,70,46,.3);
+  transition: .15s;
+}
+.pro-banner:hover .pb-cta { filter: brightness(1.1); gap: 11px; }
+@media (max-width: 620px) {
+  .pro-banner { padding: 15px; gap: 12px; }
+  .pb-icon { width: 40px; height: 40px; font-size: 20px; }
+  .pb-cta { width: 100%; justify-content: center; }
+}
 .all-tools {
   margin: 0 0 22px;
   border: 1px solid var(--line, rgba(120,150,200,.16));

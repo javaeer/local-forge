@@ -102,6 +102,15 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
         <kbd class="sb-text">Ctrl K</kbd>
       </button>
 
+      <!-- Pro 宣传入口：侧栏第一眼可见，点击直达外部购买页（不含任何本地授权逻辑） -->
+      <a href="https://dodo.pe/localforge" target="_blank" rel="noopener noreferrer" class="sb-pro" data-testid="pro-entry-side" :title="T('proPromo.title')">
+        <i class="bi bi-stars"></i>
+        <span class="sb-text">
+          <b>{{ T('proPromo.badge') }}</b>
+          <small>{{ T('proPromo.cta') }}</small>
+        </span>
+      </a>
+
       <nav class="sb-nav">
         <template v-for="g in NAV_GROUPS" :key="g">
           <div v-if="groupItems(g).length" class="sb-group sb-text">{{ groupLabel(g) }}</div>
@@ -198,6 +207,11 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
         >
           <i class="bi" :class="isSidebar ? 'bi-layout-text-window-reverse' : 'bi-layout-sidebar-inset'"></i>
         </button>
+
+        <!-- Pro 宣传入口：固定在顶栏最右端，桌面/移动通用，点击直达外部购买页 -->
+        <a href="https://dodo.pe/localforge" target="_blank" rel="noopener noreferrer" class="tb-pro" data-testid="pro-entry" :title="T('proPromo.title')">
+          <i class="bi bi-stars"></i> <span>{{ T('proPromo.badge') }}</span>
+        </a>
       </header>
 
       <main class="content">
@@ -276,6 +290,23 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
 .sb-search i { font-size: 15px; flex: none; }
 .sb-search kbd { margin-left: auto; }
 
+/* Pro 宣传入口卡（外链，无本地授权逻辑） */
+.sb-pro {
+  display: flex; align-items: center; gap: 10px; flex: none;
+  margin: 0 12px 12px; padding: 10px 12px; border-radius: 10px;
+  text-decoration: none; color: #fff;
+  background: var(--grad, linear-gradient(120deg,#e8954a,#b8462e));
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 3px 14px rgba(184,70,46,.3);
+  transition: .15s;
+}
+.sidebar.collapsed .sb-pro { margin: 0 8px 10px; justify-content: center; }
+.sb-pro:hover { color: #fff; filter: brightness(1.1); transform: translateY(-1px); }
+.sb-pro > i { font-size: 18px; flex: none; }
+.sb-pro .sb-text { display: flex; flex-direction: column; line-height: 1.35; white-space: nowrap; }
+.sb-pro .sb-text b { font-size: 13px; font-weight: 800; letter-spacing: .5px; }
+.sb-pro .sb-text small { font-size: 11px; opacity: .88; }
+
 .sb-nav { flex: 1; overflow: auto; padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 1px; }
 .sb-group { font-size: 11px; color: var(--faint, #6b7a96); letter-spacing: .5px; text-transform: uppercase; padding: 12px 8px 4px; white-space: nowrap; }
 .sb-link {
@@ -337,6 +368,19 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
   background: var(--panel-2, rgba(28,37,60,.75)); color: var(--txt, #e8edf7); transition: .15s;
 }
 .icon-btn:hover { border-color: var(--accent, #38bdf8); color: var(--accent, #38bdf8); }
+
+/* Pro 宣传徽章：顶栏最右，暖色渐变，第一眼可见（外链，无本地授权逻辑） */
+.tb-pro {
+  display: inline-flex; align-items: center; gap: 6px; flex: none;
+  padding: 7px 13px; border-radius: 9px; text-decoration: none;
+  font-size: 12.5px; font-weight: 800; letter-spacing: .5px;
+  color: #fff; background: var(--grad, linear-gradient(120deg,#e8954a,#b8462e));
+  border: 1px solid rgba(255,255,255,.18);
+  box-shadow: 0 3px 14px rgba(184,70,46,.35);
+  transition: .15s;
+}
+.tb-pro:hover { color: #fff; filter: brightness(1.1); transform: translateY(-1px); box-shadow: 0 5px 18px rgba(184,70,46,.5); }
+.tb-pro i { font-size: 14px; }
 
 /* 语言下拉（B-4：中日英韩西五语） */
 .lang-wrap { position: relative; display: inline-flex; }

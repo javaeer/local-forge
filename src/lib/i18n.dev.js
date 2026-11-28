@@ -23,6 +23,7 @@ import { UI_B_MESSAGES } from './i18n.ui.b.js'
 import { UI_C_MESSAGES } from './i18n.ui.c.js'
 import { UI_D_MESSAGES } from './i18n.ui.d.js'
 import { UI_DOC_MESSAGES } from './i18n.ui.doc.js'
+import { PRO_PROMO_MESSAGES } from './i18n.pro-promo.js'
 
 // 通用词条：导航项与分组名
 export const DEV_MESSAGES = {
@@ -49,7 +50,7 @@ export const DEV_MESSAGES = {
 }
 
 // 查找顺序：通用 → SVG → CSS → 古典文学 → 中医 → 任务入口 → 首页卡片（按语言）→ 视图（按语言）→ 主 i18n
-const PACKS = [DEV_MESSAGES, SVG_MESSAGES, CSS_MESSAGES, CLASSICS_MESSAGES, TCM_MESSAGES, BENCAO_MESSAGES, TCMBOOKS_MESSAGES, TASKS_MESSAGES, HOME_ZH, HOME_EN, HOME_JA, HOME_KO, HOME_ES, VIEW_MESSAGES, UI_QR_MESSAGES, UI_B_MESSAGES, UI_C_MESSAGES, UI_D_MESSAGES, UI_DOC_MESSAGES]
+const PACKS = [DEV_MESSAGES, SVG_MESSAGES, CSS_MESSAGES, CLASSICS_MESSAGES, TCM_MESSAGES, BENCAO_MESSAGES, TCMBOOKS_MESSAGES, TASKS_MESSAGES, HOME_ZH, HOME_EN, HOME_JA, HOME_KO, HOME_ES, VIEW_MESSAGES, UI_QR_MESSAGES, UI_B_MESSAGES, UI_C_MESSAGES, UI_D_MESSAGES, UI_DOC_MESSAGES, PRO_PROMO_MESSAGES]
 
 function lookup(packs, loc, key) {
   for (const pack of packs) {
