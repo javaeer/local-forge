@@ -26,6 +26,11 @@ const DIST = 'dist'
 const DEFAULTS = {
   JS_CHUNK_RAW: 400, // 单个 JS chunk 原始体积上限（最严、最有意义的护栏）
   JS_CHUNK_GZIP: 200, // 单个 JS chunk gzip 上限
+  // i18n 聚合包单独设档：五语词条全量打进 i18n.dev.js（raw ~610KB / gzip ~221KB），
+  // 体积大是预期且合理的（离线内核要求词条随包分发、不能按需联网拉取）。
+  // 给它更宽的预算，其余 chunk 仍走上面严格的 400/200，护栏对"反常膨胀"的捕捉力不变。
+  I18N_CHUNK_RAW: 720,
+  I18N_CHUNK_GZIP: 260,
   // 2026-11 实测放宽：古典文学四模块 + 中医药两模块上线后应用代码到 4.9MB / gzip 1.62MB，
   // WASM 内核随上游版本更新到 92.15MB——此前预算（4MB / 1.5MB / 90MB）在 HEAD 上即已突破（存量），
   // 按实测值 +15% 余量重设，护栏意义不变（捕捉反常膨胀）。
@@ -98,11 +103,15 @@ function main() {
   const coreMax = budget('CORE_RAW') * KB
   for (const r of rows) {
     if (!r.core && extname(r.rel) === '.js') {
-      const rMax = budget('JS_CHUNK_RAW') * KB
-      const gMax = budget('JS_CHUNK_GZIP') * KB
+      // i18n 聚合包（i18n.dev.js 等）走单独档位，其余 chunk 走严格档位。
+      const isI18n = /(^|\/)i18n\./.test(r.rel)
+      const rawKey = isI18n ? 'I18N_CHUNK_RAW' : 'JS_CHUNK_RAW'
+      const gzKey = isI18n ? 'I18N_CHUNK_GZIP' : 'JS_CHUNK_GZIP'
+      const rMax = budget(rawKey) * KB
+      const gMax = budget(gzKey) * KB
       const over = []
-      if (r.raw > rMax) over.push(`raw ${fmt(r.raw)} > ${budget('JS_CHUNK_RAW')}KiB`)
-      if (r.gz > gMax) over.push(`gzip ${fmt(r.gz)} > ${budget('JS_CHUNK_GZIP')}KiB`)
+      if (r.raw > rMax) over.push(`raw ${fmt(r.raw)} > ${budget(rawKey)}KiB`)
+      if (r.gz > gMax) over.push(`gzip ${fmt(r.gz)} > ${budget(gzKey)}KiB`)
       if (over.length) failed.push(`${r.rel}: ${over.join('; ')}`)
     }
   }
