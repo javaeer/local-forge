@@ -50,7 +50,12 @@ const tcmBooksSrc = read('src/views/TcmBooks.vue')
 // i18n.views.js 承载全部 views.* 词条（视图 T('views.xxx') 的落点）；
 // 漏扫会让断言 E 把真实存在的词条误报为缺失。
 // 新增词条包（如 i18n.classics.js）必须在此登记，否则该包的 key 会被判缺失。
-const i18nSrcs = ['src/lib/i18n.js', 'src/lib/i18n.dev.js', 'src/lib/i18n.svg.js', 'src/lib/i18n.css.js', 'src/lib/i18n.classics.js', 'src/lib/i18n.tcm.js', 'src/lib/i18n.bencao.js', 'src/lib/i18n.tcmbooks.js', 'src/lib/i18n.tasks.js', 'src/lib/i18n.views.js'].map(read)
+// 自动扫描 src/lib 下所有 i18n*.js 词条包：曾因硬编码列表漏登记新增包
+// （i18n.ui.* / i18n.pro.js）导致断言 E 把整包 key 误判为缺失、CI 红灯。
+// 目录扫描后新增词条包无需手动登记，从根源消除该类漂移。
+const i18nSrcs = readdirSync(join(root, 'src/lib'))
+  .filter((f) => /^i18n.*\.js$/.test(f))
+  .map((f) => read(`src/lib/${f}`))
 
 // ---------- 解析 ----------
 // workspace → groupKey / 中文 group（与 tool-registry.js 的 GROUP_ZH 对齐）
@@ -97,7 +102,9 @@ const cardTos = [...formatsSrc.matchAll(/to:\s*'([^']+)'/g)].map((m) => m[1])
 // i18n 词条里出现过的所有 key 名（前面为 { 或 , ，兼容 `nav: { key: 'x' }` 单行写法）
 const i18nKeys = new Set()
 for (const src of i18nSrcs) {
-  for (const m of src.matchAll(/[{,]\s*([A-Za-z][A-Za-z0-9_]*):\s*['"`]/g)) i18nKeys.add(m[1])
+  // key 可能带引号（JSON 风格词条包，如 "formContent": "内容"），也可能裸写（foo: 'bar'）。
+  // 两种形式都要识别，否则带引号的整包 key 会被判缺失。
+  for (const m of src.matchAll(/[{,]\s*['"]?([A-Za-z][A-Za-z0-9_]*)['"]?\s*:\s*['"`]/g)) i18nKeys.add(m[1])
 }
 
 // 视图里通过 T('...') 使用的 key
