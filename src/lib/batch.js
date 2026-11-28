@@ -50,7 +50,10 @@ export const OPS = {
     match: (f) => /\.(jpe?g|png)$/i.test(f.name),
     defaults: {},
     async run(file) {
-      const blob = await stripMetadata(file)
+      // stripMetadata 返回 {blob, removed, removedBytes, kind}，只取 blob。
+      // 曾把整个结果对象当 blob 传给下游 → new File([对象]) 序列化成 "[object Object]"
+      // → 后续图片工序解码失败 → 配方结果被过滤为空 → 下载按钮永不出现。
+      const { blob } = await stripMetadata(file)
       return { name: file.name.replace(/(\.[^.]+)$/, '-clean$1'), blob }
     },
   },
