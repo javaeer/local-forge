@@ -9,6 +9,7 @@ import { compressPdf, mergePdf, splitPdf } from '../lib/pdf.js'
 import { formatSize, downloadBlob } from '../utils.js'
 import { consumePending } from '../lib/workflow.js'
 import { pushToast } from '../lib/toast.js'
+import { T } from '../lib/i18n.dev.js'
 
 const route = useRoute()
 const mode = ref(route.query.mode || 'compress') // compress | preview | merge | split
@@ -37,23 +38,24 @@ onMounted(() => {
   const pending = consumePending()
   if (pending && pending.files.length) {
     onFiles(pending.files)
-    pushToast('info', `已从「${pending.from}」载入 ${pending.files.length} 个文件`)
+    pushToast('info', T('ui.pdftools.msgLoaded', { name: pending.from, n: pending.files.length }))
   }
 })
 
 async function compress() {
   if (!file.value) return
   busy.value = true
-  message.value = { type: 'info', text: '正在重压缩 PDF 内嵌图像…' }
+  message.value = { type: 'info', text: T('ui.pdftools.compressing') }
   try {
     const { blob, name, inSize, outSize } = await compressPdf(file.value, { quality: quality.value })
     result.value = { blob, name }
+    const warn = outSize >= inSize ? T('ui.pdftools.limited') : ''
     message.value = {
       type: 'ok',
-      text: `完成：${formatSize(outSize)}（原 ${formatSize(inSize)}）${outSize >= inSize ? '（该 PDF 以文本/已压缩为主，降幅有限）' : ''}`,
+      text: T('ui.pdftools.msgCompressed', { out: formatSize(outSize), orig: formatSize(inSize), warn }),
     }
   } catch (e) {
-    message.value = { type: 'err', text: '压缩失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.pdftools.errCompress') + (e.message || e) }
   } finally {
     busy.value = false
   }
@@ -63,7 +65,7 @@ async function compress() {
 async function preview() {
   if (!file.value) return
   busy.value = true
-  message.value = { type: 'info', text: '解析 PDF 中…' }
+  message.value = { type: 'info', text: T('ui.pdftools.parsing') }
   try {
     const pdfjs = await import('pdfjs-dist')
     const { ensurePdfWorker } = await import('../lib/pdfworker.js')
@@ -79,12 +81,12 @@ async function preview() {
       canvas.height = viewport.height
       const ctx = canvas.getContext('2d')
       await page.render({ canvasContext: ctx, viewport }).promise
-      out.push({ url: canvas.toDataURL('image/png'), w: Math.round(viewport.width), h: Math.round(viewport.height), label: '第 ' + i + ' 页' })
+      out.push({ url: canvas.toDataURL('image/png'), w: Math.round(viewport.width), h: Math.round(viewport.height), label: T('ui.pdftools.pageLabel', { n: i }) })
     }
     pages.value = out
-    message.value = { type: 'ok', text: `共 ${doc.numPages} 页` }
+    message.value = { type: 'ok', text: T('ui.pdftools.msgPages', { n: doc.numPages }) }
   } catch (e) {
-    message.value = { type: 'err', text: '预览失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.pdftools.errPreview') + (e.message || e) }
   } finally {
     busy.value = false
   }
@@ -92,18 +94,18 @@ async function preview() {
 
 async function merge() {
   if (files.value.length < 2) {
-    message.value = { type: 'err', text: '请至少选择 2 个 PDF 进行合并。' }
+    message.value = { type: 'err', text: T('ui.pdftools.errMergeMin') }
     return
   }
   busy.value = true
   progress.value = 0
-  message.value = { type: 'info', text: '合并中…' }
+  message.value = { type: 'info', text: T('ui.pdftools.merging') }
   try {
     const { blob, name, count, size } = await mergePdf(files.value, { onprogress: (p) => (progress.value = p) })
     result.value = { blob, name }
-    message.value = { type: 'ok', text: `已合并 ${count} 个 PDF（${formatSize(size)}）` }
+    message.value = { type: 'ok', text: T('ui.pdftools.msgMerged', { n: count, size: formatSize(size) }) }
   } catch (e) {
-    message.value = { type: 'err', text: '合并失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.pdftools.errMerge') + (e.message || e) }
   } finally {
     busy.value = false
   }
@@ -113,12 +115,12 @@ async function split() {
   if (!file.value) return
   busy.value = true
   progress.value = 0
-  message.value = { type: 'info', text: '拆分中…' }
+  message.value = { type: 'info', text: T('ui.pdftools.splitting') }
   try {
     splitParts.value = await splitPdf(file.value, { onprogress: (p) => (progress.value = p) })
-    message.value = { type: 'ok', text: `已拆分为 ${splitParts.value.length} 个单页 PDF` }
+    message.value = { type: 'ok', text: T('ui.pdftools.msgSplit', { n: splitParts.value.length }) }
   } catch (e) {
-    message.value = { type: 'err', text: '拆分失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.pdftools.errSplit') + (e.message || e) }
   } finally {
     busy.value = false
   }
@@ -133,45 +135,45 @@ function downloadPart(p) {
 </script>
 
 <template>
-  <h1 class="page-title">PDF 工具</h1>
-  <p class="page-sub">压缩 / 预览 / 合并 / 拆分 PDF，全部在浏览器本地完成，文件不上传服务器。</p>
+  <h1 class="page-title">{{ T('ui.pdftools.pageTitle') }}</h1>
+  <p class="page-sub">{{ T('ui.pdftools.sub') }}</p>
 
-  <HelpTip title="四个模式分别做什么？" icon="bi-file-earmark-pdf" open>
+  <HelpTip :title="T('ui.pdftools.helpTitle')" icon="bi-file-earmark-pdf" open>
     <ul>
-      <li><b>压缩</b>：重压缩内嵌图像以减小体积（文本型 PDF 降幅有限，属正常）。</li>
-      <li><b>预览</b>：逐页渲染为图片，本地查看，不出户。</li>
-      <li><b>合并</b>：把多个 PDF 按拖入顺序拼成一个。</li>
-      <li><b>拆分</b>：每页输出为一个独立 PDF。</li>
+      <li><b>{{ T('ui.pdftools.tabCompress') }}</b>：{{ T('ui.pdftools.helpCompress') }}</li>
+      <li><b>{{ T('ui.pdftools.tabPreview') }}</b>：{{ T('ui.pdftools.helpPreview') }}</li>
+      <li><b>{{ T('ui.pdftools.tabMerge') }}</b>：{{ T('ui.pdftools.helpMerge') }}</li>
+      <li><b>{{ T('ui.pdftools.tabSplit') }}</b>：{{ T('ui.pdftools.helpSplit') }}</li>
     </ul>
   </HelpTip>
 
   <div class="tabs">
-    <button :class="{ active: mode === 'compress' }" @click="mode = 'compress'">压缩</button>
-    <button :class="{ active: mode === 'preview' }" @click="mode = 'preview'">预览</button>
-    <button :class="{ active: mode === 'merge' }" @click="mode = 'merge'">合并</button>
-    <button :class="{ active: mode === 'split' }" @click="mode = 'split'">拆分</button>
+    <button :class="{ active: mode === 'compress' }" @click="mode = 'compress'">{{ T('ui.pdftools.tabCompress') }}</button>
+    <button :class="{ active: mode === 'preview' }" @click="mode = 'preview'">{{ T('ui.pdftools.tabPreview') }}</button>
+    <button :class="{ active: mode === 'merge' }" @click="mode = 'merge'">{{ T('ui.pdftools.tabMerge') }}</button>
+    <button :class="{ active: mode === 'split' }" @click="mode = 'split'">{{ T('ui.pdftools.tabSplit') }}</button>
   </div>
 
   <!-- 压缩 -->
   <div v-if="mode === 'compress'" class="panel">
-    <DropZone :multiple="false" accept=".pdf" single="PDF" hint="拖放 PDF 文件" formats=".PDF" @files="onFiles" />
+    <DropZone :multiple="false" accept=".pdf" single="PDF" :hint="T('ui.pdftools.dropHint')" formats=".PDF" @files="onFiles" />
     <div v-if="file" class="row wrap">
       <div class="field">
-        <label>图像质量 {{ Math.round(quality * 100) }}%</label>
+        <label>{{ T('ui.pdftools.quality', { n: Math.round(quality * 100) }) }}</label>
         <input type="range" min="0.3" max="1" step="0.05" v-model="quality" style="width:160px" />
       </div>
-      <button class="btn" :disabled="busy" @click="compress"><i class="bi bi-file-earmark-pdf"></i> 开始压缩</button>
+      <button class="btn" :disabled="busy" @click="compress"><i class="bi bi-file-earmark-pdf"></i> {{ T('ui.pdftools.btnCompress') }}</button>
     </div>
-    <div v-if="result" class="msg ok">已生成：{{ result.name }}</div>
-    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> 下载 {{ result.name }}</button>
+    <div v-if="result" class="msg ok">{{ T('ui.pdftools.generated', { name: result.name }) }}</div>
+    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> {{ T('ui.pdftools.btnDownload', { name: result.name }) }}</button>
     <NextSteps v-if="result" from="/pdf-tools" :files="[result]" />
   </div>
 
   <!-- 预览 -->
   <div v-if="mode === 'preview'" class="panel">
-    <DropZone :multiple="false" accept=".pdf" single="PDF" hint="拖放 PDF 文件" formats=".PDF" @files="onFiles" />
+    <DropZone :multiple="false" accept=".pdf" single="PDF" :hint="T('ui.pdftools.dropHint')" formats=".PDF" @files="onFiles" />
     <div v-if="file" class="row wrap">
-      <button class="btn" :disabled="busy" @click="preview"><i class="bi bi-eye"></i> 预览</button>
+      <button class="btn" :disabled="busy" @click="preview"><i class="bi bi-eye"></i> {{ T('ui.pdftools.btnPreview') }}</button>
     </div>
     <div v-if="pages.length" class="pdf-pages">
       <figure v-for="p in pages" :key="p.label">
@@ -183,23 +185,23 @@ function downloadPart(p) {
 
   <!-- 合并 -->
   <div v-if="mode === 'merge'" class="panel">
-    <DropZone multiple accept=".pdf" single="PDF" hint="拖放多个 PDF（将按顺序合并为一个）" formats=".PDF" @files="onFiles" />
+    <DropZone multiple accept=".pdf" single="PDF" :hint="T('ui.pdftools.mergeDropHint')" formats=".PDF" @files="onFiles" />
     <div v-if="files.length" class="row wrap">
-      <button class="btn" :disabled="busy || files.length < 2" @click="merge"><i class="bi bi-intersect"></i> 合并 {{ files.length }} 个 PDF</button>
+      <button class="btn" :disabled="busy || files.length < 2" @click="merge"><i class="bi bi-intersect"></i> {{ T('ui.pdftools.btnMerge', { n: files.length }) }}</button>
     </div>
     <ul v-if="files.length" class="files">
       <li v-for="f in files" :key="f.name + f.size"><i class="bi bi-file-earmark-pdf"></i><span class="name">{{ f.name }}</span><span class="size">{{ formatSize(f.size) }}</span></li>
     </ul>
-    <div v-if="result" class="msg ok">已生成：{{ result.name }}</div>
-    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> 下载 {{ result.name }}</button>
+    <div v-if="result" class="msg ok">{{ T('ui.pdftools.generated', { name: result.name }) }}</div>
+    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> {{ T('ui.pdftools.btnDownload', { name: result.name }) }}</button>
     <NextSteps v-if="result" from="/pdf-tools" :files="[result]" />
   </div>
 
   <!-- 拆分 -->
   <div v-if="mode === 'split'" class="panel">
-    <DropZone :multiple="false" accept=".pdf" single="PDF" hint="拖放 PDF 文件" formats=".PDF" @files="onFiles" />
+    <DropZone :multiple="false" accept=".pdf" single="PDF" :hint="T('ui.pdftools.dropHint')" formats=".PDF" @files="onFiles" />
     <div v-if="file" class="row wrap">
-      <button class="btn" :disabled="busy" @click="split"><i class="bi bi-scissors"></i> 拆分为单页</button>
+      <button class="btn" :disabled="busy" @click="split"><i class="bi bi-scissors"></i> {{ T('ui.pdftools.btnSplit') }}</button>
     </div>
     <ul v-if="splitParts.length" class="files">
       <li v-for="p in splitParts" :key="p.name"><i class="bi bi-file-earmark-pdf"></i><span class="name">{{ p.name }}</span><button class="btn ghost" style="padding:4px 9px" @click="downloadPart(p)"><i class="bi bi-download"></i></button></li>
@@ -208,8 +210,8 @@ function downloadPart(p) {
 
   <div v-if="busy || progress" class="progress"><span :style="{ width: progress + '%' }"></span></div>
   <div class="row wrap" style="margin:10px 0 0">
-    <StatusPill v-if="busy" state="working" :label="progress ? `处理中 ${progress}%` : '处理中…'" />
-    <StatusPill v-else-if="result" state="done" label="已生成结果" />
+    <StatusPill v-if="busy" state="working" :label="progress ? T('ui.pdftools.stWorking', { n: progress }) : T('ui.pdftools.stBusy')" />
+    <StatusPill v-else-if="result" state="done" :label="T('ui.pdftools.resultReady')" />
     <StatusPill v-else-if="message && message.type === 'err'" state="error" :label="message.text" />
   </div>
   <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>

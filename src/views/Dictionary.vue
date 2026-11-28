@@ -7,6 +7,7 @@ import { loadDict, dictSearch, MODES } from '../lib/dictclient.js'
 import { saveLexicon, listLexicons, deleteLexicon } from '../lib/dictstore.js'
 import { precacheCores, coreStatus, swSupported } from '../lib/offline.js'
 import { pushToast } from '../lib/toast.js'
+import { T } from '../lib/i18n.dev.js'
 
 /* ---------------- 状态 ---------------- */
 const loading = ref(false)
@@ -25,23 +26,20 @@ const openIdx = ref(-1)
 const saved = ref([]) // 本机持久化的自定义词库
 const savedPersisted = ref(true)
 
-const MODE_LABEL = {
-  auto: '自动（汉字 / 拼音 / 首字母）',
-  exact: '精确匹配',
-  prefix: '前缀扩展',
-  pinyin: '拼音检索',
-  gloss: '英文释义反查',
-  fuzzy: '模糊纠错（编辑距离 ≤ 2）',
-}
-const HIT_LABEL = {
-  exact: '精确', prefix: '前缀', pinyin: '拼音', initials: '首字母', gloss: '释义', fuzzy: '模糊',
-}
+const MODE_LABEL = computed(() => ({  auto: T('ui.dict.modeAuto'),
+  exact: T('ui.dict.modeExact'),
+  prefix: T('ui.dict.modePrefix'),
+  pinyin: T('ui.dict.modePinyin'),
+  gloss: T('ui.dict.modeGloss'),
+  fuzzy: T('ui.dict.modeFuzzy'),
+}))
+const HIT_LABEL = computed(() => ({  exact: T('ui.dict.hitExact'), prefix: T('ui.dict.hitPrefix'), pinyin: T('ui.dict.hitPinyin'), initials: T('ui.dict.hitInitials'), gloss: T('ui.dict.hitGloss'), fuzzy: T('ui.dict.hitFuzzy'),
+}))
 
 /* 内置词库源：同一套索引/检索管道，按需切换 */
-const BUILTIN_SOURCES = {
-  cedict: { id: 'cedict', file: 'dict/cc-cedict.txt.gz', name: 'CC-CEDICT（内置 · 汉英）', label: '汉英 CC-CEDICT（12 万条）' },
-  ecdict: { id: 'ecdict', file: 'dict/ecdict.csv.gz', name: 'ECDICT（内置 · 英汉双解）', label: '英汉双解 ECDICT（77 万条）' },
-}
+const BUILTIN_SOURCES = computed(() => ({  cedict: { id: 'cedict', file: 'dict/cc-cedict.txt.gz', name: T('ui.dict.srcCedictName'), label: T('ui.dict.srcCedictLabel') },
+  ecdict: { id: 'ecdict', file: 'dict/ecdict.csv.gz', name: T('ui.dict.srcEcdictName'), label: T('ui.dict.srcEcdictLabel') },
+}))
 const builtinId = ref('cedict')
 
 /* ---------------- 解压（原生优先，fflate 兜底） ---------------- */
@@ -91,7 +89,7 @@ const fuzzyUsable = computed(() => {
 })
 
 async function loadBuiltin(id) {
-  const src = BUILTIN_SOURCES[id || builtinId.value] || BUILTIN_SOURCES.cedict
+  const src = BUILTIN_SOURCES.value[id || builtinId.value] || BUILTIN_SOURCES.value.cedict
   if (id) builtinId.value = src.id
   loading.value = true
   error.value = ''
@@ -104,8 +102,8 @@ async function loadBuiltin(id) {
       fetch(`${base}dict/en-ipa-uk.txt.gz`).catch(() => null),
     ])
     if (!main.ok) {
-      const hint = src.id === 'ecdict' ? '。可先在首页「离线内核」面板预缓存「英汉大词库 ECDICT」，或检查 fetch-dict 是否已拉取该数据' : ''
-      throw new Error(`内置词库加载失败（HTTP ${main.status}）：${base}${src.file}${hint}`)
+      const hint = src.id === 'ecdict' ? T('ui.dict.loadHintEcdict') : ''
+      throw new Error(T('ui.dict.builtinFail', { status: main.status, base, file: src.file, hint }))
     }
     const text = await maybeGunzip(await main.arrayBuffer())
     ipaTexts.value = {
@@ -115,7 +113,7 @@ async function loadBuiltin(id) {
     await applyEntries(text, src.name)
     precacheDict(src.id === 'ecdict' ? 'dict-en' : 'dict') // 后台静默预缓存（SW 管辖，访一次即可永久离线）
   } catch (e) {
-    error.value = `${e.message}。可先在下方导入一份 CC-CEDICT / JSONL / TSV 词库继续使用。`
+    error.value = T('ui.dict.loadFailSuffix', { msg: e.message })
   } finally {
     loading.value = false
   }
@@ -178,10 +176,13 @@ async function onFiles(files) {
     await applyEntries(text, name)
     const rec = await saveLexicon({ name, text, count: info.value.entries })
     await refreshSaved()
-    pushToast('ok', `已导入 ${info.value.entries.toLocaleString()} 条词条${rec.persisted ? '，已存入本机' : '（本机不支持持久化，仅本次会话可用）'}`)
+    pushToast('ok', T('ui.dict.imported', {
+      n: info.value.entries.toLocaleString(),
+      state: rec.persisted ? T('ui.dict.importedPersisted') : T('ui.dict.importedSession'),
+    }))
   } catch (e) {
-    error.value = '导入失败：' + (e.message || e)
-    pushToast('err', '导入失败')
+    error.value = T('ui.dict.errImport', { msg: e.message || e })
+    pushToast('err', T('ui.dict.importFail'))
   } finally {
     loading.value = false
   }
@@ -200,9 +201,9 @@ async function loadSaved(rec) {
   error.value = ''
   try {
     await applyEntries(rec.text, rec.name)
-    pushToast('ok', `已载入「${rec.name}」`)
+    pushToast('ok', T('ui.dict.loadedSaved', { name: rec.name }))
   } catch (e) {
-    error.value = '载入失败：' + (e.message || e)
+    error.value = T('ui.dict.errLoad', { msg: e.message || e })
   } finally {
     loading.value = false
   }
@@ -218,23 +219,23 @@ function toggle(i) { openIdx.value = openIdx.value === i ? -1 : i }
 
 // 系统本地语音朗读（Web Speech API，零依赖、零外发请求；无语音包时静默失败）
 function speak(variant) {
-  if (!('speechSynthesis' in window)) { pushToast('err', '此浏览器不支持语音朗读'); return }
+  if (!('speechSynthesis' in window)) { pushToast('err', T('ui.dict.noSpeech')); return }
   try {
     speechSynthesis.cancel()
     const u = new SpeechSynthesisUtterance(res.value.query)
     u.lang = variant === 'us' ? 'en-US' : 'en-GB'
     u.rate = 0.9
     speechSynthesis.speak(u)
-  } catch { pushToast('err', '朗读失败') }
+  } catch { pushToast('err', T('ui.dict.speakFail')) }
 }
 
 async function copyEntry(it) {
   const lines = [`${it.s}${it.t && it.t !== it.s ? `（${it.t}）` : ''}  [${it.pm || it.p}]`, ...it.d.map((x, i) => `${i + 1}. ${x}`)]
   try {
     await navigator.clipboard.writeText(lines.join('\n'))
-    pushToast('ok', '词条已复制')
+    pushToast('ok', T('ui.dict.entryCopied'))
   } catch {
-    pushToast('err', '浏览器拒绝了剪贴板权限')
+    pushToast('err', T('ui.dict.clipboardDenied'))
   }
 }
 function onKey(e) {
@@ -250,17 +251,16 @@ onBeforeUnmount(() => clearTimeout(timer))
 </script>
 
 <template>
-  <h1 class="page-title">离线词典</h1>
+  <h1 class="page-title">{{ T('ui.dict.pageTitle') }}</h1>
   <p class="page-sub">
-    CC-CEDICT 汉英双向词库（约 12 万条）在浏览器内建索引，<b>零外发请求、断网可用</b>。
-    支持汉字、带调拼音、无调拼音、首字母、英文释义五种查法。
+    {{ T('ui.dict.sub1') }}<b>{{ T('ui.dict.sub2') }}</b>
+    {{ T('ui.dict.sub3') }}
   </p>
 
-  <HelpTip title="为什么不直接用网上的「在线字典」？" icon="bi-shield-lock" open>
+  <HelpTip :title="T('ui.dict.helpTitle')" icon="bi-shield-lock" open>
     <p style="margin:0">
-      搜索引擎里的「在线新华字典」绝大多数<strong>未获授权</strong>（商务印书馆已公开声明《新华字典》无网页版），
-      且音形义错漏常见。这里把词库当作本地文件：一次取回、永久离线、可替换、可审计，
-      查询内容不会离开你的浏览器。
+      {{ T('ui.dict.helpLead') }}<strong>{{ T('ui.dict.helpUnauth') }}</strong>{{ T('ui.dict.helpNoWeb') }}
+      {{ T('ui.dict.helpRest') }}
     </p>
   </HelpTip>
 
@@ -272,31 +272,31 @@ onBeforeUnmount(() => clearTimeout(timer))
         v-model="query"
         type="text"
         class="search-input"
-        placeholder="汉字 / lvse / lü sè / nh / bicycle"
+        :placeholder="T('ui.dict.phSearch')"
         autocomplete="off"
         spellcheck="false"
         @keydown="onKey"
       />
-      <button v-if="query" class="btn ghost clear-btn" title="清空（Esc）" @click="query = ''; res = null">
+      <button v-if="query" class="btn ghost clear-btn" :title="T('ui.dict.clearTitle')" @click="query = ''; res = null">
         <i class="bi bi-x-lg"></i>
       </button>
     </div>
 
     <div class="row">
       <div class="field" style="min-width:240px;flex:1">
-        <label>检索模式</label>
+        <label>{{ T('ui.dict.modeLabel') }}</label>
         <select v-model="mode">
           <option v-for="m in MODES" :key="m" :value="m">{{ MODE_LABEL[m] }}</option>
         </select>
       </div>
       <div class="field" style="min-width:220px;flex:0 0 auto">
-        <label>内置词库</label>
+        <label>{{ T('ui.dict.builtinLabel') }}</label>
         <select v-model="builtinId" :disabled="loading" @change="loadBuiltin()">
           <option v-for="s in BUILTIN_SOURCES" :key="s.id" :value="s.id">{{ s.label }}</option>
         </select>
       </div>
       <div class="field" style="flex:0 0 auto">
-        <label>示例</label>
+        <label>{{ T('ui.dict.sampleLabel') }}</label>
         <div class="samples">
           <button v-for="s in ['绿色', 'lvse', 'nǐ hǎo', 'nh', 'bicycle']" :key="s" class="chip" @click="pickSample(s)">{{ s }}</button>
         </div>
@@ -304,19 +304,18 @@ onBeforeUnmount(() => clearTimeout(timer))
     </div>
 
     <p v-if="builtinId === 'ecdict'" class="hint" style="margin:6px 0 0">
-      ECDICT 77 万条双解：首载约 <b>21.7 MB</b>（之后由离线内核缓存，断网可用），
-      建索引约 <b>4 秒</b>，常驻内存约 <b>500 MB</b> —— 桌面推荐；手机建议留在汉英词库。
+      {{ T('ui.dict.ecdictHint1') }}<b>21.7 MB</b>{{ T('ui.dict.ecdictHint2') }}<b>{{ T('ui.dict.ecdictIndexSec') }}</b>{{ T('ui.dict.ecdictHint3') }}<b>500 MB</b>{{ T('ui.dict.ecdictHint4') }}
     </p>
 
     <div class="status">
       <template v-if="info.entries">
         <i class="bi bi-database-check"></i>
-        词库：<b>{{ sourceName }}</b> · <b>{{ info.entries.toLocaleString() }}</b> 条 ·
-        索引构建 <b>{{ buildMs }} ms</b>（<span class="thread-badge">{{ thread === 'worker' ? '后台线程' : '主线程' }}</span>）
-        <template v-if="info.ipaWords"> · 音标库 <b>{{ info.ipaWords.toLocaleString() }}</b> 词</template> · 全部本地
+        {{ T('ui.dict.statusLexicon') }}<b>{{ sourceName }}</b> · <b>{{ info.entries.toLocaleString() }}</b>{{ T('ui.dict.statusEntries') }}
+        {{ T('ui.dict.statusBuild') }} <b>{{ buildMs }} ms</b>（<span class="thread-badge">{{ thread === 'worker' ? T('ui.dict.threadWorker') : T('ui.dict.threadMain') }}</span>）
+        <template v-if="info.ipaWords">{{ T('ui.dict.statusIpa') }}<b>{{ info.ipaWords.toLocaleString() }}</b>{{ T('ui.dict.statusWords') }}</template>{{ T('ui.dict.statusAllLocal') }}
       </template>
-      <template v-else-if="loading">正在装载词库并建索引…</template>
-      <template v-else>词库尚未就绪</template>
+      <template v-else-if="loading">{{ T('ui.dict.statusLoading') }}</template>
+      <template v-else>{{ T('ui.dict.statusNotReady') }}</template>
     </div>
 
     <div v-if="loading" class="progress indeterminate"><span></span></div>
@@ -326,59 +325,57 @@ onBeforeUnmount(() => clearTimeout(timer))
   <!-- 结果 -->
   <!-- 空结果：绝不能只留一片白 —— 说明为什么没查到、给出下一步动作与相近词 -->
   <div v-if="res && res.query && !res.items.length" class="empty-state">
-    <div class="es-title"><i class="bi bi-search"></i> 未收录「{{ res.query }}」</div>
+    <div class="es-title"><i class="bi bi-search"></i> {{ T('ui.dict.notFound', { q: res.query }) }}</div>
 
     <div v-if="suggest.length" class="es-block">
-      <div class="es-label">你是不是想找</div>
+      <div class="es-label">{{ T('ui.dict.suggestLabel') }}</div>
       <div class="es-chips">
         <button v-for="it in suggest" :key="it.i" class="chip" @click="pickSample(it.s)">
           {{ it.s }}<span v-if="it.t && it.t !== it.s" class="es-trad">{{ it.t }}</span>
         </button>
       </div>
     </div>
-    <div v-else-if="suggestBusy" class="es-block es-muted">正在找相近词…</div>
+    <div v-else-if="suggestBusy" class="es-block es-muted">{{ T('ui.dict.suggestBusy') }}</div>
 
     <ul class="es-tips">
       <li v-if="builtinId === 'cedict'">
-        当前是 <b>汉英词库 CC-CEDICT</b>（12 万条，只收常见词条）。中文释义可切到
-        <a href="#" @click.prevent="switchBuiltin('ecdict')">英汉双解 ECDICT</a> 反查。
+        {{ T('ui.dict.emptyCedict1') }} <b>{{ T('ui.dict.emptyCedictName') }}</b>{{ T('ui.dict.emptyCedict2') }}
+        <a href="#" @click.prevent="switchBuiltin('ecdict')">{{ T('ui.dict.switchEcdict') }}</a> {{ T('ui.dict.emptyReverse') }}
       </li>
       <li v-else>
-        当前是 <b>英汉双解 ECDICT</b>（77 万条）。中文词条需用
-        <a href="#" @click.prevent="switchBuiltin('cedict')">汉英 CC-CEDICT</a> 查。
+        {{ T('ui.dict.emptyCedict1') }} <b>{{ T('ui.dict.switchEcdict') }}</b>{{ T('ui.dict.emptyEcdict2') }}
+        <a href="#" @click.prevent="switchBuiltin('cedict')">{{ T('ui.dict.switchCedict') }}</a> {{ T('ui.dict.emptyQuery') }}
       </li>
       <li v-if="mode !== 'fuzzy' && fuzzyUsable">
-        或换 <a href="#" @click.prevent="mode = 'fuzzy'">模糊纠错</a> 模式，
-        按编辑距离找字形相近的词。
+        {{ T('ui.dict.emptyFuzzy1') }} <a href="#" @click.prevent="mode = 'fuzzy'">{{ T('ui.dict.emptyFuzzyLink') }}</a>{{ T('ui.dict.emptyFuzzy2') }}
       </li>
       <li>
-        自有词库可直接拖入下方 <b>导入词库</b>（CC-CEDICT / JSONL / TSV），
-        导入后同样离线可用。
+        {{ T('ui.dict.emptyImport1') }} <b>{{ T('ui.dict.emptyImportBold') }}</b>{{ T('ui.dict.emptyImport2') }}
       </li>
     </ul>
     <p class="es-muted" style="margin:8px 0 0">
-      已尝试：精确 → 前缀 → 拼音 → 释义反查<template v-if="builtinId === 'ecdict'"> → 中文义项</template>。
+      {{ T('ui.dict.tried1') }}<template v-if="builtinId === 'ecdict'">{{ T('ui.dict.triedEcdict') }}</template>{{ T('ui.dict.period') }}
     </p>
   </div>
 
   <div v-if="res && res.total" class="result-bar">
-    <span><b>{{ res.total.toLocaleString() }}</b> 条结果 · {{ res.took }} ms</span>
-    <span class="mono-note">查询「{{ res.query }}」</span>
+    <span><b>{{ res.total.toLocaleString() }}</b>{{ T('ui.dict.resultCount') }}{{ res.took }} ms</span>
+    <span class="mono-note">{{ T('ui.dict.queryLabel', { q: res.query }) }}</span>
   </div>
 
   <!-- 英语音标卡：查询单个英文词时由音标库给出（美式 / 英式） -->
   <div v-if="res && res.ipa" class="ipa-card">
     <div v-for="(ipas, v) in res.ipa" :key="v" class="ipa-row">
-      <span class="ipa-tag">{{ v === 'us' ? '美' : '英' }}</span>
+      <span class="ipa-tag">{{ v === 'us' ? T('ui.dict.ipaUs') : T('ui.dict.ipaUk') }}</span>
       <span class="ipa-val">/{{ ipas[0] }}/</span>
       <span v-if="ipas.length > 1" class="ipa-alt" :title="ipas.map((x) => '/' + x + '/').join('  ')">
-        另有 {{ ipas.length - 1 }} 种读音
+        {{ T('ui.dict.ipaMore', { n: ipas.length - 1 }) }}
       </span>
-      <button class="ipa-play" title="朗读单词" @click="speak(v)">
+      <button class="ipa-play" :title="T('ui.dict.readWordTitle')" @click="speak(v)">
         <i class="bi bi-volume-up-fill"></i>
       </button>
     </div>
-    <span class="ipa-src">音标数据：open-dict-data/ipa-dict（MIT）· 朗读使用系统本地语音</span>
+    <span class="ipa-src">{{ T('ui.dict.ipaSrc') }}</span>
   </div>
 
   <div v-if="res && res.items.length" class="dict-list">
@@ -395,83 +392,81 @@ onBeforeUnmount(() => clearTimeout(timer))
         <ol>
           <li v-for="(d, k) in it.d" :key="k">{{ d }}</li>
         </ol>
-        <p v-if="!it.d.length" class="hint" style="margin:8px 0 0">这条没有释义，可能来自自定义词库。</p>
+        <p v-if="!it.d.length" class="hint" style="margin:8px 0 0">{{ T('ui.dict.noDef') }}</p>
         <div class="row" style="margin:10px 0 0">
           <span class="hint" style="margin:0;flex:1">
-            原始拼音：<code>{{ it.p || '—' }}</code> · 词条序号 #{{ it.i }}
+            {{ T('ui.dict.rawPinyin') }}<code>{{ it.p || '—' }}</code>{{ T('ui.dict.entryNo', { n: it.i }) }}
           </span>
-          <button class="btn ghost" @click="copyEntry(it)"><i class="bi bi-clipboard"></i> 复制词条</button>
+          <button class="btn ghost" @click="copyEntry(it)"><i class="bi bi-clipboard"></i> {{ T('ui.dict.copyEntry') }}</button>
         </div>
       </div>
     </div>
   </div>
 
   <div v-else-if="res && !res.items.length" class="msg info">
-    没有命中。换个写法试试：汉字可查「前缀」，外语可试 <b>无调拼音</b>（lvse）、<b>首字母</b>（nh），
-    或把模式切到「模糊纠错」。
+    {{ T('ui.dict.noHit1') }} <b>{{ T('ui.dict.noHitBold1') }}</b>{{ T('ui.dict.noHit2') }}<b>{{ T('ui.dict.noHitBold2') }}</b>{{ T('ui.dict.noHit3') }}
   </div>
 
   <!-- 空态 -->
   <div v-if="!res && info.entries" class="panel empty-hint">
     <i class="bi bi-journal-text"></i>
-    <p>输入一个字、一个词，或一段拼音开始。全部检索在你本机完成。</p>
+    <p>{{ T('ui.dict.emptyHint') }}</p>
   </div>
 
   <!-- 导入 -->
   <details class="panel">
-    <summary class="import-summary"><i class="bi bi-box-arrow-in-down"></i> 导入自己的词库（替换当前词库）</summary>
+    <summary class="import-summary"><i class="bi bi-box-arrow-in-down"></i> {{ T('ui.dict.importSummary') }}</summary>
     <p class="hint" style="margin-top:12px">
-      支持 <b>CC-CEDICT</b>（.txt / .txt.gz）、<b>Kaikki / Wiktextract</b>（.jsonl）、<b>TSV</b>（词 ⇥ 拼音 ⇥ 释义，释义用 | 分隔）。
-      文件只在本地解析，不会上传。
+      {{ T('ui.dict.importHint1') }}<b>CC-CEDICT</b>{{ T('ui.dict.importHint2') }}<b>Kaikki / Wiktextract</b>{{ T('ui.dict.importHint3') }}<b>TSV</b>{{ T('ui.dict.importHint4') }}
+      {{ T('ui.dict.importHint5') }}
     </p>
     <DropZone
       :multiple="true"
       accept=".txt,.gz,.jsonl,.json,.tsv,.csv"
-      hint="拖放词库文件到此处，或点击选择"
+      :hint="T('ui.dict.dropHint')"
       formats="CC-CEDICT .txt / .gz · JSONL · TSV"
-      single="词库"
+      :single="T('ui.dict.dropSingle')"
       @files="onFiles"
     />
     <div v-if="saved.length" class="saved-row">
-      <span class="hint" style="margin:0">我的词库（{{ savedPersisted ? '已存本机' : '仅本次会话' }}，点击重载）：</span>
+      <span class="hint" style="margin:0">{{ T('ui.dict.myLexicons', { state: savedPersisted ? T('ui.dict.persisted') : T('ui.dict.sessionOnly') }) }}</span>
       <span class="saved-chips">
         <span v-for="s in saved" :key="s.id" class="saved-item">
-          <button class="chip" :title="`${s.count.toLocaleString()} 条 · ${new Date(s.addedAt).toLocaleString()}`" @click="loadSaved(s)">
+          <button class="chip" :title="T('ui.dict.savedTitle', { n: s.count.toLocaleString(), date: new Date(s.addedAt).toLocaleString() })" @click="loadSaved(s)">
             {{ s.name }} · {{ s.count.toLocaleString() }}
           </button>
-          <button class="saved-del" title="删除" @click="removeSaved(s.id)"><i class="bi bi-x"></i></button>
+          <button class="saved-del" :title="T('ui.dict.deleteTitle')" @click="removeSaved(s.id)"><i class="bi bi-x"></i></button>
         </span>
       </span>
     </div>
     <div class="row">
-      <button class="btn ghost" @click="loadBuiltin"><i class="bi bi-arrow-counterclockwise"></i> 恢复内置词库</button>
+      <button class="btn ghost" @click="loadBuiltin"><i class="bi bi-arrow-counterclockwise"></i> {{ T('ui.dict.restoreBuiltin') }}</button>
     </div>
   </details>
 
   <!-- 数据来源 -->
   <div class="panel">
-    <h3 style="margin-top:0;font-size:15px"><i class="bi bi-info-circle"></i> 数据来源与许可</h3>
+    <h3 style="margin-top:0;font-size:15px"><i class="bi bi-info-circle"></i> {{ T('ui.dict.sourcesTitle') }}</h3>
     <ul class="src-list">
       <li>
-        <b>CC-CEDICT</b> —— 社区维护的汉英词典，<b>CC BY-SA 4.0</b> 许可，约 12 万条。
-        本项目内置文件位于 <code>public/dict/cc-cedict.txt.gz</code>，随仓库以相同许可分发。
+        <b>CC-CEDICT</b> —— {{ T('ui.dict.srcCedict1') }}<b>CC BY-SA 4.0</b>{{ T('ui.dict.srcCedict2') }}
+        {{ T('ui.dict.srcCedict3') }}<code>public/dict/cc-cedict.txt.gz</code>{{ T('ui.dict.srcCedict4') }}
       </li>
       <li>
-        <b>ECDICT</b> —— 开源英汉/英英双解词库（<b>MIT</b> 许可，约 77 万条，含音标/词频/考级标签），
-        文件位于 <code>public/dict/ecdict.csv.gz</code>（不入 Git，由 <code>fetch-dict</code> 拉取），
-        可在上方「内置词库」切换装载，也可在首页「离线内核」预缓存后断网使用。
+        <b>ECDICT</b> —— {{ T('ui.dict.srcEcdict1') }}<b>MIT</b>{{ T('ui.dict.srcEcdict2') }}
+        {{ T('ui.dict.srcEcdict3') }}<code>public/dict/ecdict.csv.gz</code>{{ T('ui.dict.srcEcdict4') }}<code>fetch-dict</code>{{ T('ui.dict.srcEcdict5') }}
       </li>
       <li>
-        <b>Kaikki / Wiktextract</b> —— 维基词典结构化导出（CC BY-SA），可用「导入」按语言增量补充。
+        <b>Kaikki / Wiktextract</b> —— {{ T('ui.dict.srcKaikki1') }}
       </li>
       <li>
-        <b>方法论</b>：词库 ⇄ 索引 ⇄ 检索三层解耦，换源不改代码；索引常驻后台线程，刷新即重建；
-        导入的自定义词库经 <b>IndexedDB</b> 存在本机（最多 5 份），随时可重载。
+        <b>{{ T('ui.dict.methodTitle') }}</b>{{ T('ui.dict.method1') }}
+        {{ T('ui.dict.method2') }}<b>IndexedDB</b>{{ T('ui.dict.method3') }}
       </li>
     </ul>
     <p class="hint" style="margin-bottom:0">
-      需要「规范到出版级」的现代汉语释义时，请使用商务印书馆《现代汉语词典》App 等正版渠道；
-      本工具定位是<b>可审计、可离线、可替换</b>的极客方案，不以替代权威辞书为目标。
+      {{ T('ui.dict.needPro') }}
+      {{ T('ui.dict.position1') }}<b>{{ T('ui.dict.positionBold') }}</b>{{ T('ui.dict.position2') }}
     </p>
   </div>
 </template>

@@ -1,5 +1,6 @@
 <script setup>
 import { toasts, dismissToast } from '../lib/toast.js'
+import { T } from '../lib/i18n.dev.js'
 </script>
 
 <template>
@@ -12,7 +13,7 @@ import { toasts, dismissToast } from '../lib/toast.js'
           info: 'bi-info-circle-fill',
         }[t.type] || 'bi-info-circle-fill'"></i>
         <span class="toast-text">{{ t.text }}</span>
-        <button class="toast-x" @click="dismissToast(t.id)" aria-label="关闭"><i class="bi bi-x"></i></button>
+        <button class="toast-x" @click="dismissToast(t.id)" :aria-label="T('ui.toasthost.close')"><i class="bi bi-x"></i></button>
       </div>
     </transition-group>
   </div>

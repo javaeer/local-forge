@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { createApp } from 'vue'
+import { T } from '../lib/i18n.dev.js'
 import router from '../router'
 import { runAllSelfTests } from '../lib/selftest.js'
 
@@ -103,7 +104,7 @@ async function runViewSmoke() {
     try {
       const loader = viewModules[`../views/${r.file}`]
       if (!loader) {
-        captured = new Error(`未在 glob 中找到视图模块：../views/${r.file}`)
+        captured = new Error(T('ui.selftest.globMissing', { file: r.file }))
         viewResults.value.push({ path: r.path, ok: false, error: { message: captured.message, stack: '' } })
         continue
       }
@@ -156,39 +157,36 @@ function clearErrors() {
 
 <template>
   <section class="selftest panel">
-    <h2 class="st-title"><i class="bi bi-clipboard-check"></i> 测试回显面板</h2>
-    <p class="st-sub">
-      运行各功能模块的引擎自检，并逐路由隔离挂载组件捕获渲染期错误；任何 bug（含运行期
-      <code>window error</code> / <code>unhandledrejection</code> / <code>console.error</code>）都会原样显示在此处。
-    </p>
+    <h2 class="st-title"><i class="bi bi-clipboard-check"></i> {{ T('ui.selftest.title') }}</h2>
+    <p class="st-sub" v-html="T('ui.selftest.sub')"></p>
 
     <div class="st-actions">
       <button class="btn" :disabled="loading || viewLoading" @click="runEngine">
-        <i class="bi bi-play-fill"></i> {{ loading ? '引擎自检中…' : '运行全部自检' }}
+        <i class="bi bi-play-fill"></i> {{ loading ? T('ui.selftest.runningEngine') : T('ui.selftest.runEngine') }}
       </button>
       <button class="btn" :disabled="loading || viewLoading" @click="runViewSmoke">
-        <i class="bi bi-eye"></i> {{ viewLoading ? '渲染自检中…' : '视图渲染自检' }}
+        <i class="bi bi-eye"></i> {{ viewLoading ? T('ui.selftest.runningView') : T('ui.selftest.runView') }}
       </button>
       <button class="btn ghost" :disabled="!runtimeErrors.length" @click="clearErrors">
-        <i class="bi bi-eraser"></i> 清空运行期错误
+        <i class="bi bi-eraser"></i> {{ T('ui.selftest.clearErrors') }}
       </button>
       <button class="btn ghost" :disabled="!report && !viewResults.length" @click="copyReport">
-        <i class="bi bi-clipboard"></i> 复制报告
+        <i class="bi bi-clipboard"></i> {{ T('ui.selftest.copyReport') }}
       </button>
     </div>
 
     <div v-if="report" class="st-summary">
-      <span class="badge">模块 {{ report.modules.length }}</span>
-      <span class="badge">子测试 {{ total }}</span>
-      <span class="badge ok">通过 {{ passed }}</span>
-      <span class="badge" :class="failed ? 'bad' : 'ok'">失败 {{ failed }}</span>
-      <span class="badge" :class="skipped ? 'skip' : 'ok'">跳过 {{ skipped }}</span>
-      <span class="badge" :class="runtimeErrors.length ? 'bad' : 'ok'">运行期错误 {{ runtimeErrors.length }}</span>
+      <span class="badge">{{ T('ui.selftest.modules', { n: report.modules.length }) }}</span>
+      <span class="badge">{{ T('ui.selftest.subtTests', { n: total }) }}</span>
+      <span class="badge ok">{{ T('ui.selftest.passed', { n: passed }) }}</span>
+      <span class="badge" :class="failed ? 'bad' : 'ok'">{{ T('ui.selftest.failed', { n: failed }) }}</span>
+      <span class="badge" :class="skipped ? 'skip' : 'ok'">{{ T('ui.selftest.skipped', { n: skipped }) }}</span>
+      <span class="badge" :class="runtimeErrors.length ? 'bad' : 'ok'">{{ T('ui.selftest.runtimeErrors', { n: runtimeErrors.length }) }}</span>
     </div>
 
     <!-- 运行期错误（红色高亮，任何 bug 都可在此看到）-->
     <div v-if="runtimeErrors.length" class="st-runtime">
-      <h3><i class="bi bi-exclamation-triangle-fill"></i> 运行期错误（{{ runtimeErrors.length }}）</h3>
+      <h3><i class="bi bi-exclamation-triangle-fill"></i> {{ T('ui.selftest.runtimeErrorsTitle', { n: runtimeErrors.length }) }}</h3>
       <div v-for="(e, i) in runtimeErrors" :key="i" class="err-block">
         <div class="err-head">[{{ e.type }}] {{ e.message }}</div>
         <pre v-if="e.stack" class="err-stack">{{ e.stack }}</pre>
@@ -205,7 +203,7 @@ function clearErrors() {
           </span>
         </div>
         <div v-for="it in (m.items || [])" :key="it.id" class="item-row" :class="it.skipped ? 'skip' : (it.ok ? 'pass' : 'fail')">
-          <span class="badge" :class="it.skipped ? 'skip' : (it.ok ? 'ok' : 'bad')">{{ it.skipped ? '↷ 跳过' : (it.ok ? '✓ PASS' : '✗ FAIL') }}</span>
+          <span class="badge" :class="it.skipped ? 'skip' : (it.ok ? 'ok' : 'bad')">{{ it.skipped ? T('ui.selftest.skipBadge') : (it.ok ? '✓ PASS' : '✗ FAIL') }}</span>
           <span class="item-title">{{ it.title }}</span>
           <span v-if="it.detail" class="item-detail">{{ it.detail }}</span>
           <pre v-if="it.error" class="err-stack">[{{ it.error.message }}]\n{{ it.error.stack }}</pre>
@@ -215,7 +213,7 @@ function clearErrors() {
 
     <!-- 视图渲染自检结果 -->
     <div v-if="viewResults.length" class="st-views">
-      <h3><i class="bi bi-layout-text-window"></i> 视图渲染自检</h3>
+      <h3><i class="bi bi-layout-text-window"></i> {{ T('ui.selftest.viewTitle') }}</h3>
       <div v-for="v in viewResults" :key="v.path" class="item-row" :class="v.ok ? 'pass' : 'fail'">
         <span class="badge" :class="v.ok ? 'ok' : 'bad'">{{ v.ok ? '✓ PASS' : '✗ FAIL' }}</span>
         <span class="item-title">{{ v.path }}</span>

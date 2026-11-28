@@ -22,6 +22,8 @@ const browser = await puppeteer.launch({
   args: ['--no-sandbox', '--disable-setuid-sandbox'],
 })
 const page = await browser.newPage()
+// 功能护栏锁定中文界面：本脚本用中文文案定位页签/按钮，避免受 UI 国际化影响
+await page.evaluateOnNewDocument(() => { try { localStorage.setItem('lf-locale', 'zh-CN') } catch {} })
 const errors = []
 page.on('pageerror', (e) => errors.push('PAGEERR: ' + e.message))
 page.on('console', (m) => { if (m.type() === 'error') errors.push('CONSOLE: ' + m.text()) })

@@ -1,5 +1,6 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { T } from '../lib/i18n.dev.js'
 import HelpTip from '../components/HelpTip.vue'
 import StatusPill from '../components/StatusPill.vue'
 import PhaseProgress from '../components/PhaseProgress.vue'
@@ -23,9 +24,9 @@ const busy = ref(false)
 const message = ref(null)
 
 const phase = createProgress([
-  { id: 'core', label: '内核', weight: 2 },
-  { id: 'fetch', label: '拉取', weight: 6 },
-  { id: 'merge', label: '合并', weight: 4 },
+  { id: 'core', label: T('ui.mediafetch.phaseCore'), weight: 2 },
+  { id: 'fetch', label: T('ui.mediafetch.phaseFetch'), weight: 6 },
+  { id: 'merge', label: T('ui.mediafetch.phaseMerge'), weight: 4 },
 ])
 const showPhase = ref(false)
 
@@ -68,13 +69,13 @@ async function fetchOne(url, viaBridge) {
 async function fetchAll() {
   const urls = parseUrls(input.value)
   if (!urls.length) {
-    message.value = { type: 'err', text: '请先粘贴至少一个媒体直链（每行一个）。' }
+    message.value = { type: 'err', text: T('ui.mediafetch.errNoUrl') }
     return
   }
   busy.value = true
   phase.reset()
   showPhase.value = true
-  message.value = { type: 'info', text: '开始拉取媒体…' }
+  message.value = { type: 'info', text: T('ui.mediafetch.startFetch') }
   let ok = 0
   try {
     for (const u of urls) {
@@ -82,10 +83,10 @@ async function fetchAll() {
       if (it.status === 'done') ok++
     }
     message.value = ok
-      ? { type: 'ok', text: `已获取 ${ok}/${urls.length} 个文件。` }
-      : { type: 'err', text: '全部获取失败，请检查链接或桥接地址。' }
+      ? { type: 'ok', text: T('ui.mediafetch.fetched', { ok, total: urls.length }) }
+      : { type: 'err', text: T('ui.mediafetch.allFailed') }
   } catch (e) {
-    message.value = { type: 'err', text: '获取失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.mediafetch.fetchFailed', { msg: e.message || e }) }
   } finally {
     busy.value = false
     phase.finish()
@@ -95,13 +96,13 @@ async function fetchAll() {
 async function merge() {
   const done = items.value.filter((i) => i.status === 'done' && i.blob)
   if (done.length < 2) {
-    message.value = { type: 'err', text: '合并至少需要 2 个已获取的文件。' }
+    message.value = { type: 'err', text: T('ui.mediafetch.mergeNeedTwo') }
     return
   }
   busy.value = true
   phase.reset()
   showPhase.value = true
-  message.value = { type: 'info', text: '加载内核并合并中…' }
+  message.value = { type: 'info', text: T('ui.mediafetch.loadingMerge') }
   try {
     // 内核已就绪时直接置满，避免阶段卡在"内核"
     phase.set('core', 1)
@@ -122,9 +123,9 @@ async function merge() {
       error: null,
     })
     phase.finish()
-    message.value = { type: 'ok', text: `合并完成：${formatSize(blob.size)}` }
+    message.value = { type: 'ok', text: T('ui.mediafetch.mergeDone', { size: formatSize(blob.size) }) }
   } catch (e) {
-    message.value = { type: 'err', text: '合并失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.mediafetch.mergeFailed', { msg: e.message || e }) }
   } finally {
     busy.value = false
   }
@@ -136,42 +137,38 @@ function download(it) {
 </script>
 
 <template>
-  <h1 class="page-title">媒体获取</h1>
-  <p class="page-sub">纯浏览器内拉取音视频到本地——零上传、不依赖任何第三方解析服务。支持直链模式（粘贴已解析的媒体 URL）与可选桥接模式（你自托管的反代 / CORS 代理，解决跨域）。多分片可本地合并，全部在设备内完成。</p>
+  <h1 class="page-title">{{ T('ui.mediafetch.title') }}</h1>
+  <p class="page-sub">{{ T('ui.mediafetch.sub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-steps" open tone="tip">
-    <ol class="howto">
-      <li>粘贴媒体直链，每行一个（支持 .m3u8 分片清单里的多个 URL，或普通 mp4 / webm / m4a 直链）。</li>
-      <li>若链接跨域无法直连，开启「桥接模式」并填入你自托管的代理地址（留空则走直链）。</li>
-      <li>点「获取」，逐条拉取并显示进度；需要合并时，勾选多个已获取文件后点「合并为一个文件」。</li>
-    </ol>
+  <HelpTip :title="T('ui.common.helpTitle')" icon="bi-steps" open tone="tip">
+    <div v-html="T('ui.mediafetch.help')"></div>
   </HelpTip>
 
   <div class="panel">
     <div class="row wrap">
-      <StatusPill v-if="busy" state="working" label="处理中…" />
+      <StatusPill v-if="busy" state="working" :label="T('ui.common.processing')" />
       <StatusPill v-else-if="message && message.type === 'ok'" state="done" :label="message.text" />
       <StatusPill v-else-if="message && message.type === 'err'" state="error" :label="message.text" />
     </div>
 
     <div class="field col">
-      <label>媒体直链（每行一个）</label>
+      <label>{{ T('ui.mediafetch.linkLabel') }}</label>
       <textarea v-model="input" rows="4" placeholder="https://example.com/video/part1.ts&#10;https://example.com/video/part2.ts" :disabled="busy"></textarea>
-      <div class="hint">共解析到 {{ urlCount }} 个链接。</div>
+      <div class="hint">{{ T('ui.mediafetch.parsedCount', { n: urlCount }) }}</div>
     </div>
 
     <div class="row wrap">
-      <label class="check"><input type="checkbox" v-model="useBridge" @change="onBridgeInput" :disabled="busy" /> 桥接模式（自托管反代 / CORS 代理）</label>
+      <label class="check"><input type="checkbox" v-model="useBridge" @change="onBridgeInput" :disabled="busy" /> {{ T('ui.mediafetch.bridgeMode') }}</label>
     </div>
     <div class="field col" v-if="useBridge">
-      <label>桥接地址</label>
-      <input v-model="bridgeUrl" @input="onBridgeInput" placeholder="https://your-proxy.example/{url}  或  https://your-proxy.example?url=" :disabled="busy" />
-      <div class="hint">支持 <code>{url}</code> 占位符或自动追加 <code>?url=</code>。地址仅保存在本机 localStorage，不会发给任何第三方。</div>
+      <label>{{ T('ui.mediafetch.bridgeAddr') }}</label>
+      <input v-model="bridgeUrl" @input="onBridgeInput" :placeholder="T('ui.mediafetch.bridgePlaceholder')" :disabled="busy" />
+      <div class="hint" v-html="T('ui.mediafetch.bridgeHint')"></div>
     </div>
 
     <div class="row wrap">
-      <button class="btn" :disabled="busy || !urlCount" @click="fetchAll"><i class="bi bi-cloud-download"></i> 获取</button>
-      <button class="btn" :disabled="busy || items.filter(i=>i.status==='done'&&i.blob).length < 2" @click="merge"><i class="bi bi-object-union"></i> 合并为一个文件</button>
+      <button class="btn" :disabled="busy || !urlCount" @click="fetchAll"><i class="bi bi-cloud-download"></i> {{ T('ui.mediafetch.btnFetch') }}</button>
+      <button class="btn" :disabled="busy || items.filter(i=>i.status==='done'&&i.blob).length < 2" @click="merge"><i class="bi bi-object-union"></i> {{ T('ui.mediafetch.btnMerge') }}</button>
     </div>
 
     <PhaseProgress v-if="busy && showPhase" :progress="phase" />
@@ -182,15 +179,15 @@ function download(it) {
   </div>
 
   <div v-if="items.length" class="panel">
-    <h3 class="st-title">已获取（{{ items.filter(i=>i.status==='done').length }}）</h3>
+    <h3 class="st-title">{{ T('ui.mediafetch.fetchedTitle', { n: items.filter(i=>i.status==='done').length }) }}</h3>
     <div v-for="(it, idx) in items" :key="idx" class="item-row" :class="it.status === 'error' ? 'fail' : (it.status === 'done' ? 'pass' : '')">
       <span class="badge" :class="it.status === 'error' ? 'bad' : (it.status === 'done' ? 'ok' : 'skip')">
-        {{ it.status === 'error' ? '✗ 失败' : (it.status === 'done' ? '✓ 完成' : '… 拉取中') }}
+        {{ it.status === 'error' ? T('ui.mediafetch.itemFail') : (it.status === 'done' ? T('ui.mediafetch.itemDone') : T('ui.mediafetch.itemWorking')) }}
       </span>
       <span class="item-title">{{ it.name }}</span>
       <span v-if="it.size" class="item-detail">{{ formatSize(it.size) }}</span>
       <span v-if="it.status === 'working' && it.progress" class="item-detail">{{ it.progress }}%</span>
-      <button v-if="it.status === 'done'" class="btn ghost" @click="download(it)"><i class="bi bi-download"></i> 下载</button>
+      <button v-if="it.status === 'done'" class="btn ghost" @click="download(it)"><i class="bi bi-download"></i> {{ T('ui.common.download') }}</button>
       <pre v-if="it.error" class="err-stack">{{ it.error }}</pre>
     </div>
   </div>

@@ -152,20 +152,8 @@ onMounted(loadRecent)
   <OfflineCores />
 
   <div class="panel">
-    <h3 style="margin-top:0"><i class="bi bi-cpu"></i> 技术选型（相对 LocalForge 的改进）</h3>
-    <ul style="color:var(--muted);font-size:13px;line-height:1.9;margin:6px 0 0">
-      <li><b style="color:var(--txt)">zip.js 2.15</b> + 多线程 + AES-256（原版 2.8.34，且真正启用多线程与分卷）</li>
-      <li><b style="color:var(--txt)">libarchive.js</b> 开源 WASM 写/读引擎，覆盖 ZIP/7Z/TAR/ISO/RAR/APK/DMG… 200+ 格式</li>
-      <li><b style="color:var(--txt)">@ffmpeg/ffmpeg 多线程内核</b>（SharedArrayBuffer）补齐网页端音视频转换</li>
-      <li><b style="color:var(--txt)">upng-js（类 TinyPNG）量化</b>图片有损压缩 + 保透明，全程零上传</li>
-      <li><b style="color:var(--txt)">WebRTC</b> 点对点文件直传（P2P 分享，手动信令，无需服务器）</li>
-      <li>
-        <b style="color:var(--txt)">二维码双向能力</b>：生成用 <b style="color:var(--txt)">qrcode</b>,
-        识别用 <b style="color:var(--txt)">zxing-wasm</b>（ZXing-C++ WASM 本地打包，原生 BarcodeDetector 优先）——
-        取代已停更的 jsQR / html5-qrcode，覆盖 QR · DataMatrix · Aztec · EAN · Code128 · PDF417 等 20+ 码制
-      </li>
-      <li><b style="color:var(--txt)">COOP/COEP 跨源隔离头</b>真正启用，发挥多线程与 WASM 性能</li>
-    </ul>
+    <h3 style="margin-top:0"><i class="bi bi-cpu"></i> {{ T('ui.home.techTitle') }}</h3>
+    <ul style="color:var(--muted);font-size:13px;line-height:1.9;margin:6px 0 0" v-html="T('ui.home.techList')"></ul>
   </div>
 
   <SelfTestPanel />

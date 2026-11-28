@@ -8,6 +8,7 @@ import { parseMarkdown, markdownToPdf, markdownToHtml, hasWideChars } from '../l
 import { createProgress } from '../lib/progress.js'
 import { downloadBlob } from '../utils.js'
 import { pushToast } from '../lib/toast.js'
+import { T } from '../lib/i18n.dev.js'
 
 const SAMPLE = `# LocalForge 文档转换
 
@@ -39,9 +40,9 @@ const useWide = computed(() => hasWideChars(md.value))
 const blocks = computed(() => parseMarkdown(md.value))
 
 const phase = createProgress([
-  { id: 'parse', label: '解析', weight: 1 },
-  { id: 'render', label: '渲染', weight: 4 },
-  { id: 'save', label: '生成', weight: 1 },
+  { id: 'parse', label: () => T('ui.doc.phaseParse'), weight: 1 },
+  { id: 'render', label: () => T('ui.doc.phaseRender'), weight: 4 },
+  { id: 'save', label: () => T('ui.doc.phaseSave'), weight: 1 },
 ])
 
 function onFile(list) {
@@ -65,9 +66,9 @@ async function toPdf() {
     })
     phase.set('save', 1)
     downloadBlob(new Blob([bytes], { type: 'application/pdf' }), 'document.pdf')
-    pushToast('ok', '已生成 document.pdf')
+    pushToast('ok', T('ui.doc.toastPdfOk'))
   } catch (e) {
-    pushToast('err', 'PDF 生成失败：' + (e.message || e))
+    pushToast('err', T('ui.doc.toastPdfFail', { msg: e.message || e }))
   } finally {
     phase.finish()
     busy.value = false
@@ -77,23 +78,23 @@ async function toPdf() {
 function toHtml() {
   const html = markdownToHtml(md.value, { title: 'LocalForge Document' })
   downloadBlob(new Blob([html], { type: 'text/html' }), 'document.html')
-  pushToast('ok', '已生成 document.html')
+  pushToast('ok', T('ui.doc.toastHtmlOk'))
 }
 
 function preview() {
-  previewHtml.value = markdownToHtml(md.value, { title: '预览' })
+  previewHtml.value = markdownToHtml(md.value, { title: T('ui.doc.previewTitle') })
 }
 </script>
 
 <template>
-  <h1 class="page-title">文档转换</h1>
-  <p class="page-sub">把 Markdown 转成 PDF 或 HTML——自带解析器，零新增依赖；中文同样支持（渲染通道自动切换）。适合把笔记、README、说明文档一键导出成可分发格式，全程本地完成。</p>
+  <h1 class="page-title">{{ T('ui.doc.pageTitle') }}</h1>
+  <p class="page-sub">{{ T('ui.doc.pageSub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-file-earmark-arrow-down" open tone="tip">
+  <HelpTip :title="T('ui.doc.stepTitle')" icon="bi-file-earmark-arrow-down" open tone="tip">
     <ol class="howto">
-      <li>在下方编辑 Markdown，或拖入一个 <code>.md</code> / <code>.txt</code> 文件。</li>
-      <li>选择纸张（A4 / Letter），点「生成 PDF」或「生成 HTML」即可下载。</li>
-      <li>含中文时 PDF 会自动切换到 canvas 渲染通道，无需额外字体文件。</li>
+      <li v-html="T('ui.doc.step1')"></li>
+      <li>{{ T('ui.doc.step2') }}</li>
+      <li>{{ T('ui.doc.step3') }}</li>
     </ol>
   </HelpTip>
 
@@ -101,11 +102,11 @@ function preview() {
     <div class="row wrap" style="margin-top:0">
       <span class="tag" :class="{ warn: useWide }">
         <i class="bi" :class="useWide ? 'bi-globe2' : 'bi-fonts'"></i>
-        {{ useWide ? '含中文 · canvas 渲染' : '纯拉丁 · 矢量渲染' }}
+        {{ useWide ? T('ui.doc.tagWide') : T('ui.doc.tagLatin') }}
       </span>
-      <span class="tag"><i class="bi bi-blockquote-left"></i> {{ blocks.length }} 个块</span>
+      <span class="tag"><i class="bi bi-blockquote-left"></i> {{ T('ui.doc.blocks', { n: blocks.length }) }}</span>
       <div class="field" style="margin-left:auto">
-        <label>纸张</label>
+        <label>{{ T('ui.doc.paper') }}</label>
         <select v-model="pageSize">
           <option value="a4">A4</option>
           <option value="letter">Letter</option>
@@ -113,15 +114,15 @@ function preview() {
       </div>
     </div>
 
-    <label class="lbl">Markdown 内容</label>
+    <label class="lbl">{{ T('ui.doc.mdContent') }}</label>
     <textarea v-model="md" class="md-input" spellcheck="false"></textarea>
 
     <input type="file" accept=".md,.markdown,.txt" class="sr-only" ref="fileInput" @change="onFile($event.target.files)" />
     <div class="row wrap">
-      <button class="btn" :disabled="busy" @click="toPdf"><i class="bi bi-file-earmark-pdf"></i> 生成 PDF</button>
-      <button class="btn ghost" @click="toHtml"><i class="bi bi-filetype-html"></i> 生成 HTML</button>
-      <button class="btn ghost" @click="preview"><i class="bi bi-eye"></i> 预览</button>
-      <button class="btn ghost" @click="$refs.fileInput.click()"><i class="bi bi-upload"></i> 载入 .md</button>
+      <button class="btn" :disabled="busy" @click="toPdf"><i class="bi bi-file-earmark-pdf"></i> {{ T('ui.doc.btnPdf') }}</button>
+      <button class="btn ghost" @click="toHtml"><i class="bi bi-filetype-html"></i> {{ T('ui.doc.btnHtml') }}</button>
+      <button class="btn ghost" @click="preview"><i class="bi bi-eye"></i> {{ T('ui.doc.btnPreview') }}</button>
+      <button class="btn ghost" @click="$refs.fileInput.click()"><i class="bi bi-upload"></i> {{ T('ui.doc.btnLoad') }}</button>
     </div>
 
     <PhaseProgress v-if="busy" :progress="phase" />

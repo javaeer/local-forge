@@ -6,6 +6,7 @@ import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { flowsFrom, stashFiles, wfLabel } from '../lib/workflow.js'
 import { locale } from '../lib/i18n.js'
+import { T } from '../lib/i18n.dev.js'
 
 const props = defineProps({
   from: { type: String, required: true },
@@ -41,7 +42,7 @@ async function go(flow) {
 
 <template>
   <div v-if="flows.length" class="next-steps">
-    <span class="ns-label"><i class="bi bi-diagram-3"></i> {{ title || (locale === 'en' ? 'Next step' : '下一步') }}</span>
+    <span class="ns-label"><i class="bi bi-diagram-3"></i> {{ title || T('ui.nextsteps.title') }}</span>
     <div class="ns-btns">
       <button v-for="f in flows" :key="f.to" class="ns-btn" type="button" :disabled="busy" @click="go(f)">
         {{ labelOf(f) }} <i class="bi bi-arrow-right-short"></i>

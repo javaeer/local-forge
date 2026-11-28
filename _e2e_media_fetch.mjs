@@ -26,6 +26,8 @@ const browser = await puppeteer.launch({
   args: ['--no-sandbox', '--disable-dev-shm-usage'],
 })
 const page = await browser.newPage()
+// 功能护栏锁定中文界面：本脚本用中文文案定位按钮/断言，避免受 UI 国际化影响
+await page.evaluateOnNewDocument(() => { try { localStorage.setItem('lf-locale', 'zh-CN') } catch {} })
 await page.setViewport({ width: 1280, height: 900 })
 
 const errors = []

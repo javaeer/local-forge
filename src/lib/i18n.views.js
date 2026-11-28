@@ -585,7 +585,7 @@ export const VIEW_MESSAGES = {
       },
       wechatSearch: {
         title: "WeChat Article Search",
-        sub: "WeChat has no public search API; the only reliably enumerable unit is an <strong>album (合集)</strong>. Give this page one known article and it resolves which album it belongs to, then pulls the whole album's titles, dates and links, filtering locally by keyword. <strong>All parsing is local</strong>; only direct/proxy mode sends a request.",
+        sub: "WeChat has no public search API; the only reliably enumerable unit is an <strong>album</strong>. Give this page one known article and it resolves which album it belongs to, then pulls the whole album's titles, dates and links, filtering locally by keyword. <strong>All parsing is local</strong>; only direct/proxy mode sends a request.",
         helpTitle: "How to use / why direct mode fails",
         help1: "① Paste any article link from that account (use the <strong>full share link</strong> including <code>chksm</code>) and hit Search — its album is expanded automatically.",
         help2: "② WeChat sends no CORS headers, so the browser is always blocked: put your own forwarder prefix in Proxy (supports <code>{url}</code>), or switch to Paste and drop the page source in (fully offline).",
@@ -865,7 +865,7 @@ export const VIEW_MESSAGES = {
       },
       wechatSearch: {
         title: "微信公衆号の記事検索",
-        sub: "微信公衆号には公開検索 API がなく、安定して列挙できるのは<strong>合集（アルバム）</strong>だけです。既知の記事を 1 本渡すと、それが属する合集を特定し、合集全体のタイトル・日付・リンクを取得してローカルでキーワード絞り込みします。<strong>解析はすべてローカル</strong>で、直連／代理モードのみ通信します。",
+        sub: "微信公衆号には公開検索 API がなく、安定して列挙できるのは<strong>アルバム</strong>だけです。既知の記事を 1 本渡すと、それが属するアルバムを特定し、アルバム全体のタイトル・日付・リンクを取得してローカルでキーワード絞り込みします。<strong>解析はすべてローカル</strong>で、直連／代理モードのみ通信します。",
         helpTitle: "使い方 / 直連が失敗する理由",
         help1: "① そのアカウントの任意の記事リンク（<code>chksm</code> を含む<strong>完全な共有リンク</strong>）を貼り、「検索開始」を押すと合集が自動展開されます。",
         help2: "② 微信は CORS ヘッダを返さないため、ブラウザの直連は必ず遮断されます。「代理」に自分の転送プレフィックス（<code>{url}</code> 対応）を入れるか、「貼り付け」でソースを貼ってください（完全オフライン）。",
@@ -1145,7 +1145,7 @@ export const VIEW_MESSAGES = {
       },
       wechatSearch: {
         title: "위챗 공중호 글 검색",
-        sub: "위챗 공중호에는 공개 검색 API가 없고, 안정적으로 나열할 수 있는 단위는 <strong>合集(앨범)</strong>뿐입니다. 알려진 글 하나를 주면 그 글이 속한 앨범을 찾아 앨범 전체의 제목·날짜·링크를 가져오고 로컬에서 키워드로 걸러냅니다. <strong>파싱은 전부 로컬</strong>이며 직접/프록시 모드에서만 요청을 보냅니다.",
+        sub: "위챗 공중호에는 공개 검색 API가 없고, 안정적으로 나열할 수 있는 단위는 <strong>앨범</strong>뿐입니다. 알려진 글 하나를 주면 그 글이 속한 앨범을 찾아 앨범 전체의 제목·날짜·링크를 가져오고 로컬에서 키워드로 걸러냅니다. <strong>파싱은 전부 로컬</strong>이며 직접/프록시 모드에서만 요청을 보냅니다.",
         helpTitle: "사용법 / 직접 연결이 실패하는 이유",
         help1: "① 해당 계정의 아무 글 링크나 붙여넣고(<code>chksm</code> 포함 <strong>전체 공유 링크</strong>) 검색을 누르면 소속 앨범이 자동으로 펼쳐집니다.",
         help2: "② 위챗은 CORS 헤더를 주지 않아 브라우저 직접 연결은 항상 차단됩니다. ‘프록시’에 직접 만든 전달 주소(<code>{url}</code> 지원)를 넣거나 ‘붙여넣기’로 페이지 소스를 넣으세요(완전 오프라인).",
@@ -1426,7 +1426,7 @@ export const VIEW_MESSAGES = {
       },
       wechatSearch: {
         title: "Búsqueda de artículos de WeChat",
-        sub: "WeChat no ofrece API pública de búsqueda; la única unidad enumerable de forma estable es el <strong>álbum (合集)</strong>. Dale un artículo conocido y esta página resuelve a qué álbum pertenece, descarga títulos, fechas y enlaces de todo el álbum y filtra localmente por palabra clave. <strong>Todo el análisis es local</strong>; solo los modos directo/proxy hacen una petición.",
+        sub: "WeChat no ofrece API pública de búsqueda; la única unidad enumerable de forma estable es el <strong>álbum</strong>. Dale un artículo conocido y esta página resuelve a qué álbum pertenece, descarga títulos, fechas y enlaces de todo el álbum y filtra localmente por palabra clave. <strong>Todo el análisis es local</strong>; solo los modos directo/proxy hacen una petición.",
         helpTitle: "Cómo usarlo / por qué falla el modo directo",
         help1: "① Pega cualquier enlace de artículo de esa cuenta (usa el <strong>enlace completo</strong>, con <code>chksm</code>) y pulsa Buscar: su álbum se expande automáticamente.",
         help2: "② WeChat no envía cabeceras CORS, así que el navegador siempre queda bloqueado: pon tu propio prefijo de reenvío en Proxy (admite <code>{url}</code>) o usa Pegar con el código fuente (sin red).",

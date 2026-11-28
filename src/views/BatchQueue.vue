@@ -11,6 +11,7 @@ import { formatSize, downloadBlob } from '../utils.js'
 import { createZip } from '../lib/archive.js'
 import { pushToast } from '../lib/toast.js'
 import { t } from '../lib/i18n.js'
+import { T } from '../lib/i18n.dev.js'
 
 const files = ref([])
 const opId = ref('image-compress')
@@ -29,7 +30,7 @@ const eligible = computed(() => filterAcceptable(files.value, opId.value))
 const skipped = computed(() => files.value.length - eligible.value.length)
 
 const phase = createProgress([
-  { id: 'queue', label: '队列', weight: 1 },
+  { id: 'queue', label: T('ui.batch.phaseQueue'), weight: 1 },
 ])
 
 function onFiles(list) {
@@ -46,7 +47,7 @@ async function applyPreset() {
   if (p.params.maxEdge != null) maxEdge.value = p.params.maxEdge
   if (p.params.text != null) wmText.value = p.params.text
   if (p.params.position != null) wmPos.value = p.params.position
-  pushToast('ok', `已套用预设：${p.label}`)
+  pushToast('ok', T('ui.batch.toastPreset', { name: p.label }))
 }
 
 async function start() {
@@ -84,7 +85,7 @@ async function start() {
   })
   phase.finish()
   busy.value = false
-  pushToast(results.value.length ? 'ok' : 'err', cancelled.value ? '已取消' : `批处理完成：${results.value.length}/${items.value.length}`)
+  pushToast(results.value.length ? 'ok' : 'err', cancelled.value ? T('ui.batch.toastCancelled') : T('ui.batch.toastDone', { n: results.value.length, m: items.value.length }))
 }
 
 function cancel() { cancelled.value = true }
@@ -100,73 +101,73 @@ async function downloadZip() {
     const zipFiles = results.value.map((r) => new File([r.blob], r.name, { type: r.blob.type }))
     const blob = await createZip(zipFiles, { level: 6 })
     downloadBlob(blob, 'batch-output.zip')
-    pushToast('ok', '已打包为 batch-output.zip')
+    pushToast('ok', T('ui.batch.toastZipped'))
   } finally { busy.value = false }
 }
-const statusText = (s) => ({ idle: '待处理', queued: '排队中', running: '处理中', done: '完成', error: '失败' }[s] || s)
+const statusText = (s) => ({ idle: T('ui.batch.stIdle'), queued: T('ui.batch.stQueued'), running: T('ui.batch.stRunning'), done: T('ui.batch.stDone'), error: T('ui.batch.stError') }[s] || s)
 </script>
 
 <template>
-  <h1 class="page-title">批处理队列</h1>
-  <p class="page-sub">一次拖入多份文件，套用同一个操作（压缩 / 转格式 / 去 EXIF / PDF 瘦身 / 打包），串行处理并逐项回显结果——适合整理相册、批量瘦身文档。全程本地完成，不上传。</p>
+  <h1 class="page-title">{{ T('ui.batch.pageTitle') }}</h1>
+  <p class="page-sub">{{ T('ui.batch.sub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-list-task" open tone="tip">
+  <HelpTip :title="T('ui.batch.helpTitle')" icon="bi-list-task" open tone="tip">
     <ol class="howto">
-      <li>拖入多份文件（可混合类型，系统会自动筛出当前操作支持的文件）。</li>
-      <li>选择「操作」，或直接选一个「预设」一键套用推荐参数。</li>
-      <li>点「开始批处理」；完成后可逐个下载，或「打包全部为 ZIP」一次带走。</li>
+      <li>{{ T('ui.batch.help1') }}</li>
+      <li>{{ T('ui.batch.help2') }}</li>
+      <li>{{ T('ui.batch.help3') }}</li>
     </ol>
   </HelpTip>
 
-  <DropZone :multiple="true" accept="image/*,application/pdf,.zip" single="多个文件" hint="拖放多个文件（图片 / PDF 可混合）" formats="PNG / JPG / WEBP / PDF / ZIP…" @files="onFiles" />
+  <DropZone :multiple="true" accept="image/*,application/pdf,.zip" :single="T('ui.batch.single')" :hint="T('ui.batch.dropHint')" formats="PNG / JPG / WEBP / PDF / ZIP…" @files="onFiles" />
 
   <div v-if="files.length" class="panel">
     <div class="row wrap">
       <div class="field">
-        <label>操作</label>
+        <label>{{ T('ui.batch.operation') }}</label>
         <select v-model="opId" :disabled="busy">
           <option v-for="o in OP_LIST" :key="o.id" :value="o.id">{{ o.label }}</option>
         </select>
       </div>
       <div class="field">
-        <label>预设（可选）</label>
+        <label>{{ T('ui.batch.presetOptional') }}</label>
         <select v-model="presetId" :disabled="busy" @change="applyPreset">
-          <option value="">— 自定义 —</option>
+          <option value="">{{ T('ui.batch.customPreset') }}</option>
           <option v-for="p in PRESETS" :key="p.id" :value="p.id">{{ p.label }}</option>
         </select>
       </div>
       <div class="field" v-if="opId === 'image-compress' || opId === 'image-convert'">
-        <label>质量 {{ Math.round(quality * 100) }}%</label>
+        <label>{{ T('ui.batch.quality', { n: Math.round(quality * 100) }) }}</label>
         <input type="range" min="0.1" max="1" step="0.05" v-model.number="quality" :disabled="busy" />
       </div>
       <div class="field" v-if="opId === 'image-resize'">
-        <label>最长边（px）</label>
+        <label>{{ T('ui.batch.maxEdge') }}</label>
         <input type="number" min="64" max="8000" step="16" v-model.number="maxEdge" :disabled="busy" style="width:110px" />
       </div>
       <div class="field" v-if="opId === 'image-watermark'">
-        <label>水印文字</label>
+        <label>{{ T('ui.batch.watermark') }}</label>
         <input type="text" v-model="wmText" :disabled="busy" style="width:150px" />
       </div>
       <div class="field" v-if="opId === 'image-watermark'">
-        <label>位置</label>
+        <label>{{ T('ui.batch.position') }}</label>
         <select v-model="wmPos" :disabled="busy">
-          <option value="bottom-right">右下</option>
-          <option value="bottom-left">左下</option>
-          <option value="top-right">右上</option>
-          <option value="center">居中</option>
-          <option value="tile">平铺</option>
+          <option value="bottom-right">{{ T('ui.batch.posBottomRight') }}</option>
+          <option value="bottom-left">{{ T('ui.batch.posBottomLeft') }}</option>
+          <option value="top-right">{{ T('ui.batch.posTopRight') }}</option>
+          <option value="center">{{ T('ui.batch.posCenter') }}</option>
+          <option value="tile">{{ T('ui.batch.posTile') }}</option>
         </select>
       </div>
       <button class="btn" :disabled="busy || !eligible.length" @click="start">
-        <i class="bi bi-play-fill"></i> 开始批处理
+        <i class="bi bi-play-fill"></i> {{ T('ui.batch.btnStart') }}
       </button>
-      <button v-if="busy" class="btn ghost" @click="cancel"><i class="bi bi-stop-fill"></i> 取消</button>
+      <button v-if="busy" class="btn ghost" @click="cancel"><i class="bi bi-stop-fill"></i> {{ T('ui.batch.btnCancel') }}</button>
     </div>
 
     <div class="status">
-      共 <b style="color:var(--txt)">{{ files.length }}</b> 个文件
-      · 可处理 <b style="color:var(--accent)">{{ eligible.length }}</b>
-      <span v-if="skipped"> · 跳过不支持 <b>{{ skipped }}</b></span>
+      {{ T('ui.batch.total') }} <b style="color:var(--txt)">{{ files.length }}</b> {{ T('ui.batch.files') }}
+      · {{ T('ui.batch.eligible') }} <b style="color:var(--accent)">{{ eligible.length }}</b>
+      <span v-if="skipped"> · {{ T('ui.batch.skipped') }} <b>{{ skipped }}</b></span>
     </div>
 
     <PhaseProgress v-if="busy" :progress="phase" />
@@ -189,7 +190,7 @@ const statusText = (s) => ({ idle: '待处理', queued: '排队中', running: '�
 
     <div v-if="results.length" class="actions">
       <button class="btn green" :disabled="busy" @click="downloadZip">
-        <i class="bi bi-file-earmark-zip"></i> 打包全部为 ZIP（{{ results.length }}）
+        <i class="bi bi-file-earmark-zip"></i> {{ T('ui.batch.btnZip', { n: results.length }) }}
       </button>
     </div>
   </div>

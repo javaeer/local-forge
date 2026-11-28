@@ -28,7 +28,8 @@ export function createProgress(phases) {
 
   const activeLabel = computed(() => {
     const p = list.find((x) => x.id === activeId.value)
-    return p ? p.label : ''
+    if (!p) return ''
+    return typeof p.label === 'function' ? p.label() : p.label
   })
 
   function set(id, ratio) {

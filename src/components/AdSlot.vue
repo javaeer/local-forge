@@ -8,18 +8,17 @@
 //           data-ad-format="auto" data-full-width-responsive="true"></ins>
 //      并在其后调用 (adsbygoogle = window.adsbygoogle || []).push({});
 // 当前该组件不加载任何广告脚本、不收集任何数据，仅作布局占位。
+import { T } from '../lib/i18n.dev.js'
+
 defineProps({
-  label: { type: String, default: '广告位预留' },
+  label: { type: String, default: '' },
 })
 </script>
 
 <template>
   <aside class="ad-slot" aria-label="advertisement">
-    <span class="ad-tag">{{ label }}</span>
-    <p class="ad-hint">
-      此处为广告位预留区，后续将接入 Google AdSense 等第三方广告。<br />
-      当前未加载任何广告脚本，不收集数据。
-    </p>
+    <span class="ad-tag">{{ label || T('ui.adslot.label') }}</span>
+    <p class="ad-hint" v-html="T('ui.adslot.hint')"></p>
   </aside>
 </template>
 

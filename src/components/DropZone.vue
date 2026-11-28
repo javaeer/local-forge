@@ -1,13 +1,14 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { T } from '../lib/i18n.dev.js'
 
 const props = defineProps({
   multiple: { type: Boolean, default: true },
   accept: { type: String, default: '' },
   directory: { type: Boolean, default: false },
-  hint: { type: String, default: '拖放文件到此处，或点击选择' },
+  hint: { type: String, default: '' },
   formats: { type: String, default: '' }, // 例如 "ZIP / RAR / 7Z / TAR…"
-  single: { type: String, default: '文件' }, // 用于占位文案，如 "图片"
+  single: { type: String, default: '' }, // 用于占位文案，如 "图片"
 })
 const emit = defineEmits(['files'])
 
@@ -49,13 +50,13 @@ function pick() {
   >
     <i class="bi bi-cloud-arrow-up"></i>
     <p class="dz-main">
-      {{ hint }}
+      {{ hint || T('ui.dropzone.defaultHint') }}
     </p>
     <p class="dz-sub">
-      或 <span class="link">点击选择{{ single }}</span>
-      <span v-if="directory">（将保留文件夹结构）</span>
+      {{ T('ui.dropzone.or') }} <span class="link">{{ T('ui.dropzone.pick', { name: single || T('ui.dropzone.file') }) }}</span>
+      <span v-if="directory">{{ T('ui.dropzone.keepTree') }}</span>
     </p>
-    <div v-if="formatsText" class="dz-formats">支持：{{ formatsText }}</div>
+    <div v-if="formatsText" class="dz-formats">{{ T('ui.dropzone.formats', { list: formatsText }) }}</div>
     <slot />
     <input
       ref="inputRef"

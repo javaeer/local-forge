@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
+import { T } from '../lib/i18n.dev.js'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
 import StatusPill from '../components/StatusPill.vue'
@@ -18,10 +19,10 @@ const presets = [
   { id: 'mp4-webm', label: 'MP4 → WebM', out: 'webm', mime: 'video/webm', args: ['-i', 'IN', '-c:v', 'libvpx-vp9', '-c:a', 'libopus', 'OUT'] },
   { id: 'webm-mp4', label: 'WebM → MP4', out: 'mp4', mime: 'video/mp4', args: ['-i', 'IN', '-c:v', 'libx264', '-c:a', 'aac', 'OUT'] },
   { id: 'mov-mp4', label: 'MOV → MP4', out: 'mp4', mime: 'video/mp4', args: ['-i', 'IN', '-c:v', 'libx264', '-c:a', 'aac', 'OUT'] },
-  { id: 'mp4-mp3', label: 'MP4 → MP3（提取音频）', out: 'mp3', mime: 'audio/mpeg', args: ['-i', 'IN', '-vn', '-c:a', 'libmp3lame', 'OUT'] },
+  { id: 'mp4-mp3', labelKey: 'ui.mediaconvert.presetMp4Mp3', out: 'mp3', mime: 'audio/mpeg', args: ['-i', 'IN', '-vn', '-c:a', 'libmp3lame', 'OUT'] },
   { id: 'wav-mp3', label: 'WAV → MP3', out: 'mp3', mime: 'audio/mpeg', args: ['-i', 'IN', '-c:a', 'libmp3lame', 'OUT'] },
   { id: 'mp3-wav', label: 'MP3 → WAV', out: 'wav', mime: 'audio/wav', args: ['-i', 'IN', '-c:a', 'pcm_s16le', 'OUT'] },
-  { id: 'compress', label: '压缩（降码率）', out: 'mp4', mime: 'video/mp4', args: ['-i', 'IN', '-c:v', 'libx264', '-crf', '32', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '96k', 'OUT'] },
+  { id: 'compress', labelKey: 'ui.mediaconvert.presetCompress', out: 'mp4', mime: 'video/mp4', args: ['-i', 'IN', '-c:v', 'libx264', '-crf', '32', '-preset', 'veryfast', '-c:a', 'aac', '-b:a', '96k', 'OUT'] },
 ]
 
 const file = ref(null)
@@ -35,9 +36,9 @@ const sizeWarn = ref(null)
 
 // A-5 阶段进度：加载内核 → 读取文件 → 转码
 const phase = createProgress([
-  { id: 'core', label: '内核', weight: 2 },
-  { id: 'read', label: '读取', weight: 1 },
-  { id: 'run', label: '转码', weight: 7 },
+  { id: 'core', label: T('ui.mediaconvert.phaseCore'), weight: 2 },
+  { id: 'read', label: T('ui.mediaconvert.phaseRead'), weight: 1 },
+  { id: 'run', label: T('ui.mediaconvert.phaseRun'), weight: 7 },
 ])
 const showPhase = ref(false)
 
@@ -67,7 +68,7 @@ async function resolveInputData() {
   if (mode.value === 'zip' && file.value?.name?.toLowerCase().endsWith('.zip')) {
     const entries = await extract(file.value)
     const media = entries.find((e) => /\.(mp4|webm|mov|mp3|wav|m4a)$/i.test(e.name))
-    if (!media) throw new Error('压缩包内未找到常见音视频文件。')
+    if (!media) throw new Error(T('ui.mediaconvert.noMediaInZip'))
     return { data: new Uint8Array(await (await media.getBlob()).arrayBuffer()), name: 'input' }
   }
   // 大文件走分块流式读取（A-4），避免一次性大分配导致 OOM
@@ -88,7 +89,7 @@ async function convert() {
   readPct.value = 0
   phase.reset()
   showPhase.value = true
-  message.value = { type: 'info', text: '加载内核并转换中…' }
+  message.value = { type: 'info', text: T('ui.mediaconvert.loading') }
   try {
     // 内核已加载时直接置满，避免阶段卡在"内核"
     phase.set('core', 1)
@@ -99,9 +100,9 @@ async function convert() {
     result.value = { blob, name: outName }
     progress.value = 100
     phase.finish()
-    message.value = { type: 'ok', text: `转换完成：${formatSize(blob.size)}` }
+    message.value = { type: 'ok', text: T('ui.mediaconvert.doneMsg', { size: formatSize(blob.size) }) }
   } catch (e) {
-    message.value = { type: 'err', text: '转换失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.mediaconvert.failed', { msg: e.message || e }) }
   } finally {
     busy.value = false
   }
@@ -112,41 +113,37 @@ function download() {
 </script>
 
 <template>
-  <h1 class="page-title">媒体转换</h1>
-  <p class="page-sub">基于 @ffmpeg/ffmpeg 在浏览器内转码音视频——弥补原版网页端媒体能力短板。多线程内核（SharedArrayBuffer）优先，自动回退单线程以保证兼容性；内核默认本地打包，离线可用。</p>
+  <h1 class="page-title">{{ T('ui.mediaconvert.title') }}</h1>
+  <p class="page-sub">{{ T('ui.mediaconvert.sub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-steps" open tone="tip">
-    <ol class="howto">
-      <li>拖入音视频文件（或含媒体的 ZIP 包，选择「从 ZIP 提取」）。</li>
-      <li>选「模式」与「目标格式/预设」，例如 MP4→WebM、MP4→MP3 提取音频。</li>
-      <li>点「开始转换」；<b>首次转换会先加载内核</b>（约几秒，属正常），之后更快。</li>
-    </ol>
+  <HelpTip :title="T('ui.common.helpTitle')" icon="bi-steps" open tone="tip">
+    <div v-html="T('ui.mediaconvert.help')"></div>
   </HelpTip>
 
-  <DropZone :multiple="false" accept="video/*,audio/*,.zip" single="音视频" hint="拖放音视频文件（或含媒体的 ZIP）" formats="MP4 / WebM / MOV / MP3 / WAV / ZIP" @files="onFiles" />
+  <DropZone :multiple="false" accept="video/*,audio/*,.zip" :single="T('ui.mediaconvert.dropSingle')" :hint="T('ui.mediaconvert.dropHint')" formats="MP4 / WebM / MOV / MP3 / WAV / ZIP" @files="onFiles" />
 
   <div v-if="file" class="panel">
     <div class="row wrap" style="margin-top:0">
-      <StatusPill v-if="busy" state="working" :label="progress ? `转换中 ${progress}%` : (readPct ? `读取文件 ${readPct}%` : '加载内核并转换中…')" />
-      <StatusPill v-else-if="result" state="done" label="转换完成" />
+      <StatusPill v-if="busy" state="working" :label="progress ? T('ui.mediaconvert.converting', { p: progress }) : (readPct ? T('ui.mediaconvert.reading', { p: readPct }) : T('ui.mediaconvert.loading'))" />
+      <StatusPill v-else-if="result" state="done" :label="T('ui.mediaconvert.doneLabel')" />
       <StatusPill v-else-if="message && message.type === 'err'" state="error" :label="message.text" />
     </div>
     <div class="row wrap">
       <div class="field">
-        <label>模式</label>
+        <label>{{ T('ui.mediaconvert.modeLabel') }}</label>
         <select v-model="mode">
-          <option value="convert">格式转换</option>
-          <option value="compress">压缩（降码率）</option>
-          <option value="zip">从 ZIP 提取</option>
+          <option value="convert">{{ T('ui.mediaconvert.modeConvert') }}</option>
+          <option value="compress">{{ T('ui.mediaconvert.modeCompress') }}</option>
+          <option value="zip">{{ T('ui.mediaconvert.modeZip') }}</option>
         </select>
       </div>
       <div class="field" v-if="mode !== 'zip'">
-        <label>目标格式 / 预设</label>
-        <select v-model="presetId"><option v-for="p in presets" :key="p.id" :value="p.id">{{ p.label }}</option></select>
+        <label>{{ T('ui.mediaconvert.targetLabel') }}</label>
+        <select v-model="presetId"><option v-for="p in presets" :key="p.id" :value="p.id">{{ p.labelKey ? T(p.labelKey) : p.label }}</option></select>
       </div>
-      <button class="btn" :disabled="busy" @click="convert"><i class="bi bi-arrow-left-right"></i> 开始转换</button>
+      <button class="btn" :disabled="busy" @click="convert"><i class="bi bi-arrow-left-right"></i> {{ T('ui.mediaconvert.btnStart') }}</button>
     </div>
-    <div class="status">源文件：<b style="color:var(--txt)">{{ file.name }}</b> · {{ formatSize(file.size) }}</div>
+    <div class="status">{{ T('ui.mediaconvert.sourceFile') }}<b style="color:var(--txt)">{{ file.name }}</b> · {{ formatSize(file.size) }}</div>
     <div v-if="sizeWarn && sizeWarn.level !== 'ok'" class="msg" :class="sizeWarn.level === 'block' ? 'err' : 'info'">
       <i class="bi" :class="sizeWarn.level === 'block' ? 'bi-x-octagon' : 'bi-exclamation-triangle'"></i>
       {{ sizeWarn.message }}
@@ -154,6 +151,6 @@ function download() {
     <PhaseProgress v-if="busy && showPhase" :progress="phase" />
     <div v-else-if="progress" class="progress"><span :style="{ width: progress + '%' }"></span></div>
     <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>
-    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> 下载 {{ result.name }} ({{ formatSize(result.blob.size) }})</button>
+    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> {{ T('ui.common.download') }} {{ result.name }} ({{ formatSize(result.blob.size) }})</button>
   </div>
 </template>

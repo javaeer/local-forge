@@ -6,6 +6,7 @@ import StatusPill from '../components/StatusPill.vue'
 import { readMetadata, stripMetadata, LEVELS } from '../lib/exif.js'
 import { createZip } from '../lib/archive.js'
 import { formatSize, downloadBlob, basename } from '../utils.js'
+import { T } from '../lib/i18n.dev.js'
 
 const items = ref([]) // { file, meta, state, clean?:{blob,removed,removedBytes} }
 const state = ref('idle')
@@ -18,7 +19,7 @@ async function onFiles(fs) {
   items.value = (fs || []).map((f) => ({ file: f, meta: null, state: 'idle', error: null }))
   if (!items.value.length) return
   state.value = 'working'
-  setMsg('info', `正在读取 ${items.value.length} 张图片的元数据……`)
+  setMsg('info', T('ui.exif.reading', { n: items.value.length }))
   for (const it of items.value) {
     try {
       it.meta = await readMetadata(it.file)
@@ -34,10 +35,10 @@ async function onFiles(fs) {
   setMsg(
     withGps ? 'err' : withExif ? 'info' : 'ok',
     withGps
-      ? `读取完成：其中 ${withGps} 张带有 GPS 定位信息。发到群里/朋友圈前建议清理，否则别人能反查到拍摄地点。`
+      ? T('ui.exif.msgGps', { n: withGps })
       : withExif
-        ? `读取完成：${withExif} 张含 EXIF 信息（未发现定位数据）。`
-        : '读取完成：未发现 EXIF 元数据，这些图片已不含可识别的隐私信息。',
+        ? T('ui.exif.msgExif', { n: withExif })
+        : T('ui.exif.msgClean'),
   )
 }
 
@@ -45,9 +46,9 @@ async function cleanOne(it) {
   try {
     const res = await stripMetadata(it.file)
     it.clean = res
-    setMsg('ok', `已清理 ${it.file.name}：移除 ${res.removed} 个元数据段（${formatSize(res.removedBytes)}），图像本身无损。`)
+    setMsg('ok', T('ui.exif.msgCleanOne', { name: it.file.name, n: res.removed, size: formatSize(res.removedBytes) }))
   } catch (e) {
-    setMsg('err', '清理失败：' + e.message)
+    setMsg('err', T('ui.exif.errClean') + e.message)
   }
 }
 
@@ -60,7 +61,7 @@ function downloadOne(it) {
 
 async function cleanAll() {
   const targets = items.value.filter((x) => x.meta && (x.meta.hasMeta || x.meta.hasExif) && !x.error)
-  if (!targets.length) { setMsg('info', '没有需要清理的文件（或尚未发现元数据）。'); return }
+  if (!targets.length) { setMsg('info', T('ui.exif.msgNothing')); return }
   busy.value = true
   try {
     for (const it of targets) {
@@ -74,9 +75,9 @@ async function cleanAll() {
     })
     const zip = await createZip(files, { level: 6 })
     downloadBlob(zip, `cleaned-${files.length}-${Date.now()}.zip`)
-    setMsg('ok', `已清理 ${done.length} 张并打包下载（${formatSize(zip.size)}）。原文件未被修改。`)
+    setMsg('ok', T('ui.exif.msgCleanAll', { n: done.length, size: formatSize(zip.size) }))
   } catch (e) {
-    setMsg('err', '批量清理失败：' + e.message)
+    setMsg('err', T('ui.exif.errCleanAll') + e.message)
   } finally {
     busy.value = false
   }
@@ -94,33 +95,30 @@ function fmtValue(v) {
 </script>
 
 <template>
-  <h1 class="page-title">照片隐私清理（EXIF）</h1>
-  <p class="page-sub">
-    查看并清除照片里隐藏的元数据：<b>GPS 定位</b>、拍摄时间、设备型号与序列号、作者与版权。
-    解析与清理全部在本地完成（自研解析，零依赖），<b>照片不会上传任何服务器</b>。
-  </p>
+  <h1 class="page-title">{{ T('ui.exif.pageTitle') }}</h1>
+  <p class="page-sub" v-html="T('ui.exif.sub')"></p>
 
-  <HelpTip title="为什么需要这一步？" icon="bi-shield-lock" open>
+  <HelpTip :title="T('ui.exif.helpTitle')" icon="bi-shield-lock" open>
     <ol class="howto">
-      <li>手机/相机拍照时会把<b>拍摄位置、时间、设备型号、序列号</b>写进照片文件（EXIF）。</li>
-      <li>把原图发到群、朋友圈、二手平台，对方下载后就能反查出你的<b>精确坐标</b>。</li>
-      <li>这里可以一键剥离：<b>只删元数据，不动图像像素</b>，画质完全无损，生成新文件，原图保持不变。</li>
+      <li v-html="T('ui.exif.help1')"></li>
+      <li v-html="T('ui.exif.help2')"></li>
+      <li v-html="T('ui.exif.help3')"></li>
     </ol>
-    <p style="margin:8px 0 0">注意：微信/部分平台会自动压缩并清除元数据，但发原图、邮件附件、网盘分享时不会。</p>
+    <p style="margin:8px 0 0">{{ T('ui.exif.helpNote') }}</p>
   </HelpTip>
 
   <DropZone
-    multiple accept="image/jpeg,image/png" single="图片"
-    hint="拖放 JPG / PNG 图片到此处（可多选）"
-    formats="JPEG / PNG（其它格式请先用「图片工具」转换）"
+    multiple accept="image/jpeg,image/png" :single="T('ui.exif.single')"
+    :hint="T('ui.exif.dropHint')"
+    :formats="T('ui.exif.formats')"
     @files="onFiles"
   />
 
   <div class="row wrap" style="margin-top:12px">
     <button class="btn green" :disabled="busy || !items.some((x) => x.meta && (x.meta.hasMeta || x.meta.hasExif))" @click="cleanAll">
-      <i class="bi bi-eraser"></i> {{ busy ? '清理中……' : '批量清理并打包 ZIP' }}
+      <i class="bi bi-eraser"></i> {{ busy ? T('ui.exif.btnBusy') : T('ui.exif.btnCleanAll') }}
     </button>
-    <StatusPill :state="state" :label="state === 'working' ? '读取中' : state === 'done' ? `已读取 ${items.length} 张` : '等待图片'" />
+    <StatusPill :state="state" :label="state === 'working' ? T('ui.exif.stReading') : state === 'done' ? T('ui.exif.stRead', { n: items.length }) : T('ui.exif.stWait')" />
   </div>
 
   <div v-if="items.length" class="list">
@@ -131,17 +129,17 @@ function fmtValue(v) {
         <span class="tag">{{ formatSize(it.file.size) }}</span>
         <span v-if="it.error" class="tag danger"><i class="bi bi-exclamation-triangle"></i> {{ it.error }}</span>
         <template v-else-if="it.meta">
-          <span v-if="it.meta.gps" class="tag danger"><i class="bi bi-geo-alt"></i> 含 GPS 定位</span>
-          <span v-else-if="it.meta.hasExif" class="tag warn"><i class="bi bi-info-circle"></i> 含 EXIF</span>
-          <span v-else class="tag ok"><i class="bi bi-check-circle"></i> 无元数据</span>
-          <span v-if="it.clean" class="tag ok"><i class="bi bi-eraser"></i> 已清理（移除 {{ it.clean.removed }} 段）</span>
+          <span v-if="it.meta.gps" class="tag danger"><i class="bi bi-geo-alt"></i> {{ T('ui.exif.tagGps') }}</span>
+          <span v-else-if="it.meta.hasExif" class="tag warn"><i class="bi bi-info-circle"></i> {{ T('ui.exif.tagExif') }}</span>
+          <span v-else class="tag ok"><i class="bi bi-check-circle"></i> {{ T('ui.exif.tagNone') }}</span>
+          <span v-if="it.clean" class="tag ok"><i class="bi bi-eraser"></i> {{ T('ui.exif.tagCleaned', { n: it.clean.removed }) }}</span>
         </template>
       </div>
 
       <div v-if="it.meta && it.meta.gps" class="gps">
         <i class="bi bi-geo-alt-fill"></i>
-        拍摄坐标：<b>纬度 {{ it.meta.gps.lat }}，经度 {{ it.meta.gps.lng }}</b>
-        <span v-if="it.meta.gps.altitude != null"> · 海拔 {{ it.meta.gps.altitude }} m</span>
+        {{ T('ui.exif.coords') }}<b>{{ T('ui.exif.latLng', { lat: it.meta.gps.lat, lng: it.meta.gps.lng }) }}</b>
+        <span v-if="it.meta.gps.altitude != null">{{ T('ui.exif.altitude', { alt: it.meta.gps.altitude }) }}</span>
         <span v-if="it.meta.gps.date"> · {{ it.meta.gps.date }}</span>
       </div>
 
@@ -152,26 +150,25 @@ function fmtValue(v) {
           <span class="v">{{ fmtValue(t.value) }}</span>
         </div>
       </div>
-      <p v-else-if="it.meta" class="hint" style="margin:8px 0 0">这张图没有可读取的元数据。</p>
+      <p v-else-if="it.meta" class="hint" style="margin:8px 0 0">{{ T('ui.exif.noMeta') }}</p>
 
       <div v-if="it.meta && !it.error" class="row wrap" style="margin-top:10px">
         <button class="btn ghost" :disabled="!it.meta.hasMeta && !it.meta.hasExif" @click="cleanOne(it)">
-          <i class="bi bi-eraser"></i> 清理这张
+          <i class="bi bi-eraser"></i> {{ T('ui.exif.btnCleanOne') }}
         </button>
         <button class="btn" :disabled="!it.clean" @click="downloadOne(it)">
-          <i class="bi bi-download"></i> 下载清理后的图片
+          <i class="bi bi-download"></i> {{ T('ui.exif.btnDownload') }}
         </button>
       </div>
     </div>
   </div>
 
   <div v-if="items.length" class="panel" style="margin-top:14px">
-    <h3 class="sec-title"><i class="bi bi-diagram-3"></i> 敏感级别说明</h3>
+    <h3 class="sec-title"><i class="bi bi-diagram-3"></i> {{ T('ui.exif.levelTitle') }}</h3>
     <div v-for="l in LEVELS" :key="l.id" class="row-tag" :class="l.id">
       <span class="lv">{{ l.label }}</span><span class="k">{{ l.desc }}</span>
     </div>
-    <p class="hint">「清理」会移除所有 APPn 段：EXIF（含 GPS）、IPTC 作者版权、XMP、ICC 色彩配置与注释。
-      ICC 被移除可能让个别看图软件显示的色彩略有差异，图片数据本身不受影响。</p>
+    <p class="hint">{{ T('ui.exif.cleanHint') }}</p>
   </div>
 
   <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>

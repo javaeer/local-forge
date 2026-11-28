@@ -1,8 +1,9 @@
 <script setup>
 import { ref } from 'vue'
+import { T } from '../lib/i18n.dev.js'
 
 const props = defineProps({
-  title: { type: String, default: '使用说明' },
+  title: { type: String, default: '' },
   icon: { type: String, default: 'bi-info-circle' },
   open: { type: Boolean, default: false },
   tone: { type: String, default: 'info' }, // info | warn | tip
@@ -14,7 +15,7 @@ const show = ref(props.open)
   <div class="helptip" :class="[tone, { open: show }]">
     <button class="ht-head" type="button" @click="show = !show">
       <i class="bi" :class="icon"></i>
-      <span class="ht-title">{{ title }}</span>
+      <span class="ht-title">{{ title || T('ui.helptip.defaultTitle') }}</span>
       <i class="bi ht-caret" :class="show ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
     </button>
     <div v-show="show" class="ht-body">

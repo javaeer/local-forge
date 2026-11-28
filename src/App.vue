@@ -7,6 +7,7 @@ import { recordUsage } from './lib/history.js'
 import { setDownloadHook } from './utils.js'
 import { typeOfName } from './lib/filetype.js'
 import { locale, t, setLocale, initLocale, availableLocales, LOCALE_NAMES, LOCALE_SHORT } from './lib/i18n.js'
+import { T } from './lib/i18n.dev.js'
 import { APP_COMMANDS_KEY } from './lib/app-commands.js'
 import CommandPalette from './components/CommandPalette.vue'
 import ToastHost from './components/ToastHost.vue'
@@ -116,7 +117,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
 
       <div class="sb-foot">
         <div class="lang-wrap">
-          <button class="sb-theme" type="button" @click="toggleLangMenu" :aria-expanded="langOpen" title="切换语言 / Language">
+          <button class="sb-theme" type="button" @click="toggleLangMenu" :aria-expanded="langOpen" :title="T('ui.app.switchLang')">
             <i class="bi bi-translate"></i>
             <span class="sb-text">{{ LOCALE_NAMES[locale] }}</span>
           </button>
@@ -175,7 +176,7 @@ onUnmounted(() => window.removeEventListener('keydown', onGlobalKey))
         </button>
 
         <div class="lang-wrap">
-          <button class="icon-btn" type="button" data-testid="locale-toggle" @click="toggleLangMenu" :aria-expanded="langOpen" title="切换语言 / Language">
+          <button class="icon-btn" type="button" data-testid="locale-toggle" @click="toggleLangMenu" :aria-expanded="langOpen" :title="T('ui.app.switchLang')">
             <span style="font-size:12px;font-weight:700">{{ localeLabel }}</span>
           </button>
           <div v-if="langOpen" class="lang-menu" role="menu">

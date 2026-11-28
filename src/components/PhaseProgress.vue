@@ -16,7 +16,7 @@ const segs = computed(() => {
     const ratio = p.ratios.value[ph.id] || 0
     return {
       id: ph.id,
-      label: ph.label,
+      label: typeof ph.label === 'function' ? ph.label() : ph.label,
       weight: ph.weight,
       flex: ph.weight / tw,
       fill: Math.round(ratio * 100),

@@ -231,7 +231,7 @@ onMounted(() => {
                   :key="j"
                   class="cell"
                   :class="[c.status, { foot: ln.rhymeLine && j === ln.chars.length - 1 }]"
-                  :title="`${c.ch}：${toneLabel(c.actual)}（应为${toneLabel(c.expected)}）`"
+                  :title="T('ui.poemmeter.charTip', { ch: c.ch, actual: toneLabel(c.actual), expected: toneLabel(c.expected) })"
                 >
                   <b>{{ c.ch }}</b>
                   <small>{{ toneLabel(c.actual) }}</small>

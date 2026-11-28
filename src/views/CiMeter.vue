@@ -301,7 +301,7 @@ const writeFatal = computed(() => (wResult.value?.fatal ? fatalText(wResult.valu
                     :key="j"
                     class="cell"
                     :class="[c.status, { foot: c.mark === MARK_RHYME || c.mark === MARK_YE }]"
-                    :title="`${c.ch}：${c.actual || '?'}（谱 ${c.expected}）`"
+                    :title="T('ui.cimeter.charTip', { ch: c.ch, actual: c.actual || '?', expected: c.expected })"
                   >
                     <small class="spec">{{ toneSym(c.expected) }}</small>
                     <b>{{ c.ch }}</b>

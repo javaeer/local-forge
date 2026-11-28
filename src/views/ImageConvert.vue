@@ -1,6 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import { T } from '../lib/i18n.dev.js'
 import { saveResume, getResume } from '../lib/resume.js'
 import DropZone from '../components/DropZone.vue'
 import HelpTip from '../components/HelpTip.vue'
@@ -51,7 +52,7 @@ onMounted(() => {
   const pending = consumePending()
   if (pending && pending.files.length) {
     onFiles([pending.files[0]])
-    pushToast('info', `已从「${pending.from}」载入 1 个文件`)
+    pushToast('info', T('ui.imageconvert.loadedFrom', { from: pending.from }))
   }
 })
 
@@ -73,7 +74,7 @@ function onFiles(list) {
 async function run() {
   if (!file.value) return
   busy.value = true
-  message.value = { type: 'info', text: '本地处理中…' }
+  message.value = { type: 'info', text: T('ui.imageconvert.processing') }
   try {
     const blob = await compressImage(file.value, {
       outMime: outMime.value,
@@ -87,10 +88,10 @@ async function run() {
     const pct = Math.round((1 - blob.size / file.value.size) * 100)
     message.value = {
       type: 'ok',
-      text: `完成：${formatSize(blob.size)}（原 ${formatSize(file.value.size)}，节省 ${pct}%）`,
+      text: T('ui.imageconvert.doneMsg', { size: formatSize(blob.size), orig: formatSize(file.value.size), pct }),
     }
   } catch (e) {
-    message.value = { type: 'err', text: '失败：' + (e.message || e) }
+    message.value = { type: 'err', text: T('ui.imageconvert.failed', { msg: e.message || e }) }
   } finally {
     busy.value = false
   }
@@ -101,53 +102,48 @@ function download() {
 </script>
 
 <template>
-  <h1 class="page-title">图片工具</h1>
-  <p class="page-sub">图片格式转换 / 压缩 / 预览，全部浏览器本地完成（文件零上传）。PNG 走 upng 有损量化、保透明（类 TinyPNG）；JPG/WEBP/AVIF 走浏览器原生编码。</p>
+  <h1 class="page-title">{{ T('ui.imageconvert.title') }}</h1>
+  <p class="page-sub">{{ T('ui.imageconvert.sub') }}</p>
 
-  <HelpTip title="操作步骤" icon="bi-steps" open>
-    <ol class="howto">
-      <li>拖入或选择一张图片（支持 PNG / JPG / WEBP / AVIF）。</li>
-      <li>选「模式」：<b>格式转换</b>改扩展名，<b>压缩</b>缩小体积，<b>查看</b>仅预览。</li>
-      <li>点「开始」，处理完成后直接下载结果文件。</li>
-    </ol>
-    <p style="margin:8px 0 0">全部在本地运算，图片不会上传任何服务器。</p>
+  <HelpTip :title="T('ui.common.helpTitle')" icon="bi-steps" open>
+    <div v-html="T('ui.imageconvert.help')"></div>
   </HelpTip>
 
-  <DropZone :multiple="false" accept="image/*" single="图片" hint="拖放图片到此处" formats="PNG / JPG / WEBP / AVIF" @files="onFiles" />
+  <DropZone :multiple="false" accept="image/*" :single="T('ui.imageconvert.dropSingle')" :hint="T('ui.imageconvert.dropHint')" formats="PNG / JPG / WEBP / AVIF" @files="onFiles" />
 
   <div v-if="file" class="panel">
     <div class="row wrap" style="margin-top:0">
-      <StatusPill v-if="busy" state="working" label="本地处理中…" />
-      <StatusPill v-else-if="result" state="done" :label="savingPct != null ? `已完成 · 节省 ${savingPct}%` : '已完成'" />
+      <StatusPill v-if="busy" state="working" :label="T('ui.imageconvert.processing')" />
+      <StatusPill v-else-if="result" state="done" :label="savingPct != null ? T('ui.imageconvert.savedPill', { pct: savingPct }) : T('ui.imageconvert.donePill')" />
       <StatusPill v-else-if="message && message.type === 'err'" state="error" :label="message.text" />
     </div>
     <div v-if="mode === 'view'" class="img-preview"><img :src="previewUrl" :alt="file.name" /></div>
     <template v-else>
       <div class="row wrap">
         <div class="field">
-          <label>模式</label>
-          <select v-model="mode"><option value="convert">格式转换</option><option value="compress">压缩</option></select>
+          <label>{{ T('ui.imageconvert.modeLabel') }}</label>
+          <select v-model="mode"><option value="convert">{{ T('ui.imageconvert.modeConvert') }}</option><option value="compress">{{ T('ui.imageconvert.modeCompress') }}</option></select>
         </div>
         <div class="field" v-if="mode === 'convert' || mode === 'compress'">
-          <label>输出格式</label>
+          <label>{{ T('ui.imageconvert.outFormat') }}</label>
           <select v-model="outMime"><option v-for="o in OUTS" :key="o.id" :value="o.id">{{ o.label }}</option></select>
         </div>
         <div class="field" v-if="mode === 'compress'">
-          <label>质量 {{ Math.round(quality * 100) }}%</label>
+          <label>{{ T('ui.imageconvert.quality', { p: Math.round(quality * 100) }) }}</label>
           <input type="range" min="0.1" max="1" step="0.05" v-model="quality" style="width:160px" />
         </div>
         <div class="field" v-if="outMime === 'image/png' && mode !== 'view'">
-          <label class="chk"><input type="checkbox" v-model="losslessPng" /> 无损 PNG</label>
+          <label class="chk"><input type="checkbox" v-model="losslessPng" /> {{ T('ui.imageconvert.lossless') }}</label>
         </div>
-        <button class="btn" :disabled="busy" @click="run"><i class="bi bi-image"></i> 开始</button>
+        <button class="btn" :disabled="busy" @click="run"><i class="bi bi-image"></i> {{ T('ui.imageconvert.start') }}</button>
       </div>
       <p v-if="outMime === 'image/png' && !losslessPng && mode !== 'view'" class="hint">
-        有损量化：调色板降色并保留透明通道，体积通常可省 50–80%（类 TinyPNG）。勾选「无损 PNG」则逐像素无损失。
+        {{ T('ui.imageconvert.losslessHint') }}
       </p>
       <div v-if="result" class="img-preview"><img :src="resultUrl" :alt="result.name" /></div>
     </template>
     <div v-if="message" class="msg" :class="message.type">{{ message.text }}</div>
-    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> 下载 {{ result.name }} ({{ formatSize(result.blob.size) }})</button>
+    <button v-if="result" class="btn green" @click="download"><i class="bi bi-download"></i> {{ T('ui.common.download') }} {{ result.name }} ({{ formatSize(result.blob.size) }})</button>
     <NextSteps v-if="result" from="/image-convert" :files="[result]" />
   </div>
 </template>

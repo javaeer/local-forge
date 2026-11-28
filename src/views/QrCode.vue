@@ -14,44 +14,44 @@ import { createZip } from '../lib/archive.js'
 import { downloadBlob, formatSize, basename } from '../utils.js'
 import { pushToast } from '../lib/toast.js'
 import { consumePending, consumePendingText, stashText } from '../lib/workflow.js'
+import { T } from '../lib/i18n.dev.js'
 
 const route = useRoute()
 const router = useRouter()
 
 /* ---------------- 生成 ---------------- */
-const TYPE_SCHEMA = {
-  text: [{ key: 'text', label: '内容', type: 'textarea', ph: '输入任意文字，或粘贴一个网址' }],
-  url: [{ key: 'url', label: '网址', type: 'text', ph: 'example.com' }],
+const TYPE_SCHEMA = computed(() => ({  text: [{ key: 'text', label: T('ui.qr.formContent'), type: 'textarea', ph: T('ui.qr.phContent') }],
+  url: [{ key: 'url', label: T('ui.qr.formUrl'), type: 'text', ph: 'example.com' }],
   wifi: [
-    { key: 'ssid', label: '网络名称（SSID）', type: 'text', ph: 'My-WiFi' },
-    { key: 'password', label: '密码', type: 'password', ph: '若无密码请选「开放网络」' },
-    { key: 'encryption', label: '加密方式', type: 'select', options: [['WPA', 'WPA / WPA2 / WPA3（最常见）'], ['WEP', 'WEP（老旧）'], ['nopass', '开放网络（无密码）']] },
-    { key: 'hidden', label: '这是隐藏网络', type: 'checkbox' },
+    { key: 'ssid', label: T('ui.qr.formSsid'), type: 'text', ph: 'My-WiFi' },
+    { key: 'password', label: T('ui.qr.formPassword'), type: 'password', ph: T('ui.qr.phPassword') },
+    { key: 'encryption', label: T('ui.qr.formEncryption'), type: 'select', options: [['WPA', T('ui.qr.encWpa')], ['WEP', T('ui.qr.encWep')], ['nopass', T('ui.qr.encOpen')]] },
+    { key: 'hidden', label: T('ui.qr.formHidden'), type: 'checkbox' },
   ],
   vcard: [
-    { key: 'name', label: '姓名', type: 'text', ph: '张三' },
-    { key: 'tel', label: '手机', type: 'text', ph: '13800000000' },
-    { key: 'org', label: '公司', type: 'text', ph: '选填' },
-    { key: 'title', label: '职位', type: 'text', ph: '选填' },
-    { key: 'email', label: '邮箱', type: 'text', ph: '选填' },
-    { key: 'url', label: '网址', type: 'text', ph: '选填' },
-    { key: 'addr', label: '地址', type: 'text', ph: '选填' },
+    { key: 'name', label: T('ui.qr.formName'), type: 'text', ph: '张三' },
+    { key: 'tel', label: T('ui.qr.formTel'), type: 'text', ph: '13800000000' },
+    { key: 'org', label: T('ui.qr.formOrg'), type: 'text', ph: T('ui.qr.phOptional') },
+    { key: 'title', label: T('ui.qr.formTitle'), type: 'text', ph: T('ui.qr.phOptional') },
+    { key: 'email', label: T('ui.qr.formEmail'), type: 'text', ph: T('ui.qr.phOptional') },
+    { key: 'url', label: T('ui.qr.formUrl'), type: 'text', ph: T('ui.qr.phOptional') },
+    { key: 'addr', label: T('ui.qr.formAddr'), type: 'text', ph: T('ui.qr.phOptional') },
   ],
   email: [
-    { key: 'to', label: '收件人', type: 'text', ph: 'someone@example.com' },
-    { key: 'subject', label: '主题', type: 'text', ph: '选填' },
-    { key: 'body', label: '正文', type: 'textarea', ph: '选填' },
+    { key: 'to', label: T('ui.qr.formTo'), type: 'text', ph: 'someone@example.com' },
+    { key: 'subject', label: T('ui.qr.formSubject'), type: 'text', ph: T('ui.qr.phOptional') },
+    { key: 'body', label: T('ui.qr.formBody'), type: 'textarea', ph: T('ui.qr.phOptional') },
   ],
-  phone: [{ key: 'tel', label: '电话号码', type: 'text', ph: '13800000000' }],
+  phone: [{ key: 'tel', label: T('ui.qr.formPhone'), type: 'text', ph: '13800000000' }],
   sms: [
-    { key: 'tel', label: '接收号码', type: 'text', ph: '13800000000' },
-    { key: 'body', label: '短信内容', type: 'textarea', ph: '选填' },
+    { key: 'tel', label: T('ui.qr.formSmsTel'), type: 'text', ph: '13800000000' },
+    { key: 'body', label: T('ui.qr.formSmsBody'), type: 'textarea', ph: T('ui.qr.phOptional') },
   ],
   geo: [
-    { key: 'lat', label: '纬度', type: 'text', ph: '39.9042' },
-    { key: 'lng', label: '经度', type: 'text', ph: '116.4074' },
+    { key: 'lat', label: T('ui.qr.formLat'), type: 'text', ph: '39.9042' },
+    { key: 'lng', label: T('ui.qr.formLng'), type: 'text', ph: '116.4074' },
   ],
-}
+}))
 
 const tab = ref(route.query.tab === 'decode' ? 'decode' : route.query.tab === 'batch' ? 'batch' : 'make')
 const type = ref('text')
@@ -79,7 +79,38 @@ watch(() => route.query.tab, (v) => {
   if (v === 'make' || v === 'decode' || v === 'batch') tab.value = v
 })
 
-const fields = computed(() => TYPE_SCHEMA[type.value] || [])
+// 引擎类型/识别结果是中文数据，UI 展示层按当前语言映射（响应式）
+const qrTypes = computed(() => QR_TYPES.map((t) => ({
+  ...t,
+  label: T(`ui.qrType.${t.id}.label`),
+  desc: T(`ui.qrType.${t.id}.desc`),
+})))
+const currentTypeDesc = computed(() => (qrTypes.value.find((x) => x.id === type.value) || {}).desc || '')
+
+// describeText 返回的字段/动作标签是中文，映射成 i18n key
+const DESC_KEYMAP = {
+  'WiFi 网络':'wifiNet', '联系人名片':'contactCard', '网页链接':'webLink', '邮件':'mail',
+  '电话号码':'phoneNum', '短信':'sms', '地理位置':'geo', '文本内容':'textContent',
+  '名称 SSID':'wifiSsid', '密码':'wifiPwd', '加密方式':'wifiEnc', '隐藏网络':'wifiHidden',
+  '姓名':'vcardName', '公司':'vcardOrg', '职位':'vcardTitle', '电话':'vcardTel',
+  '邮箱':'vcardEmail', '网址':'vcardUrl', '地址':'addr', '收件人':'recipient',
+  '主题':'subject', '正文':'body', '号码':'number', '内容':'content',
+  '纬度':'lat', '经度':'lng',
+  '（无）':'none', '是':'yes', '否':'no', '开放网络（无密码）':'openNet',
+  '下载 .vcf 名片':'dlVcf', '打开链接':'openLink', '拨号':'dial', '在地图上查看':'viewMap',
+}
+const dt = (zh) => DESC_KEYMAP[zh] ? T(`ui.qrDesc.${DESC_KEYMAP[zh]}`) : zh
+function localizeDescribe(hit) {
+  const d = describeText(hit.text)
+  return {
+    ...d,
+    label: dt(d.label),
+    fields: d.fields.map((f) => ({ ...f, k: dt(f.k), v: dt(f.v) })),
+    actions: d.actions.map((a) => ({ ...a, label: dt(a.label) })),
+  }
+}
+
+const fields = computed(() => TYPE_SCHEMA.value[type.value] || [])
 const maxChars = computed(() => QR_MAX_CHARS[opt.ec] || QR_MAX_CHARS.M)
 const payload = computed(() => {
   try { return buildPayload(type.value, form) } catch (e) { return '' }
@@ -96,11 +127,11 @@ async function onLogo(files) {
   try {
     logoData.value = await loadLogoImage(f)
     logoFile.value = f.name
-    setMessage('info', 'Logo 已加载；为保证能扫，纠错级别会自动提到 H')
+    setMessage('info', T('ui.qr.logoLoaded'))
   } catch (e) {
     logoData.value = null
     logoFile.value = null
-    setMessage('err', 'Logo 读取失败：' + e.message)
+    setMessage('err', T('ui.qr.logoFail', { msg: e.message }))
   }
 }
 function clearLogo() {
@@ -140,7 +171,7 @@ async function render() {
     state.value = 'done'
   } catch (e) {
     state.value = 'error'
-    setMessage('err', '生成失败：' + e.message)
+    setMessage('err', T('ui.qr.genFail', { msg: e.message }))
   }
 }
 
@@ -155,9 +186,9 @@ async function downloadPng() {
   try {
     const blob = await canvasToBlob(lastCanvas.value, 'image/png')
     downloadBlob(blob, `qrcode-${Date.now()}.png`)
-    pushToast('ok', 'PNG 已下载')
+    pushToast('ok', T('ui.qr.pngOk'))
   } catch (e) {
-    setMessage('err', '导出 PNG 失败：' + e.message)
+    setMessage('err', T('ui.qr.pngFail', { msg: e.message }))
   }
 }
 async function downloadSvg() {
@@ -168,18 +199,18 @@ async function downloadSvg() {
       logo: logoData.value ? { image: logoData.value.image, dataUrl: logoData.value.dataUrl, ratio: 0.2 } : null,
     })
     downloadBlob(new Blob([svg], { type: 'image/svg+xml' }), `qrcode-${Date.now()}.svg`)
-    pushToast('ok', 'SVG 已下载（矢量）')
+    pushToast('ok', T('ui.qr.svgOk'))
   } catch (e) {
-    setMessage('err', '导出 SVG 失败：' + e.message)
+    setMessage('err', T('ui.qr.svgFail', { msg: e.message }))
   }
 }
 async function copyPayload() {
   if (!payload.value) return
   try {
     await navigator.clipboard.writeText(payload.value)
-    setMessage('ok', '二维码内容已复制到剪贴板。')
+    setMessage('ok', T('ui.qr.copyPayloadOk'))
   } catch {
-    setMessage('err', '浏览器拒绝了剪贴板权限，请手动复制上方内容。')
+    setMessage('err', T('ui.qr.copyPayloadFail'))
   }
 }
 
@@ -199,15 +230,15 @@ async function onDecodeFiles(files) {
     if (!res.hits.length) {
       decState.value = 'idle'
       decResult.value = { hits: [], engine: res.engine, file, width: res.width, height: res.height }
-      setMessage('err', '没识别到二维码。试试把图片放大摆正、提高亮度再传一次。')
+      setMessage('err', T('ui.qr.decNoHitMsg'))
       return
     }
     decState.value = 'done'
     decResult.value = { ...res, file }
-    setMessage('ok', `识别成功（${res.hits.length} 个）· 引擎：${res.engine}。内容未上传任何服务器。`)
+    setMessage('ok', T('ui.qr.decOkMsg', { n: res.hits.length, engine: res.engine }))
   } catch (e) {
     decState.value = 'error'
-    setMessage('err', '识别失败：' + e.message)
+    setMessage('err', T('ui.qr.decFail', { msg: e.message }))
   } finally {
     decBusy.value = false
   }
@@ -217,8 +248,8 @@ function describe(hit) {
   return describeText(hit.text)
 }
 async function copyText(t) {
-  try { await navigator.clipboard.writeText(t); setMessage('ok', '内容已复制。') }
-  catch { setMessage('err', '复制失败，请手动选择复制。') }
+  try { await navigator.clipboard.writeText(t); setMessage('ok', T('ui.qr.copyOk')) }
+  catch { setMessage('err', T('ui.qr.copyFail')) }
 }
 function openLink(hit) {
   const d = describe(hit)
@@ -228,13 +259,13 @@ function openLink(hit) {
 }
 function downloadVcf(hit) {
   downloadBlob(new Blob([hit.text], { type: 'text/vcard;charset=utf-8' }), 'contact.vcf')
-  setMessage('ok', '名片已下载（.vcf，双击可导入通讯录）。')
+  setMessage('ok', T('ui.qr.vcfOk'))
 }
 function toGenerate(hit) {
   tab.value = 'make'
   type.value = 'text'
   form.text = hit.text
-  setMessage('info', '已带入到「生成」标签页，可重新排版后导出。')
+  setMessage('info', T('ui.qr.toGenerate'))
 }
 
 // 跨工具工作流：把识别出的文本送到文本工具箱
@@ -260,7 +291,7 @@ async function startCamera() {
   camState.value = 'working'
   try {
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-      throw new Error('当前浏览器不支持摄像头调用；请改用「图片识别」，并确保是 https 或 localhost 访问')
+      throw new Error(T('ui.qr.camUnsupported'))
     }
     stream = await navigator.mediaDevices.getUserMedia({
       video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -278,8 +309,8 @@ async function startCamera() {
     camState.value = 'error'
     camError.value =
       e && e.name === 'NotAllowedError'
-        ? '摄像头权限被拒绝。请点击地址栏的摄像头图标允许授权后重试。'
-        : '无法打开摄像头：' + (e && e.message ? e.message : e)
+        ? T('ui.qr.camDenied')
+        : T('ui.qr.camFail', { msg: e && e.message ? e.message : e })
   }
 }
 async function scanTick() {
@@ -296,7 +327,7 @@ async function scanTick() {
       // 去重：重复出现在短时间内直接略过（同一张码往往会连续命中多帧）
       if (text === lastHit) return
       lastHit = text
-      setMessage('ok', '扫码成功！内容已显示在下方。')
+      setMessage('ok', T('ui.qr.scanOk'))
     }
   } catch {
     // 单帧失败不影响扫码循环（常见：帧未就绪）
@@ -320,11 +351,11 @@ async function onBatchFiles(fs) {
   const f = fs && fs[0]
   if (!f) return
   batchText.value = await f.text()
-  setMessage('info', `已导入 ${basename(f.name)}，每行生成一个二维码。`)
+  setMessage('info', T('ui.qr.batchImported', { name: basename(f.name) }))
 }
 async function runBatch() {
   const lines = batchText.value.split(/\r?\n/).map((s) => s.trim()).filter(Boolean)
-  if (!lines.length) { setMessage('err', '请先输入内容（每行一个二维码）。'); return }
+  if (!lines.length) { setMessage('err', T('ui.qr.batchNoLines')); return }
   batchBusy.value = true
   batchState.value = 'working'
   batchCount.value = 0
@@ -333,16 +364,16 @@ async function runBatch() {
       ec: opt.ec, size: opt.size, margin: opt.margin, dark: opt.dark, light: opt.light,
       logo: logoData.value ? { image: logoData.value.image, ratio: 0.2 } : null,
     })
-    if (!items.length) throw new Error('没有有效行可生成')
+    if (!items.length) throw new Error(T('ui.qr.batchNoValid'))
     const files = items.map((it) => new File([it.blob], it.name, { type: 'image/png' }))
     const zip = await createZip(files, { level: 6 })
     batchCount.value = files.length
     downloadBlob(zip, `qrcodes-${files.length}-${Date.now()}.zip`)
     batchState.value = 'done'
-    setMessage('ok', `已生成 ${files.length} 个二维码并打包下载（${formatSize(zip.size)}）。`)
+    setMessage('ok', T('ui.qr.batchDone', { n: files.length, size: formatSize(zip.size) }))
   } catch (e) {
     batchState.value = 'error'
-    setMessage('err', '批量生成失败：' + e.message)
+    setMessage('err', T('ui.qr.batchFail', { msg: e.message }))
   } finally {
     batchBusy.value = false
   }
@@ -358,7 +389,7 @@ onMounted(() => {
   if (pf && pf.files.length) {
     tab.value = 'decode'
     onDecodeFiles(pf.files)
-    pushToast('info', `已从「${pf.from}」载入文件用于识别`)
+    pushToast('info', T('ui.qr.fromFiles', { from: pf.from }))
     return
   }
   const pt = consumePendingText()
@@ -366,43 +397,43 @@ onMounted(() => {
     type.value = 'text'
     form.text = pt.text
     tab.value = 'make'
-    pushToast('info', `已从「${pt.from}」载入文本并生成二维码`)
+    pushToast('info', T('ui.qr.fromText', { from: pt.from }))
   }
 })
 </script>
 
 <template>
-  <h1 class="page-title">二维码工具箱</h1>
+  <h1 class="page-title">{{ T('ui.qr.pageTitle') }}</h1>
   <p class="page-sub">
-    生成 / 识别二维码，全部在你的浏览器里完成。支持网址、WiFi、名片、邮件、短信、电话、定位等格式；
-    识别由 ZXing-C++ 的 WASM 内核驱动（优先使用浏览器原生加速），<b>文件与画面从不上传</b>。
+    {{ T('ui.qr.sub1') }}
+    {{ T('ui.qr.sub2') }}<b>{{ T('ui.qr.sub3') }}</b>
   </p>
 
-  <HelpTip title="这页能做什么？怎么用？" icon="bi-info-circle" open>
+  <HelpTip :title="T('ui.qr.helpTitle')" icon="bi-info-circle" open>
     <ol class="howto">
-      <li><b>生成</b>：选一个内容类型（如 WiFi），填好表单，右侧即时出图，下载 PNG 或 SVG。</li>
-      <li><b>识别</b>：拖入一张含二维码的图片，或直接用摄像头对着屏幕/二维码扫。</li>
-      <li><b>批量</b>：粘贴多行文本，一次生成几十个二维码并自动打包成 ZIP。</li>
+      <li><b>{{ T('ui.qr.stepMake') }}</b>{{ T('ui.qr.helpMake') }}</li>
+      <li><b>{{ T('ui.qr.stepDecode') }}</b>{{ T('ui.qr.helpDecode') }}</li>
+      <li><b>{{ T('ui.qr.stepBatch') }}</b>{{ T('ui.qr.helpBatch') }}</li>
     </ol>
     <p style="margin:8px 0 0">
-      小提示：加 Logo 会自动把纠错级别提到 <b>H</b>（可恢复约 30% 遮挡），不影响扫码；
-      颜色请保持<b>深底浅图上原则</b>——前景比背景暗得多才扫得出。
+      {{ T('ui.qr.tipLead') }}<b>H</b>{{ T('ui.qr.tipAfterH') }}
+      {{ T('ui.qr.tipColorLead') }}<b>{{ T('ui.qr.tipRule') }}</b>{{ T('ui.qr.tipRuleAfter') }}
     </p>
   </HelpTip>
 
   <div class="tabs">
-    <button :class="{ active: tab === 'make' }" @click="tab = 'make'"><i class="bi bi-qr-code"></i> 生成二维码</button>
-    <button :class="{ active: tab === 'decode' }" @click="tab = 'decode'"><i class="bi bi-upc-scan"></i> 识别二维码</button>
-    <button :class="{ active: tab === 'batch' }" @click="tab = 'batch'"><i class="bi bi-collection"></i> 批量生成</button>
+    <button :class="{ active: tab === 'make' }" @click="tab = 'make'"><i class="bi bi-qr-code"></i> {{ T('ui.qr.tabMake') }}</button>
+    <button :class="{ active: tab === 'decode' }" @click="tab = 'decode'"><i class="bi bi-upc-scan"></i> {{ T('ui.qr.tabDecode') }}</button>
+    <button :class="{ active: tab === 'batch' }" @click="tab = 'batch'"><i class="bi bi-collection"></i> {{ T('ui.qr.tabBatch') }}</button>
   </div>
 
   <!-- ================= 生成 ================= -->
   <div v-if="tab === 'make'" class="qr-grid">
     <div class="panel">
-      <h3 class="sec-title"><i class="bi bi-input-cursor-text"></i> 第一步：选择内容类型</h3>
+      <h3 class="sec-title"><i class="bi bi-input-cursor-text"></i> {{ T('ui.qr.step1') }}</h3>
       <div class="type-grid">
         <button
-          v-for="t in QR_TYPES" :key="t.id"
+          v-for="t in qrTypes" :key="t.id"
           class="type-card" :class="{ active: type === t.id }"
           @click="type = t.id"
         >
@@ -410,15 +441,15 @@ onMounted(() => {
           <span>{{ t.label }}</span>
         </button>
       </div>
-      <p class="hint">{{ (QR_TYPES.find((x) => x.id === type) || {}).desc }}</p>
+      <p class="hint">{{ currentTypeDesc }}</p>
 
-      <h3 class="sec-title"><i class="bi bi-pencil-square"></i> 第二步：填写内容</h3>
+      <h3 class="sec-title"><i class="bi bi-pencil-square"></i> {{ T('ui.qr.step2') }}</h3>
       <div class="form-grid">
         <template v-for="f in fields" :key="f.key">
           <div class="field" :class="{ 'full': f.type === 'textarea' }">
             <label>
               {{ f.label }}
-              <span v-if="f.key === 'password' && disabledPwd" class="tip-inline">已选开放网络，无需密码</span>
+              <span v-if="f.key === 'password' && disabledPwd" class="tip-inline">{{ T('ui.qr.noPwdNeeded') }}</span>
             </label>
             <textarea
               v-if="f.type === 'textarea'" rows="3" v-model="form[f.key]" :placeholder="f.ph"
@@ -439,80 +470,80 @@ onMounted(() => {
       </div>
 
       <div class="status">
-        二维码内容（{{ payloadLen }} 字符，上限约 {{ maxChars }}）：
-        <code class="payload-box">{{ payload || '（尚未填写内容）' }}</code>
+        {{ T('ui.qr.payloadLabel', { n: payloadLen, max: maxChars }) }}
+        <code class="payload-box">{{ payload || T('ui.qr.payloadEmpty') }}</code>
       </div>
       <p v-if="tooLong" class="msg err">
-        内容超出当前纠错级别的容量。请缩短内容，或把「纠错级别」调低（如 M → L）。
+        {{ T('ui.qr.tooLong') }}
       </p>
 
       <details class="opts">
-        <summary><i class="bi bi-sliders"></i> 外观与高级选项</summary>
+        <summary><i class="bi bi-sliders"></i> {{ T('ui.qr.opts') }}</summary>
         <div class="row wrap" style="margin-top:12px">
           <div class="field">
-            <label>纠错级别</label>
+            <label>{{ T('ui.qr.ecLabel') }}</label>
             <select v-model="opt.ec">
-              <option value="L">L 低（容量最大）</option>
-              <option value="M">M 中（默认推荐）</option>
-              <option value="Q">Q 较高</option>
-              <option value="H">H 最高（可挡 30%）</option>
+              <option value="L">{{ T('ui.qr.ecL') }}</option>
+              <option value="M">{{ T('ui.qr.ecM') }}</option>
+              <option value="Q">{{ T('ui.qr.ecQ') }}</option>
+              <option value="H">{{ T('ui.qr.ecH') }}</option>
             </select>
           </div>
           <div class="field">
-            <label>输出尺寸 {{ opt.size }}px</label>
+            <label>{{ T('ui.qr.optSize', { n: opt.size }) }}</label>
             <input type="range" min="128" max="1024" step="64" v-model.number="opt.size" style="width:150px" />
           </div>
           <div class="field">
-            <label>留白 {{ opt.margin }} 格</label>
+            <label>{{ T('ui.qr.optMargin', { n: opt.margin }) }}</label>
             <input type="range" min="0" max="8" step="1" v-model.number="opt.margin" style="width:120px" />
           </div>
           <div class="field">
-            <label>前景色</label>
+            <label>{{ T('ui.qr.darkLabel') }}</label>
             <input type="color" v-model="opt.dark" />
           </div>
           <div class="field">
-            <label>背景色</label>
+            <label>{{ T('ui.qr.lightLabel') }}</label>
             <input type="color" v-model="opt.light" />
           </div>
         </div>
         <div class="row wrap">
           <div class="field">
-            <label>中心 Logo（可选）</label>
+            <label>{{ T('ui.qr.logoLabel') }}</label>
             <button class="btn ghost" @click="pickLogo">
-              <i class="bi bi-image"></i> {{ logoFile ? '更换 Logo' : '选择 Logo' }}
+              <i class="bi bi-image"></i> {{ logoFile ? T('ui.qr.logoChange') : T('ui.qr.logoPick') }}
             </button>
             <input ref="logoInput" type="file" accept="image/*" hidden @change="onLogo($event.target.files)" />
           </div>
           <div v-if="logoFile" class="field">
             <label>&nbsp;</label>
             <span class="tag"><i class="bi bi-paperclip"></i> {{ logoFile }}</span>
-            <button class="btn ghost" style="margin-left:8px" @click="clearLogo"><i class="bi bi-x"></i> 移除</button>
+            <button class="btn ghost" style="margin-left:8px" @click="clearLogo"><i class="bi bi-x"></i> {{ T('ui.qr.remove') }}</button>
           </div>
         </div>
-        <p class="hint">Logo 建议小于画面 20%（自动裁到适当比例）；上传后纠错会自动提到 H，保证仍可扫码。</p>
+        <p class="hint">{{ T('ui.qr.logoHint') }}</p>
       </details>
     </div>
 
     <div class="panel qr-side">
       <div class="row" style="justify-content:space-between">
-        <h3 class="sec-title" style="margin:0"><i class="bi bi-eye"></i> 实时预览</h3>
-        <StatusPill :state="state" :label="state === 'done' ? '已生成' : state === 'error' ? '无法生成' : '待填充'" />
+        <h3 class="sec-title" style="margin:0"><i class="bi bi-eye"></i> {{ T('ui.qr.previewTitle') }}</h3>
+        <StatusPill :state="state" :label="state === 'done' ? T('ui.qr.pillDone') : state === 'error' ? T('ui.qr.pillError') : T('ui.qr.pillIdle')" />
       </div>
       <div ref="previewEl" class="qr-preview"></div>
-      <p v-if="!payload && state !== 'done'" class="hint" style="text-align:center">填写左侧内容后，二维码会立即出现在这里。</p>
+      <p v-if="!payload && state !== 'done'" class="hint" style="text-align:center">{{ T('ui.qr.previewEmpty') }}</p>
       <div class="row wrap" style="margin-top:12px">
         <button class="btn green" :disabled="!lastCanvas" @click="downloadPng">
-          <i class="bi bi-download"></i> 下载 PNG
+          <i class="bi bi-download"></i> {{ T('ui.qr.downloadPng') }}
         </button>
         <button class="btn" :disabled="!payload" @click="downloadSvg">
-          <i class="bi bi-file-earmark-code"></i> 下载 SVG
+          <i class="bi bi-file-earmark-code"></i> {{ T('ui.qr.downloadSvg') }}
         </button>
         <button class="btn ghost" :disabled="!payload" @click="copyPayload">
-          <i class="bi bi-clipboard"></i> 复制内容
+          <i class="bi bi-clipboard"></i> {{ T('ui.qr.copyContent') }}
         </button>
       </div>
       <p class="hint">
-        <b>PNG</b> 适合屏幕与社群分享；<b>SVG</b> 适合印刷与海报（放大不糊）。两者都在本地生成，没有任何上传。
+        <b>PNG</b> {{ T('ui.qr.fmtHint1') }}<b>SVG</b>{{ T('ui.qr.fmtHint2') }}
       </p>
     </div>
   </div>
@@ -520,89 +551,89 @@ onMounted(() => {
   <!-- ================= 识别 ================= -->
   <div v-else-if="tab === 'decode'" class="qr-grid">
     <div class="panel">
-      <h3 class="sec-title"><i class="bi bi-image"></i> 方式一：识别图片中的二维码</h3>
+      <h3 class="sec-title"><i class="bi bi-image"></i> {{ T('ui.qr.decodeTitle1') }}</h3>
       <StepBar :steps="[
-        { label: '选择图片', state: decResult ? 'done' : 'active' },
-        { label: '本地识别', state: decState === 'working' ? 'active' : decResult && decResult.hits.length ? 'done' : 'todo' },
-        { label: '查看结果', state: decResult && decResult.hits.length ? 'done' : 'todo' },
+        { label: T('ui.qr.stepPickImg'), state: decResult ? 'done' : 'active' },
+        { label: T('ui.qr.stepLocalDec'), state: decState === 'working' ? 'active' : decResult && decResult.hits.length ? 'done' : 'todo' },
+        { label: T('ui.qr.stepResult'), state: decResult && decResult.hits.length ? 'done' : 'todo' },
       ]" />
       <DropZone
-        :multiple="false" accept="image/*" single="图片"
-        hint="把含二维码的图片拖到这里"
-        formats="PNG / JPG / WEBP / GIF / AVIF 等浏览器可解开的图片"
+        :multiple="false" accept="image/*" :single="T('ui.qr.dropSingleImg')"
+        :hint="T('ui.qr.dropHintImg')"
+        :formats="T('ui.qr.dropFormatsImg')"
         @files="onDecodeFiles"
       />
-      <p v-if="decBusy" class="hint"><i class="bi bi-arrow-repeat spin-inline"></i> 正在本地识别，请稍候……</p>
+      <p v-if="decBusy" class="hint"><i class="bi bi-arrow-repeat spin-inline"></i> {{ T('ui.qr.decWorking') }}</p>
       <p v-if="decResult && !decResult.hits.length" class="hint">
-        图片尺寸 {{ decResult.width }}×{{ decResult.height }} 已读取，但没有找到二维码。
+        {{ T('ui.qr.decNoHitSize', { w: decResult.width, h: decResult.height }) }}
       </p>
 
       <hr class="split" />
 
-      <h3 class="sec-title"><i class="bi bi-camera"></i> 方式二：摄像头扫码</h3>
+      <h3 class="sec-title"><i class="bi bi-camera"></i> {{ T('ui.qr.decodeTitle2') }}</h3>
       <StepBar :steps="[
-        { label: '允许摄像头', state: camOn ? 'done' : camState === 'error' ? 'error' : 'active' },
-        { label: '对准二维码', state: camOn ? 'active' : 'todo' },
-        { label: '自动识别', state: camState === 'done' ? 'done' : 'todo' },
+        { label: T('ui.qr.stepCamAllow'), state: camOn ? 'done' : camState === 'error' ? 'error' : 'active' },
+        { label: T('ui.qr.stepCamAim'), state: camOn ? 'active' : 'todo' },
+        { label: T('ui.qr.stepCamAuto'), state: camState === 'done' ? 'done' : 'todo' },
       ]" />
       <div class="row wrap">
         <button v-if="!camOn" class="btn" :disabled="decBusy" @click="startCamera">
-          <i class="bi bi-camera-video"></i> 打开摄像头
+          <i class="bi bi-camera-video"></i> {{ T('ui.qr.openCamera') }}
         </button>
-        <button v-else class="btn ghost" @click="stopCamera"><i class="bi bi-stop-circle"></i> 停止</button>
-        <span v-if="camOn" class="tag live"><i class="bi bi-broadcast"></i> 正在扫描……</span>
+        <button v-else class="btn ghost" @click="stopCamera"><i class="bi bi-stop-circle"></i> {{ T('ui.qr.stop') }}</button>
+        <span v-if="camOn" class="tag live"><i class="bi bi-broadcast"></i> {{ T('ui.qr.scanning') }}</span>
       </div>
       <div v-if="camError" class="msg err">{{ camError }}</div>
       <video v-show="camOn" ref="videoEl" class="cam" playsinline muted></video>
       <p v-if="!camOn" class="hint">
-        摄像头仅在本地用于取帧分析，画面不会离开设备、也不会被录制保存。需要 https 或 localhost 环境。
+        {{ T('ui.qr.camHint') }}
       </p>
-      <div v-if="camResult" class="msg ok">扫码成功：{{ camResult.text }}</div>
+      <div v-if="camResult" class="msg ok">{{ T('ui.qr.scanOkPrefix', { text: camResult.text }) }}</div>
     </div>
 
     <div class="panel qr-side">
       <div class="row" style="justify-content:space-between">
-        <h3 class="sec-title" style="margin:0"><i class="bi bi-card-checklist"></i> 识别结果</h3>
-        <StatusPill :state="decState" :label="decState === 'done' ? '识别完成' : decState === 'working' ? '识别中' : '等待图片'" />
+        <h3 class="sec-title" style="margin:0"><i class="bi bi-card-checklist"></i> {{ T('ui.qr.resultTitle') }}</h3>
+        <StatusPill :state="decState" :label="decState === 'done' ? T('ui.qr.pillDecDone') : decState === 'working' ? T('ui.qr.pillDecWorking') : T('ui.qr.pillDecIdle')" />
       </div>
 
-      <div v-if="!decResult" class="hint">还没有结果。左边选一张图片或直接扫码，结果会显示在这里并解释含义。</div>
+      <div v-if="!decResult" class="hint">{{ T('ui.qr.resultEmpty') }}</div>
 
       <div v-else-if="!decResult.hits.length" class="hint">
-        未识别到二维码。常见原因：图片太小/倾斜/反光，或二维码本身带特效（艺术码需原始码）。
+        {{ T('ui.qr.resultNoHit') }}
       </div>
 
       <template v-else>
         <div v-for="(hit, i) in decResult.hits" :key="i" class="hit">
         <div class="hit-head">
           <span class="tag"><i class="bi bi-upc"></i> {{ hit.format || 'QRCode' }}</span>
-          <span class="tag">{{ describe(hit).label }}</span>
+          <span class="tag">{{ localizeDescribe(hit).label }}</span>
         </div>
-        <div v-for="f in describe(hit).fields" :key="f.k" class="hit-field">
+        <div v-for="f in localizeDescribe(hit).fields" :key="f.k" class="hit-field">
           <span class="k">{{ f.k }}</span>
           <span class="v">{{ f.v }}</span>
         </div>
         <div class="row wrap" style="margin-top:10px">
-          <button class="btn ghost" @click="copyText(hit.text)"><i class="bi bi-clipboard"></i> 复制原文</button>
-          <button v-if="describe(hit).actions.some((a) => a.id === 'open')" class="btn ghost" @click="openLink(hit)">
-            <i class="bi" :class="describe(hit).actions.find((a) => a.id === 'open').icon"></i>
-            {{ describe(hit).actions.find((a) => a.id === 'open').label }}
+          <button class="btn ghost" @click="copyText(hit.text)"><i class="bi bi-clipboard"></i> {{ T('ui.qr.copyOriginal') }}</button>
+          <button v-if="localizeDescribe(hit).actions.some((a) => a.id === 'open')" class="btn ghost" @click="openLink(hit)">
+            <i class="bi" :class="localizeDescribe(hit).actions.find((a) => a.id === 'open').icon"></i>
+            {{ localizeDescribe(hit).actions.find((a) => a.id === 'open').label }}
           </button>
-          <button v-if="describe(hit).kind === 'vcard'" class="btn ghost" @click="downloadVcf(hit)">
-            <i class="bi bi-person-plus"></i> 下载 .vcf 名片
+          <button v-if="localizeDescribe(hit).kind === 'vcard'" class="btn ghost" @click="downloadVcf(hit)">
+            <i class="bi bi-person-plus"></i> {{ T('ui.qr.downloadVcf') }}
           </button>
-          <button class="btn ghost" @click="toGenerate(hit)"><i class="bi bi-qr-code"></i> 重新生成一个</button>
-          <button class="btn ghost" @click="sendTextTo(hit)"><i class="bi bi-code-slash"></i> 送去文本工具</button>
+          <button class="btn ghost" @click="toGenerate(hit)"><i class="bi bi-qr-code"></i> {{ T('ui.qr.regenerate') }}</button>
+          <button class="btn ghost" @click="sendTextTo(hit)"><i class="bi bi-code-slash"></i> {{ T('ui.qr.sendToText') }}</button>
         </div>
         <details class="raw">
-          <summary>查看原始内容</summary>
+          <summary>{{ T('ui.qr.viewRaw') }}</summary>
           <pre>{{ hit.text }}</pre>
         </details>
         </div>
       </template>
 
       <p v-if="decResult" class="hint">
-        本次引擎：{{ decResult.engine }}。全过程在你的浏览器完成，图片没有上传任何服务器。
+        {{ T('ui.qr.engineHint', { engine: decResult.engine }) }}
       </p>
     </div>
   </div>
@@ -610,33 +641,33 @@ onMounted(() => {
   <!-- ================= 批量 ================= -->
   <div v-else class="qr-grid">
     <div class="panel">
-      <h3 class="sec-title"><i class="bi bi-body-text"></i> 输入多行内容</h3>
-      <p class="hint">每行生成一个二维码；空行会被自动跳过。适合批量做桌牌、商品标签、会议室贴纸。</p>
-      <textarea v-model="batchText" rows="10" placeholder="https://example.com/a&#10;https://example.com/b&#10;会议室-301&#10;会议室-302"></textarea>
+      <h3 class="sec-title"><i class="bi bi-body-text"></i> {{ T('ui.qr.batchInputTitle') }}</h3>
+      <p class="hint">{{ T('ui.qr.batchHint') }}</p>
+      <textarea v-model="batchText" rows="10" :placeholder="T('ui.qr.phBatch')"></textarea>
       <div class="row wrap" style="margin-top:10px">
         <button class="btn green" :disabled="batchBusy || !batchText.trim()" @click="runBatch">
-          <i class="bi bi-lightning-charge"></i> {{ batchBusy ? '正在生成……' : '生成并打包 ZIP' }}
+          <i class="bi bi-lightning-charge"></i> {{ batchBusy ? T('ui.qr.generating') : T('ui.qr.genZip') }}
         </button>
-        <button class="btn ghost" @click="pickBatch"><i class="bi bi-file-earmark-text"></i> 导入 TXT</button>
+        <button class="btn ghost" @click="pickBatch"><i class="bi bi-file-earmark-text"></i> {{ T('ui.qr.importTxt') }}</button>
         <input ref="batchInput" type="file" accept=".txt,.csv,text/plain" hidden @change="onBatchFiles($event.target.files)" />
       </div>
       <div v-if="batchText.trim()" class="status">
-        共 <b style="color:var(--txt)">{{ batchText.split(/\r?\n/).filter((s) => s.trim()).length }}</b> 行待生成（沿用「生成」页的尺寸/颜色/Logo 设置）。
+        {{ T('ui.qr.batchCountPrefix') }}<b style="color:var(--txt)">{{ batchText.split(/\r?\n/).filter((s) => s.trim()).length }}</b>{{ T('ui.qr.batchCountSuffix') }}
       </div>
     </div>
     <div class="panel qr-side">
       <div class="row" style="justify-content:space-between">
-        <h3 class="sec-title" style="margin:0"><i class="bi bi-box-seam"></i> 输出</h3>
-        <StatusPill :state="batchState" :label="batchState === 'done' ? `已生成 ${batchCount} 个` : batchState === 'working' ? '生成中' : '待开始'" />
+        <h3 class="sec-title" style="margin:0"><i class="bi bi-box-seam"></i> {{ T('ui.qr.outputTitle') }}</h3>
+        <StatusPill :state="batchState" :label="batchState === 'done' ? T('ui.qr.pillBatchDone', { n: batchCount }) : batchState === 'working' ? T('ui.qr.pillBatchWorking') : T('ui.qr.pillBatchIdle')" />
       </div>
-      <HelpTip title="批量怎么用最省事？" icon="bi-lightbulb" tone="tip">
+      <HelpTip :title="T('ui.qr.batchHelpTitle')" icon="bi-lightbulb" tone="tip">
         <ol class="howto">
-          <li>左侧每行一条内容（网址、编号、WiFi 名都行）。</li>
-          <li>把二维码样式（尺寸/颜色/Logo）在「生成」页调好，这里会沿用。</li>
-          <li>点生成 → 下载一个 ZIP，里面是 <code>001-xxx.png</code> 这样按序编号的图片。</li>
+          <li>{{ T('ui.qr.batchHelp1') }}</li>
+          <li>{{ T('ui.qr.batchHelp2') }}</li>
+          <li>{{ T('ui.qr.batchHelp3') }}<code>001-xxx.png</code>{{ T('ui.qr.batchHelp3b') }}</li>
         </ol>
       </HelpTip>
-      <p class="hint">ZIP 由本项目自带的 zip.js 在浏览器本地打包，同样零上传。</p>
+      <p class="hint">{{ T('ui.qr.zipHint') }}</p>
     </div>
   </div>
 
